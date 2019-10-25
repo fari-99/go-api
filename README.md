@@ -2,6 +2,7 @@
 ## Description
 
 This repository is base for my API.
+Learning Backend Everyday.
 
 ## Feature
 1. JWT token authentication
@@ -15,6 +16,7 @@ This repository is base for my API.
 1. Redis Cache
 1. NoSql (Mongo)
 1. ElasticSearch
+1. Finite State Machine
 
 ## Install
 1. install go version at least version 1.12.8 ([download](https://golang.org/dl/))
