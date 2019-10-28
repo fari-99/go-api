@@ -2,7 +2,7 @@ package token_generator
 
 import (
 	_ "crypto"
-	"goService/models"
+	"go-api/models"
 	"os"
 	"time"
 

@@ -3,7 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"errors"
-	"goService/models"
+	"go-api/models"
 	"os"
 	"reflect"
 	"strconv"

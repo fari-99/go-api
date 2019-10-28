@@ -1,23 +1,25 @@
 package routes
 
 import (
-	"goService/controllers"
-	"goService/utils"
+	"go-api/configs"
+	"go-api/controllers"
 	"log"
 
 	"github.com/kataras/iris"
 )
 
-func init() {
-	log.Println("Initialize User router")
-	app := utils.GetIrisApplication()
-	db, _ := utils.DatabaseBase().SetConnection()
+func (routes *Routes) setupCustomerRoute() *iris.Application {
+	log.Println("Setup Customer router")
 
-	authentication := utils.NewMiddleware(utils.MiddlewareConfiguration{})
+	app := routes.irisApp
+	db := routes.DB
+	redis := routes.Redis
+
+	authentication := configs.NewMiddleware(configs.MiddlewareConfiguration{})
 
 	// Approver Endpoint collection
 	app.PartyFunc("/customers", func(customers iris.Party) {
-		customerController := &controllers.CustomerController{DB: db}
+		customerController := &controllers.CustomerController{DB: db, Redis: redis}
 		//companyIDPathName := "companyID"
 
 		// authentication data
@@ -41,4 +43,6 @@ func init() {
 		//	customerCars.Delete("/{"+companyCarIDPathName+":int64}", customerCarsController.DeleteAction) // Delete
 		//})
 	})
+
+	return app
 }

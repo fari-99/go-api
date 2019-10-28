@@ -1,4 +1,4 @@
-module goService
+module go-api
 
 go 1.12
 

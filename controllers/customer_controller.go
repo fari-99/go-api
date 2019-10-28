@@ -3,10 +3,10 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	"goService/helpers"
-	"goService/helpers/token_generator"
-	"goService/models"
-	"goService/utils"
+	"go-api/configs"
+	"go-api/helpers"
+	"go-api/helpers/token_generator"
+	"go-api/models"
 
 	"github.com/go-redis/redis"
 
@@ -15,7 +15,8 @@ import (
 )
 
 type CustomerController struct {
-	DB *gorm.DB
+	DB    *gorm.DB
+	Redis *redis.Client
 }
 
 func (controller *CustomerController) CreateAction(ctx iris.Context) {
@@ -23,19 +24,19 @@ func (controller *CustomerController) CreateAction(ctx iris.Context) {
 	var input models.Customers
 	err := ctx.ReadJSON(&input)
 	if err != nil {
-		_, _ = utils.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
 		return
 	}
 
 	var userModel models.Customers
-	if !db.Where("username = ? OR email = ?", input.Username, input.Email).Find(&userModel).RecordNotFound() {
-		_, _ = utils.NewResponse(ctx, iris.StatusInternalServerError, "Username or Email already created")
+	if !db.Debug().Where("username = ? OR email = ?", input.Username, input.Email).Find(&userModel).RecordNotFound() {
+		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, "Username or Email already created")
 		return
 	}
 
 	password, err := helpers.GeneratePassword(input.Password)
 	if err != nil {
-		_, _ = utils.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
+		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -43,11 +44,11 @@ func (controller *CustomerController) CreateAction(ctx iris.Context) {
 
 	err = db.Create(&input).Error
 	if err != nil {
-		_, _ = utils.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
+		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
 		return
 	}
 
-	_, _ = utils.NewResponse(ctx, iris.StatusOK, "User successfully created")
+	_, _ = configs.NewResponse(ctx, iris.StatusOK, "User successfully created")
 	return
 }
 
@@ -55,27 +56,27 @@ func (controller *CustomerController) AuthenticateAction(ctx iris.Context) {
 	var input models.Customers
 	err := ctx.ReadJSON(&input)
 	if err != nil {
-		_, _ = utils.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
 		return
 	}
 
 	db := controller.DB
 	var customerModel models.Customers
 	if db.Where(&models.Customers{Email: input.Email}).Find(&customerModel).RecordNotFound() {
-		_, _ = utils.NewResponse(ctx, iris.StatusOK, "User not found")
+		_, _ = configs.NewResponse(ctx, iris.StatusOK, "User not found")
 		return
 	}
 
 	err = helpers.AuthenticatePassword(&customerModel, input.Password)
 	if err != nil {
-		_, _ = utils.NewResponse(ctx, iris.StatusOK, err.Error())
+		_, _ = configs.NewResponse(ctx, iris.StatusOK, err.Error())
 		return
 	}
 
 	// generate JWT token
 	token, err := token_generator.NewJwt().SetClaim(customerModel).SignClaim()
 	if err != nil {
-		_, _ = utils.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
+		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -85,12 +86,12 @@ func (controller *CustomerController) AuthenticateAction(ctx iris.Context) {
 
 	customerResult.BearerToken = token
 
-	_, _ = utils.NewResponse(ctx, iris.StatusOK, customerResult)
+	_, _ = configs.NewResponse(ctx, iris.StatusOK, customerResult)
 	return
 }
 
 func (controller *CustomerController) TestRedisAction(ctx iris.Context) {
-	client := utils.GetRedis()
+	client := controller.Redis
 
 	err := client.Set("key", "value", 0).Err()
 	if err != nil {
@@ -111,6 +112,6 @@ func (controller *CustomerController) TestRedisAction(ctx iris.Context) {
 	} else {
 		fmt.Println("key2", val2)
 	}
-	_, _ = utils.NewResponse(ctx, iris.StatusOK, "yee")
+	_, _ = configs.NewResponse(ctx, iris.StatusOK, "yee")
 	return
 }
