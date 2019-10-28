@@ -43,6 +43,10 @@ func (routes *Routes) Setup(host string, port string) {
 
 	routes.setupCustomerRoute()
 
+	if os.Getenv("LOG_LEVEL") == "debug" {
+		routes.setupTestRoute()
+	}
+
 	//start server
 	_ = app.Run(iris.Addr(host+":"+port), iris.WithoutServerError(iris.ErrServerClosed))
 }

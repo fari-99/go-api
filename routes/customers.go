@@ -24,7 +24,6 @@ func (routes *Routes) setupCustomerRoute() *iris.Application {
 
 		// authentication data
 		customers.Post("/auth", customerController.AuthenticateAction)
-		customers.Post("/test-redis", customerController.TestRedisAction)
 
 		customers.Post("/", authentication, customerController.CreateAction) // Create
 		//customers.Get("/{"+companyIDPathName+":int64}", customerController.ReadAction)    // Read
