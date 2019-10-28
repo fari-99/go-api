@@ -9,21 +9,29 @@ import (
 
 func (routes *Routes) setupTestRoute() *iris.Application {
 	app := routes.irisApp
-	db := routes.DB
-	redis := routes.Redis
-
-	//authentication := configs.NewMiddleware(configs.MiddlewareConfiguration{})
 
 	// Redis Test Endpoint collection
 	app.PartyFunc("/test-redis", func(customers iris.Party) {
 		log.Println("Setup Test Redis router")
 
 		testRedisController := &test_controllers.TestRedisController{
-			DB:    db,
-			Redis: redis,
+			DB:    routes.DB,
+			Redis: routes.Redis,
 		}
 
 		customers.Post("/", testRedisController.TestRedisAction)
+	})
+
+	// Redis Cache Test Endpoint collection
+	app.PartyFunc("/test-redis-cache", func(customers iris.Party) {
+		log.Println("Setup Test Redis Cache router")
+
+		testRedisController := &test_controllers.RedisCacheController{
+			DB:         routes.DB,
+			RedisCache: routes.RedisCache,
+		}
+
+		customers.Post("/", testRedisController.TestRedisCacheAction)
 	})
 
 	return app

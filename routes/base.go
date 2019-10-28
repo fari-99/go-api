@@ -4,6 +4,8 @@ import (
 	"go-api/configs"
 	"os"
 
+	"github.com/go-redis/cache"
+
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/kataras/iris"
@@ -13,8 +15,9 @@ import (
 type Routes struct {
 	irisApp *iris.Application
 
-	DB    *gorm.DB
-	Redis *redis.Client
+	DB         *gorm.DB
+	Redis      *redis.Client
+	RedisCache *cache.Codec
 }
 
 func NewRouteBase() *Routes {
@@ -28,6 +31,9 @@ func NewRouteBase() *Routes {
 
 	// setup redis
 	routes.setupRedis()
+
+	// setup redis cache
+	routes.setupRedisCache()
 
 	return routes
 }
@@ -68,5 +74,14 @@ func (routes *Routes) setupRedis() *Routes {
 
 	// put redis to routes
 	routes.Redis = redisConn
+	return routes
+}
+
+func (routes *Routes) setupRedisCache() *Routes {
+	// Setup Redis Cache
+	redisCache := configs.GetRedisCache()
+
+	// put redis cache to routes
+	routes.RedisCache = redisCache
 	return routes
 }
