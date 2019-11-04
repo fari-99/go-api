@@ -34,5 +34,18 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		customers.Post("/", testRedisController.TestRedisCacheAction)
 	})
 
+	// Redis Cache Test Endpoint collection
+	app.PartyFunc("/test-rabbit", func(customers iris.Party) {
+		log.Println("Setup Test RabbitMq Connection router")
+
+		testRabbitMqQueueController := &test_controllers.RabbitMqController{
+			RabbitMqConnection: routes.RabbitQueue.Connection,
+			RabbitMqChannel:    routes.RabbitQueue.Channel,
+		}
+
+		customers.Post("/queue", testRabbitMqQueueController.TestPublishQueueAction)
+		customers.Post("/batch-queue", testRabbitMqQueueController.TestBatchPublishQueueAction)
+	})
+
 	return app
 }

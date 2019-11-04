@@ -4,6 +4,8 @@ import (
 	"go-api/configs"
 	"os"
 
+	"github.com/streadway/amqp"
+
 	"github.com/go-redis/cache"
 
 	"github.com/go-redis/redis"
@@ -15,9 +17,13 @@ import (
 type Routes struct {
 	irisApp *iris.Application
 
-	DB         *gorm.DB
-	Redis      *redis.Client
-	RedisCache *cache.Codec
+	DB          *gorm.DB
+	Redis       *redis.Client
+	RedisCache  *cache.Codec
+	RabbitQueue struct {
+		Connection *amqp.Connection
+		Channel    *amqp.Channel
+	}
 }
 
 func NewRouteBase() *Routes {
@@ -34,6 +40,9 @@ func NewRouteBase() *Routes {
 
 	// setup redis cache
 	routes.setupRedisCache()
+
+	// setup RabbitMq Connection
+	routes.setupRabbitMqQueue()
 
 	return routes
 }
@@ -83,5 +92,15 @@ func (routes *Routes) setupRedisCache() *Routes {
 
 	// put redis cache to routes
 	routes.RedisCache = redisCache
+	return routes
+}
+
+func (routes *Routes) setupRabbitMqQueue() *Routes {
+	// setup connection RabbitMq queue
+	connection, channel := configs.GetRabbitQueue()
+
+	// put rabbitMq queue connection to routes
+	routes.RabbitQueue.Channel = channel
+	routes.RabbitQueue.Connection = connection
 	return routes
 }
