@@ -33,22 +33,7 @@ func GetRabbitQueue() (*amqp.Connection, *amqp.Channel) {
 	rabbitQueueOnce.Do(func() {
 		log.Println("Initialize RabbitMq Queue connection...")
 
-		connUrl, err := getRabbitConfig()
-		if err != nil {
-			panic(err.Error())
-		}
-
-		connection, err := amqp.DialConfig(connUrl, amqp.Config{
-			//SASL:            nil,
-			//Vhost:           "",
-			//ChannelMax:      0,
-			//FrameSize:       0,
-			Heartbeat: 10 * time.Second, // default value
-			//TLSClientConfig: nil,
-			//Properties:      nil,
-			//Locale:          "en_US",
-			//Dial:            nil,
-		})
+		connection, err := GetRabbitMqQueueConnection()
 		if err != nil {
 			panic(err.Error())
 		}
@@ -65,6 +50,27 @@ func GetRabbitQueue() (*amqp.Connection, *amqp.Channel) {
 	})
 
 	return rabbitQueueInstance.Connection, rabbitQueueInstance.Channel
+}
+
+func GetRabbitMqQueueConnection() (*amqp.Connection, error) {
+	connUrl, err := getRabbitConfig()
+	if err != nil {
+		return &amqp.Connection{}, err
+	}
+
+	connection, err := amqp.DialConfig(connUrl, amqp.Config{
+		//SASL:            nil,
+		//Vhost:           "",
+		//ChannelMax:      0,
+		//FrameSize:       0,
+		Heartbeat: 10 * time.Second, // default value
+		//TLSClientConfig: nil,
+		//Properties:      nil,
+		//Locale:          "en_US",
+		//Dial:            nil,
+	})
+
+	return connection, err
 }
 
 // RabbitHost

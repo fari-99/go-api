@@ -102,7 +102,7 @@ func (base *BaseQueue) PublishQueue(message string) error {
 
 	confirms := channel.NotifyPublish(make(chan amqp.Confirmation, 1))
 	if err := channel.Confirm(false); err != nil {
-		log.Fatalf("confirm.select destination: %s", err)
+		return errors.New("confirm.select destination: " + err.Error())
 	}
 
 	go func(connection *amqp.Connection, channel *amqp.Channel) {
@@ -112,27 +112,34 @@ func (base *BaseQueue) PublishQueue(message string) error {
 			log.Printf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
 		} else {
 			log.Printf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
-			// TODO: Try reconnect here
+			for {
+				err := base.TryReconnect(message)
+				if err == nil {
+					break
+				}
+			}
 		}
 	}(connection, channel)
 
 	return nil
 }
 
-func (base *BaseQueue) BatchPublish(messages []string) []error {
-	var allError []error
+func (base *BaseQueue) BatchPublish(messages []string) []string {
+	var allError []string
 
 	connection := base.queueConnection
 	channel := base.queueChannel
 
 	confirms := channel.NotifyPublish(make(chan amqp.Confirmation, 1))
 	if err := channel.Confirm(false); err != nil {
-		log.Fatalf("confirm.select destination: %s", err)
+		allError = append(allError, "confirm.select destination: "+err.Error())
+		return allError
 	}
 
+	testConnection := 0
 	for _, message := range messages {
 		if !helpers.IsJSON(message) {
-			allError = append(allError, errors.New("data is not json string, err := "+message))
+			allError = append(allError, "data is not json string, err := "+message)
 			continue
 		}
 
@@ -145,12 +152,43 @@ func (base *BaseQueue) BatchPublish(messages []string) []error {
 				log.Printf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag)
 			} else {
 				log.Printf("failed delivery of delivery tag: %d", confirmed.DeliveryTag)
-				// TODO: Try reconnect here
+				for {
+					err := base.TryReconnect(message)
+					if err == nil {
+						break
+					}
+				}
 			}
 		}(connection, channel, message)
+
+		if testConnection == 5 {
+			_ = connection.Close()
+		} else {
+			testConnection++
+		}
 	}
 
 	return allError
+}
+
+func (base *BaseQueue) TryReconnect(message string) error {
+	time.Sleep(5 * time.Second)
+
+	connection, err := configs.GetRabbitMqQueueConnection()
+	if err != nil {
+		return err
+	}
+
+	channel, err := connection.Channel()
+	if err != nil {
+		return err
+	}
+
+	base.queueConnection = connection
+	base.queueChannel = channel
+
+	err = base.PublishQueue(message)
+	return err
 }
 
 func (base *BaseQueue) sendMessages(connection *amqp.Connection, channel *amqp.Channel, message string) error {
