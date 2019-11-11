@@ -49,7 +49,7 @@ func NewBaseQueue() (*BaseQueue, error) {
 
 func (base *BaseQueue) GetDefaultConfigQueue() ConfigQueue {
 	return ConfigQueue{
-		Name:       "your-queue-name-here",
+		Name:       "test",
 		Durable:    false,
 		AutoDelete: false,
 		Exclusive:  false,
@@ -60,7 +60,7 @@ func (base *BaseQueue) GetDefaultConfigQueue() ConfigQueue {
 
 func (base *BaseQueue) GetDefaultConfigPublishQueue() ConfigPublishQueue {
 	return ConfigPublishQueue{
-		Key:       "your-queue-name-here",
+		Key:       "test",
 		Mandatory: false,
 		Immediate: false,
 		Msg: amqp.Publishing{
