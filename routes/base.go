@@ -2,6 +2,7 @@ package routes
 
 import (
 	"go-api/configs"
+	"gopkg.in/gomail.v2"
 	"os"
 
 	"github.com/streadway/amqp"
@@ -24,6 +25,7 @@ type Routes struct {
 		Connection *amqp.Connection
 		Channel    *amqp.Channel
 	}
+	EmailDialler *gomail.Dialer
 }
 
 func NewRouteBase() *Routes {
@@ -43,6 +45,9 @@ func NewRouteBase() *Routes {
 
 	// setup RabbitMq Connection
 	routes.setupRabbitMqQueue()
+
+	// setup EmailDialler Connection
+	routes.setupEmail()
 
 	return routes
 }
@@ -102,5 +107,11 @@ func (routes *Routes) setupRabbitMqQueue() *Routes {
 	// put rabbitMq queue connection to routes
 	routes.RabbitQueue.Channel = channel
 	routes.RabbitQueue.Connection = connection
+	return routes
+}
+
+func (routes *Routes) setupEmail() *Routes {
+	dialer := configs.GetEmail()
+	routes.EmailDialler = dialer
 	return routes
 }

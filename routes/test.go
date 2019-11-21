@@ -47,5 +47,16 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		customers.Post("/batch-queue", testRabbitMqQueueController.TestBatchPublishQueueAction)
 	})
 
+	app.PartyFunc("/test-email", func(emails iris.Party) {
+		log.Printf("Setup Test EmailDialler Connection router")
+
+		testEmailController := &test_controllers.EmailsController{
+			DB:          routes.DB,
+			EmailDialer: routes.EmailDialler,
+		}
+
+		emails.Post("/send-email", testEmailController.SendEmailAction)
+	})
+
 	return app
 }
