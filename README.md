@@ -3,20 +3,21 @@
 
 This repository is base for my API.
 Learning Backend Everyday.
+Go version : go 1.12.8
 
 ## Feature
 1. JWT token authentication
 1. Database (Mysql)
 1. Redis
 1. Go Module
-1. Go version : go1.12.8
+1. Finite State Machine
+1. RabbitMq (queue)
 
 ## TO DO
-1. RabbitMq / Kafka
+1. RabbitMq (event)
 1. Redis Cache
 1. NoSql (Mongo)
 1. ElasticSearch
-1. Finite State Machine
 
 ## Install
 1. install go version at least version 1.12.8 ([download](https://golang.org/dl/))

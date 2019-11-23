@@ -29,7 +29,7 @@ func (controller *CustomerController) CreateAction(ctx iris.Context) {
 
 	var userModel models.Customers
 	if !db.Debug().Where("username = ? OR email = ?", input.Username, input.Email).Find(&userModel).RecordNotFound() {
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, "Username or Email already created")
+		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, "Username or EmailDialler already created")
 		return
 	}
 

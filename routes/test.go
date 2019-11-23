@@ -58,5 +58,14 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		emails.Post("/send-email", testEmailController.SendEmailAction)
 	})
 
+	app.PartyFunc("/test-state-machine", func(customers iris.Party) {
+		stateMachineController := &test_controllers.FiniteStateController{
+			DB: routes.DB,
+		}
+
+		customers.Post("/get-state", stateMachineController.GetAvailableTransitionsAction)
+		customers.Post("/change-state", stateMachineController.ChangeStateAction)
+	})
+
 	return app
 }
