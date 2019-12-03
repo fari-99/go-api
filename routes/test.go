@@ -39,8 +39,7 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		log.Println("Setup Test RabbitMq Connection router")
 
 		testRabbitMqQueueController := &test_controllers.RabbitMqController{
-			RabbitMqConnection: routes.RabbitQueue.Connection,
-			RabbitMqChannel:    routes.RabbitQueue.Channel,
+			QueueSetup: routes.Queue,
 		}
 
 		customers.Post("/queue", testRabbitMqQueueController.TestPublishQueueAction)

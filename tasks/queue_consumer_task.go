@@ -2,7 +2,7 @@ package tasks
 
 import (
 	"fmt"
-	"go-api/helpers/queue"
+	"go-api/configs"
 	"log"
 
 	"github.com/urfave/cli"
@@ -20,28 +20,35 @@ func (base *BaseCommand) getQueueConsumerTask() []cli.Command {
 					Name:     "queue-name",
 					Usage:    "queue name for this test",
 					Required: true,
-					Value:    "test", // default value is 10
+					Value:    "test-queue", // default value is 10
 				},
 			},
 			Action: func(cliContext *cli.Context) (err error) {
 				log.Printf("====  Running task queue test consumer ====")
-				consumerBase := queue.BaseConsumer()
-
-				configQueue := consumerBase.GetDefaultConfigQueueDeclare()
-				configConsumer := consumerBase.GetDefaultConfigConsumer()
-
 				queueName := base.GetFlags(cliContext, "queue-name")
 				log.Printf("Queue Name := %s", queueName)
 
-				configQueue.Name = queueName
-				configConsumer.QueueName = configQueue.Name
+				queueSetup := configs.NewBaseQueue().SetQueueName(queueName)
 
-				consumerBase.SetConfigQueue(configQueue).SetConfigConsumer(configConsumer)
-				err = consumerBase.Consume(HandleQueueEvents)
-				if err != nil {
-					log.Printf("Error consume task, err := %s", err.Error())
-					return err
+				configQueueDeclare := &configs.QueueDeclareConfig{
+					Durable:    false,
+					AutoDelete: false,
+					Exclusive:  false,
+					NoWait:     false,
+					Args:       nil,
 				}
+
+				configConsumer := &configs.ConsumerConfig{
+					Consumer:  "",
+					AutoAck:   false,
+					Exclusive: false,
+					NoLocal:   false,
+					NoWait:    false,
+					Args:      nil,
+				}
+
+				queueSetup.AddConsumer(configQueueDeclare, configConsumer)
+				queueSetup.Consume(HandleQueueEvents)
 
 				log.Printf("====  Task success ====")
 				return nil
@@ -52,6 +59,6 @@ func (base *BaseCommand) getQueueConsumerTask() []cli.Command {
 	return command
 }
 
-func HandleQueueEvents(body map[string]interface{}) {
+func HandleQueueEvents(body string) {
 	log.Printf(fmt.Sprint(body))
 }

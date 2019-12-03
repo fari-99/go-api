@@ -22,3 +22,5 @@ const TransactionOnProgress = 2
 const TransactionDone = 3
 const TransactionComplete = 4
 const TransactionDelete = 5
+
+const QueueDefaultName = "test-queue"

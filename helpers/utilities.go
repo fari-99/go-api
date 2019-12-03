@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"go-api/models"
+	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -72,14 +73,19 @@ func InArray(needle interface{}, haystack interface{}) (bool, int, error) {
 	return false, -1, nil
 }
 
-// GetEnv gets the environment variable. If environment variable is not set,
-// it returns the fallback.
-func GetEnv(key string, fallback string) string {
-	env := os.Getenv(key)
-
-	if len(env) == 0 {
-		env = fallback
+func LoggingMessage(message string, data interface{}) {
+	if data == nil {
+		return
 	}
 
-	return env
+	dataMarshal, _ := json.Marshal(data)
+	log.Printf("%s, Data := %s", message, string(dataMarshal))
+}
+
+func Recover(message string) {
+	if r := recover(); r != nil {
+		LoggingMessage(message, r)
+	}
+
+	return
 }

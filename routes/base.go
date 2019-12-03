@@ -2,30 +2,27 @@ package routes
 
 import (
 	"go-api/configs"
-	"gopkg.in/gomail.v2"
+	"go-api/helpers"
 	"os"
 
-	"github.com/streadway/amqp"
-
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/cache"
-
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/middleware/recover"
+	"gopkg.in/gomail.v2"
 )
 
 type Routes struct {
 	irisApp *iris.Application
 
-	DB          *gorm.DB
-	Redis       *redis.Client
-	RedisCache  *cache.Codec
-	RabbitQueue struct {
-		Connection *amqp.Connection
-		Channel    *amqp.Channel
-	}
-	EmailDialler *gomail.Dialer
+	DB            *gorm.DB
+	Redis         *redis.Client
+	RedisCache    *cache.Codec
+	Queue         *configs.QueueSetup
+	EmailDialler  *gomail.Dialer
+	ElasticSearch *elasticsearch.Client
 }
 
 func NewRouteBase() *Routes {
@@ -48,6 +45,9 @@ func NewRouteBase() *Routes {
 
 	// setup EmailDialler Connection
 	routes.setupEmail()
+
+	// setup ElasticSearch Connection
+	routes.setupElasticSearch()
 
 	return routes
 }
@@ -72,6 +72,7 @@ func (routes *Routes) Setup(host string, port string) {
 }
 
 func (routes *Routes) setupDatabase() *Routes {
+	helpers.LoggingMessage("Setup configuration database", nil)
 	db := configs.DatabaseBase().GetDBConnection()
 
 	// DB setup
@@ -83,6 +84,8 @@ func (routes *Routes) setupDatabase() *Routes {
 }
 
 func (routes *Routes) setupRedis() *Routes {
+	helpers.LoggingMessage("Setup configuration redis", nil)
+
 	// Setup Redis
 	redisConn := configs.GetRedis()
 
@@ -92,6 +95,8 @@ func (routes *Routes) setupRedis() *Routes {
 }
 
 func (routes *Routes) setupRedisCache() *Routes {
+	helpers.LoggingMessage("Setup configuration redis cache", nil)
+
 	// Setup Redis Cache
 	redisCache := configs.GetRedisCache()
 
@@ -101,17 +106,28 @@ func (routes *Routes) setupRedisCache() *Routes {
 }
 
 func (routes *Routes) setupRabbitMqQueue() *Routes {
+	helpers.LoggingMessage("Setup configuration RabbitMQ", nil)
+
 	// setup connection RabbitMq queue
-	connection, channel := configs.GetRabbitQueue()
+	queueBase := configs.NewBaseQueue()
 
 	// put rabbitMq queue connection to routes
-	routes.RabbitQueue.Channel = channel
-	routes.RabbitQueue.Connection = connection
+	routes.Queue = queueBase
 	return routes
 }
 
 func (routes *Routes) setupEmail() *Routes {
+	helpers.LoggingMessage("Setup configuration Email", nil)
+
 	dialer := configs.GetEmail()
 	routes.EmailDialler = dialer
+	return routes
+}
+
+func (routes *Routes) setupElasticSearch() *Routes {
+	helpers.LoggingMessage("Setup configuration ElasticSearch", nil)
+
+	elasticSearch := configs.GetElasticSearch()
+	routes.ElasticSearch = elasticSearch
 	return routes
 }
