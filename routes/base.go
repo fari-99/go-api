@@ -87,7 +87,7 @@ func (routes *Routes) setupRedis() *Routes {
 	helpers.LoggingMessage("Setup configuration redis", nil)
 
 	// Setup Redis
-	redisConn := configs.GetRedis()
+	redisConn := configs.GetRedisSession()
 
 	// put redis to routes
 	routes.Redis = redisConn

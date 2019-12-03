@@ -11,13 +11,12 @@ Go version : go 1.12.8
 1. Redis
 1. Go Module
 1. Finite State Machine
-1. RabbitMq (queue)
+1. RabbitMq
+1. ElasticSearch
 
 ## TO DO
-1. RabbitMq (event)
 1. Redis Cache
 1. NoSql (Mongo)
-1. ElasticSearch
 
 ## Install
 1. install go version at least version 1.12.8 ([download](https://golang.org/dl/))

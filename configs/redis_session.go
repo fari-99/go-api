@@ -8,15 +8,15 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type RedisConfig struct {
+type RedisSessionConfig struct {
 	Client *redis.Client
 }
 
-var redisSessionInstance *RedisConfig
-var redisOnce sync.Once
+var redisSessionInstance *RedisSessionConfig
+var redisSessionOnce sync.Once
 
-func GetRedis() *redis.Client {
-	redisOnce.Do(func() {
+func GetRedisSession() *redis.Client {
+	redisSessionOnce.Do(func() {
 		redisDB, _ := strconv.ParseInt(os.Getenv("REDIS_SESSION_DB"), 10, 64)
 
 		client := redis.NewClient(&redis.Options{
@@ -27,7 +27,7 @@ func GetRedis() *redis.Client {
 
 		client.TTL(os.Getenv("REDIS_SESSION_LIFETIME"))
 
-		redisSessionInstance = &RedisConfig{
+		redisSessionInstance = &RedisSessionConfig{
 			Client: client,
 		}
 	})
