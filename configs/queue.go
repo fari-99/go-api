@@ -9,14 +9,13 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/kataras/iris"
 
 	"github.com/streadway/amqp"
 )
-
-// TODO: split queue connection and channel, so it can be reused
 
 type QueueSetup struct {
 	queueName  string
@@ -31,6 +30,13 @@ type QueueSetup struct {
 }
 
 type ConsumerHandler func(string)
+
+type queueUtil struct {
+	QueueSetup *QueueSetup
+}
+
+var queueInstance *queueUtil
+var queueOnce sync.Once
 
 type QueueConfig struct {
 	QueueDeclareConfig   *QueueDeclareConfig
@@ -81,6 +87,28 @@ func NewBaseQueue() *QueueSetup {
 	return &queueSetup
 }
 
+func (base *QueueSetup) GetQueueUtil() *QueueSetup {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic setup queue, ", r)
+		}
+	}()
+
+	queueOnce.Do(func() {
+		err := base.openConnection()
+		if err != nil {
+			helpers.LoggingMessage("error open connection", err.Error())
+			panic(err.Error())
+		}
+
+		queueInstance = &queueUtil{
+			QueueSetup: base,
+		}
+	})
+
+	return queueInstance.QueueSetup
+}
+
 func (base *QueueSetup) SetQueueName(queueName string) *QueueSetup {
 	if len(queueName) == 0 || queueName == "" {
 		queueName = constant.QueueDefaultName
@@ -88,6 +116,25 @@ func (base *QueueSetup) SetQueueName(queueName string) *QueueSetup {
 
 	base.queueName = queueName
 	return base
+}
+
+func (base *QueueSetup) DeclareQueue() error {
+	queueDeclareConfig := base.queueConfig.QueueDeclareConfig
+
+	_, err := base.channel.QueueDeclare(
+		base.queueName,
+		queueDeclareConfig.Durable,
+		queueDeclareConfig.AutoDelete,
+		queueDeclareConfig.Exclusive,
+		queueDeclareConfig.NoWait,
+		queueDeclareConfig.Args,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (base *QueueSetup) AddConsumer(queueDeclare *QueueDeclareConfig, consumerConfig *ConsumerConfig) *QueueSetup {
@@ -123,7 +170,13 @@ func (base *QueueSetup) AddConsumer(queueDeclare *QueueDeclareConfig, consumerCo
 		panic(err.Error())
 	}
 
-	go base.reconnect()
+	err = base.DeclareQueue()
+	if err != nil {
+		helpers.LoggingMessage("error declare queue after open connection", err.Error())
+		panic(err.Error())
+	}
+
+	go base.reconnect(true)
 
 	return base
 }
@@ -178,13 +231,13 @@ func (base *QueueSetup) AddPublisher(queueDeclare *QueueDeclareConfig, publisher
 		QueuePublisherConfig: publisherConfig,
 	}
 
-	err := base.openConnection()
+	err := base.DeclareQueue()
 	if err != nil {
-		helpers.LoggingMessage("error open connection", err.Error())
+		helpers.LoggingMessage("error declare queue after open connection", err.Error())
 		panic(err.Error())
 	}
 
-	go base.reconnect()
+	go base.reconnect(false)
 
 	return base
 }
@@ -212,10 +265,10 @@ func (base *QueueSetup) Close() {
 	_ = base.connection.Close()
 }
 
-func (base *QueueSetup) reconnect() {
-	tryReconnect := 1
+func (base *QueueSetup) reconnect(isRecover bool) {
 	for {
-		helpers.LoggingMessage("Try Reconnecting", tryReconnect)
+		time.Sleep(5 * time.Second)
+		helpers.LoggingMessage("Trying to reconnect, please wait...", nil)
 
 		err := <-base.errorConnection
 		if !base.closed || err != nil {
@@ -225,23 +278,31 @@ func (base *QueueSetup) reconnect() {
 
 			errorData := base.openConnection()
 			if errorData != nil {
-				helpers.LoggingMessage("-Failed- Open Connection after connection closed", err.Error())
+				helpers.LoggingMessage("-Failed- Open Connection after connection closed", errorData.Error())
 				continue
 			}
 
-			go base.reconnect()
-
-			errorData = base.recoverQueueConsumers()
+			errorData = base.DeclareQueue()
 			if errorData != nil {
-				helpers.LoggingMessage("-Failed- Recover Queue after connection closed", err.Error())
+				helpers.LoggingMessage("-Failed- Declare Queue after connection closed", errorData.Error())
 				continue
+			}
+
+			go base.reconnect(isRecover)
+
+			if isRecover {
+				errorData = base.recoverQueueConsumers()
+				if errorData != nil {
+					helpers.LoggingMessage("-Failed- Recover Queue after connection closed", errorData.Error())
+					continue
+				}
 			}
 
 			break
 		}
-
-		tryReconnect++
 	}
+
+	helpers.LoggingMessage("Success reconnect...\n\n", nil)
 }
 
 func (base *QueueSetup) recoverQueueConsumers() error {
@@ -291,17 +352,12 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 }
 
 func (base *QueueSetup) openConnection() error {
-	tryReconnect := 1
-	totalTry, _ := strconv.ParseInt(os.Getenv("RABBIT_RECONNECT"), 10, 64)
-
 	for {
-		if int(totalTry) == tryReconnect {
-			break
-		}
+		helpers.LoggingMessage("Trying to open connection, please wait...", nil)
+		time.Sleep(5 * time.Second)
 
 		connUrl, err := base.getRabbitConfig()
 		if err != nil {
-			tryReconnect++
 			helpers.LoggingMessage("Error get config connection to RabbitMq", err.Error())
 			continue
 		}
@@ -320,7 +376,6 @@ func (base *QueueSetup) openConnection() error {
 		})
 
 		if err != nil {
-			tryReconnect++
 			helpers.LoggingMessage("Error get config connection to RabbitMq", err.Error())
 			continue
 		}
@@ -331,29 +386,12 @@ func (base *QueueSetup) openConnection() error {
 
 		err = base.openChannel()
 		if err != nil {
-			tryReconnect++
 			helpers.LoggingMessage("Error open channel", err.Error())
-			continue
-		}
-
-		if base.queueConfig == nil {
-			panic("Configuration queueConsumer is empty")
-		}
-
-		err = base.declareQueue()
-		if err != nil {
-			tryReconnect++
-			helpers.LoggingMessage("Error declare queue", err.Error())
 			continue
 		}
 
 		helpers.LoggingMessage("Connection RabbitMq Established!!", nil)
 		break
-	}
-
-	if tryReconnect == int(totalTry) {
-		err := fmt.Errorf("reconnect exceed max reconnect value")
-		return err
 	}
 
 	return nil
@@ -366,25 +404,6 @@ func (base *QueueSetup) openChannel() error {
 	}
 
 	base.channel = channel
-	return nil
-}
-
-func (base *QueueSetup) declareQueue() error {
-	queueDeclareConfig := base.queueConfig.QueueDeclareConfig
-
-	_, err := base.channel.QueueDeclare(
-		base.queueName,
-		queueDeclareConfig.Durable,
-		queueDeclareConfig.AutoDelete,
-		queueDeclareConfig.Exclusive,
-		queueDeclareConfig.NoWait,
-		queueDeclareConfig.Args,
-	)
-
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

@@ -110,9 +110,10 @@ func (routes *Routes) setupRabbitMqQueue() *Routes {
 
 	// setup connection RabbitMq queue
 	queueBase := configs.NewBaseQueue()
+	utils := queueBase.GetQueueUtil()
 
 	// put rabbitMq queue connection to routes
-	routes.Queue = queueBase
+	routes.Queue = utils
 	return routes
 }
 
