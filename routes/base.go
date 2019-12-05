@@ -62,6 +62,7 @@ func (routes *Routes) Setup(host string, port string) {
 	app.Logger().SetLevel(os.Getenv("LOG_LEVEL"))
 
 	routes.setupCustomerRoute()
+	routes.setupTokenRoute()
 
 	if os.Getenv("LOG_LEVEL") == "debug" {
 		routes.setupTestRoute()

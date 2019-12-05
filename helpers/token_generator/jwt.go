@@ -42,11 +42,29 @@ func (base *BaseJwt) SetClaim(customer models.Customers) *BaseJwt {
 	claim := JwtMapClaims{
 		TokenData: TokenData{
 			Origin: os.Getenv("APP_NAME"),
-			UserDetails: UserDetails{
+			UserDetails: &UserDetails{
 				ID:       customer.ID,
 				Email:    customer.Email,
 				Username: customer.Username,
 			},
+		},
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expiredDate,
+		},
+	}
+
+	base.MapClaims = claim
+	return base
+}
+
+func (base *BaseJwt) SetClaimApp(appData AppData) *BaseJwt {
+	timeDate := time.Now()
+	expiredDate := timeDate.AddDate(1, 2, 3).Unix() // expired after 1 year, 2 month and 3 days
+
+	claim := JwtMapClaims{
+		TokenData: TokenData{
+			Authorized: true,
+			AppData:    &appData,
 		},
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expiredDate,
