@@ -1,0 +1,61 @@
+version: '3'
+services:
+  db-web:
+    container_name: go-api-db
+    image: fari99/percona
+    ports:
+      - "${DATABASE_PORT}:3306"
+    environment:
+      - MYSQL_DATABASE=${DATABASE_NAME}
+      - MYSQL_ROOT_PASSWORD=${PASSWORD_DB}
+      - MYSQL_ROOT_HOST=%
+    volumes:
+      - /Users/fadhlan/Documents/MyProject/database-mysql:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8 --collation-server=utf8_general_ci
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "20"
+
+  redis:
+    container_name: go-api-redis
+    image: redis
+    ports:
+      - "${REDIS_SESSION_PORT}:6379"
+    command: --requirepass root
+
+  mail:
+    container_name: go-api-mail
+    image: sj26/mailcatcher
+    ports:
+      - "${SMTP_PORT}:1025"
+      - "1080:1080"
+
+  rabbit:
+    container_name: go-api-rabbit
+    image: rabbitmq:3-management
+    ports:
+      - "${RABBIT_PORT}:5672"
+      - "2153:15672"
+
+  elastic-search:
+    container_name: go-api-elasticsearch
+    image: elasticsearch:7.4.2
+    ports:
+      - "${ELASTIC_PORT}:9200"
+      - "3900:9300"
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - go-api-network
+
+networks:
+  go-api-network:
+    driver: bridge
