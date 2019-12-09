@@ -3,9 +3,10 @@ package controllers
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"go-api/configs"
 	"go-api/helpers/token_generator"
+
+	"github.com/jinzhu/gorm"
 
 	"github.com/kataras/iris"
 )
@@ -54,5 +55,36 @@ func (controller *TokenController) getSecretKeyApp(appName string) (string, erro
 }
 
 func (controller *TokenController) CheckTokenAction(ctx iris.Context) {
+	type InputCheck struct {
+		AppName string `json:"app_name"`
+		Token   string `json:"token"`
+	}
 
+	var input InputCheck
+	err := ctx.ReadJSON(&input)
+	if err != nil {
+		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		return
+	}
+
+	secretKey, err := controller.getSecretKeyApp(input.AppName)
+	if err != nil {
+		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		return
+	}
+
+	claims, err := token_generator.NewJwt().SetSecretKey(secretKey).ParseToken(input.Token)
+	if err != nil {
+		_, _ = configs.NewResponse(ctx, iris.StatusOK, iris.Map{
+			"is_valid":      false,
+			"error_message": err.Error(),
+		})
+		return
+	}
+
+	_, _ = configs.NewResponse(ctx, iris.StatusOK, iris.Map{
+		"is_valid": true,
+		"claims":   claims,
+	})
+	return
 }

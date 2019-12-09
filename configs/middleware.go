@@ -60,7 +60,7 @@ func NewMiddleware(config MiddlewareConfiguration) context.Handler {
 // If the data is valid, continues to next handler
 func (config *MiddlewareConfiguration) AuthServe(ctx context.Context) {
 
-	_, next, err := config.checkAuthHeader(ctx.GetHeader("Authorization"))
+	claims, next, err := config.checkAuthHeader(ctx.GetHeader("Authorization"))
 	if err != nil {
 		_, _ = NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
 			"message":       "You must login to access",
@@ -70,7 +70,7 @@ func (config *MiddlewareConfiguration) AuthServe(ctx context.Context) {
 		return
 	}
 
-	if !next {
+	if !next || !claims.TokenData.Authorized {
 		_, _ = NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
 			"message": "You must login to access",
 		})
@@ -99,5 +99,6 @@ func (config *MiddlewareConfiguration) checkAuthHeader(authHeader string) (*toke
 		return &token_generator.JwtMapClaims{}, false, err
 	}
 
+	claims.TokenData.Authorized = true
 	return claims, true, nil
 }

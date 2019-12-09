@@ -63,6 +63,7 @@ func (routes *Routes) Setup(host string, port string) {
 
 	routes.setupCustomerRoute()
 	routes.setupTokenRoute()
+	routes.setupStorageRoute()
 
 	if os.Getenv("LOG_LEVEL") == "debug" {
 		routes.setupTestRoute()
@@ -75,9 +76,6 @@ func (routes *Routes) Setup(host string, port string) {
 func (routes *Routes) setupDatabase() *Routes {
 	helpers.LoggingMessage("Setup configuration database", nil)
 	db := configs.DatabaseBase().GetDBConnection()
-
-	// DB setup
-	db.LogMode(false)
 
 	// put db to routes
 	routes.DB = db

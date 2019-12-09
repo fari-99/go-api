@@ -3,6 +3,10 @@ package constant
 const UserTypeCustomer = 1
 const UserTypeSeller = 2
 
+const StatusActive = 99
+const StatusNonActive = 98
+const StatusDeleted = 97
+
 const CustomerRolesAdmin = 1
 const CustomerRolesPic = 2
 const CustomerRolesFinance = 3
