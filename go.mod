@@ -16,6 +16,7 @@ require (
 	github.com/go-redis/cache v6.4.0+incompatible
 	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
+	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/gorilla/schema v1.1.0 // indirect
 	github.com/iris-contrib/blackfriday v2.0.0+incompatible // indirect
 	github.com/iris-contrib/formBinder v5.0.0+incompatible // indirect
@@ -31,6 +32,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.2 // indirect
 	github.com/ryanuber/columnize v2.1.0+incompatible // indirect
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
+	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/urfave/cli v1.22.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
