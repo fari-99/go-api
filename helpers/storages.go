@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"go-api/constant"
 	"go-api/models"
 	"image"
@@ -65,6 +66,31 @@ func (base *StorageBase) SetCtx(ctx iris.Context) *StorageBase {
 	return base
 }
 
+func (base *StorageBase) S3Session() (sessionConfig *session.Session, err error) {
+	awsAccessKey := aws.String(os.Getenv("S3_ACCESS_KEY"))
+	awsSecretKey := aws.String(os.Getenv("S3_SECRET_KEY"))
+	token := ""
+
+	credential := credentials.NewStaticCredentials(*awsAccessKey, *awsSecretKey, token)
+	_, err = credential.Get()
+	if err != nil {
+		err = fmt.Errorf("bad AWS credentials, err := %s", err.Error())
+		return
+	}
+
+	cfg := aws.NewConfig().
+		WithRegion(os.Getenv("S3_REGION")).
+		WithCredentials(credential)
+
+	sessionCfg, err := session.NewSession(cfg)
+	if err != nil {
+		err = fmt.Errorf("failed create session, err := %s", err.Error())
+		return nil, err
+	}
+
+	return sessionCfg, nil
+}
+
 func (base *StorageBase) UploadFiles() (err error) {
 	fileHeader := base.fileInput
 	fileType := base.fileType
@@ -98,22 +124,7 @@ func (base *StorageBase) UploadFiles() (err error) {
 	fileName := base.generateName(fileHeader.Filename, contentTypeData.Extension)
 
 	if base.s3Enabled {
-		awsAccessKey := aws.String(os.Getenv("S3_ACCESS_KEY"))
-		awsSecretKey := aws.String(os.Getenv("S3_SECRET_KEY"))
-		token := ""
-
-		credential := credentials.NewStaticCredentials(*awsAccessKey, *awsSecretKey, token)
-		_, err = credential.Get()
-		if err != nil {
-			err = fmt.Errorf("bad AWS credentials, err := %s", err.Error())
-			return
-		}
-
-		cfg := aws.NewConfig().
-			WithRegion(os.Getenv("S3_REGION")).
-			WithCredentials(credential)
-
-		sessionCfg, err := session.NewSession(cfg)
+		sessionCfg, err := base.S3Session()
 		if err != nil {
 			err = fmt.Errorf("failed create session, err := %s", err.Error())
 			return err
@@ -264,6 +275,44 @@ func (base *StorageBase) getFileData(fileHeader *multipart.FileHeader) (contentT
 	}
 
 	return
+}
+
+func (base *StorageBase) GetFiles(storageModel models.Storages) (files *os.File, err error) {
+	var storagePath string
+	if !base.s3Enabled {
+		storagePath = os.Getenv("LOCAL_STORAGE_PATH") + "/" + storageModel.Type + storageModel.Path + storageModel.Filename
+		file, err := os.Open(storagePath)
+		if err != nil {
+			return nil, fmt.Errorf("error open file, %s", err.Error())
+		}
+
+		return file, nil
+	}
+
+	// Storage on S3
+	sessionCfg, err := base.S3Session()
+	if err != nil {
+		err = fmt.Errorf("failed create session, err := %s", err.Error())
+		return nil, err
+	}
+
+	downloader := s3manager.NewDownloader(sessionCfg)
+	fileAws, err := ioutil.TempFile(os.TempDir(), "prefix")
+	if err != nil {
+		err = fmt.Errorf("bad AWS credentials, err := %s", err.Error())
+		return nil, err
+	}
+
+	storagePath = os.Getenv("STORAGE_PATH") + "/" + storageModel.Type + storageModel.Path + storageModel.Filename
+	_, err = downloader.Download(fileAws, &s3.GetObjectInput{
+		Bucket: aws.String(os.Getenv("S3_BUCKET")),
+		Key:    aws.String(storagePath),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to download file, %v", err)
+	}
+
+	return fileAws, nil
 }
 
 //generate path

@@ -19,6 +19,10 @@ type Transactions struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at" sql:"DEFAULT:NULL"`
 }
 
+func (Transactions) TableName() string {
+	return "transactions"
+}
+
 func (model *Transactions) generateTransactionNo(tx *gorm.DB) string {
 	modelID := strconv.FormatInt(model.ID, 10)
 	referenceNo := strconv.FormatInt(rand.Int63n(100000), 10)

@@ -3,15 +3,19 @@ package models
 import "time"
 
 type Customers struct {
-	ID       int64  `gorm:"id" json:"id"`
-	Username string `gorm:"username" json:"username"`
-	Password string `gorm:"password" json:"password"`
-	Email    string `gorm:"email" json:"email"`
-	Status   int8   `gorm:"status" json:"status"`
+	ID       int64  `gorm:"primary_key:id" json:"id"`
+	Username string `gorm:"column:username" json:"username"`
+	Password string `gorm:"column:password" json:"password"`
+	Email    string `gorm:"column:email" json:"email"`
+	Status   int8   `gorm:"column:status" json:"status"`
 
 	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at" sql:"DEFAULT:NULL"`
+}
+
+func (Customers) TableName() string {
+	return "customers"
 }
 
 type CustomerResult struct {

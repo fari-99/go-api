@@ -13,6 +13,7 @@ Go version : go 1.12.8
 1. Finite State Machine
 1. RabbitMq
 1. ElasticSearch
+1. Email
 
 ## TO DO
 1. Redis Cache
