@@ -7,13 +7,14 @@ Go version : go 1.12.8
 
 ## Feature
 1. JWT token authentication
-1. Database (Mysql)
+1. Database (Mysql - gorm - percona)
 1. Redis
 1. Go Module
 1. Finite State Machine
 1. RabbitMq
 1. ElasticSearch
 1. Email
+1. Storage (Local & S3)
 
 ## TO DO
 1. Redis Cache
