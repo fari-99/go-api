@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	"github.com/streadway/amqp"
 )
@@ -424,6 +424,7 @@ func (base *QueueSetup) registerQueueConsumer() (<-chan amqp.Delivery, error) {
 // RabbitHost
 type RabbitHosts struct {
 	RabbitHost, RabbitPort, RabbitUser, RabbitPassword string
+	test                                               int64
 }
 
 func (base *QueueSetup) getRabbitConfig() (connURL string, err error) {

@@ -7,7 +7,7 @@ import (
 	"github.com/go-redis/redis"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 type TestRedisController struct {

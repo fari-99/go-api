@@ -6,9 +6,9 @@ import (
 	"go-api/helpers/token_generator"
 	"strings"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 )
 
 type MiddlewareConfiguration struct {
@@ -58,7 +58,7 @@ func NewMiddleware(config MiddlewareConfiguration) context.Handler {
 
 // AuthServe checks user data such as user ID and roles.
 // If the data is valid, continues to next handler
-func (config *MiddlewareConfiguration) AuthServe(ctx context.Context) {
+func (config *MiddlewareConfiguration) AuthServe(ctx iris.Context) {
 
 	claims, next, err := config.checkAuthHeader(ctx.GetHeader("Authorization"))
 	if err != nil {

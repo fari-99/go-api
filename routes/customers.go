@@ -5,7 +5,7 @@ import (
 	"go-api/controllers"
 	"log"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func (routes *Routes) setupCustomerRoute() *iris.Application {

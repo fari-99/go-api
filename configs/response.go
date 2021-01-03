@@ -1,6 +1,6 @@
 package configs
 
-import "github.com/kataras/iris"
+import "github.com/kataras/iris/v12"
 
 type Response struct {
 	StatusCode int         `json:"status"`

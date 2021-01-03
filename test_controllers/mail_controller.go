@@ -4,7 +4,7 @@ import (
 	"go-api/configs"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 	"gopkg.in/gomail.v2"
 )
 

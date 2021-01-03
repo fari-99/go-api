@@ -4,7 +4,7 @@ import (
 	"go-api/test_controllers"
 	"log"
 
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func (routes *Routes) setupTestRoute() *iris.Application {

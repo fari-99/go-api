@@ -8,7 +8,7 @@ import (
 	"go-api/models"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 type FiniteStateController struct {

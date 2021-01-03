@@ -9,8 +9,8 @@ import (
 	"github.com/go-redis/cache"
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/recover"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/recover"
 	"gopkg.in/gomail.v2"
 )
 

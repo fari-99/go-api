@@ -33,12 +33,12 @@ type DatabaseConfig struct {
 func DatabaseBase() *DatabaseConfig {
 	// default database configuration
 	databaseConfig := DatabaseConfig{
-		Username:       os.Getenv("USERNAME_DB"),
-		Password:       os.Getenv("PASSWORD_DB"),
-		DatabaseType:   os.Getenv("DATABASE_TYPE"),
-		DatabaseHost:   os.Getenv("DATABASE_HOST"),
-		DatabasePort:   os.Getenv("DATABASE_PORT"),
-		DatabaseName:   os.Getenv("DATABASE_NAME"),
+		Username:       os.Getenv("USERNAME_DB_MYSQL"),
+		Password:       os.Getenv("PASSWORD_DB_MYSQL"),
+		DatabaseType:   os.Getenv("DATABASE_TYPE_MYSQL"),
+		DatabaseHost:   os.Getenv("DATABASE_HOST_MYSQL"),
+		DatabasePort:   os.Getenv("DATABASE_PORT_MYSQL"),
+		DatabaseName:   os.Getenv("DATABASE_NAME_MYSQL"),
 		DatabaseConfig: "charset=utf8&parseTime=True&loc=Local",
 	}
 
@@ -79,9 +79,9 @@ func (base *DatabaseConfig) GetDBConnection() *gorm.DB {
 		}
 
 		isDebug, _ := strconv.ParseBool(os.Getenv("DATABASE_DEBUG"))
-		maxLifetime, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME"), 10, 64)
-		maxIdleConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_IDLE_CONNECTION"), 10, 64)
-		maxOpenConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_OPEN_CONNECTION"), 10, 64)
+		maxLifetime, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"), 10, 64)
+		maxIdleConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"), 10, 64)
+		maxOpenConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"), 10, 64)
 
 		db.DB().SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
 		db.DB().SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
