@@ -72,8 +72,8 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		}
 
 		ftp.Post("/send-files", ftpController.SendFtpAction)
-		ftp.Post("/send-files-location")
-		ftp.Post("/send-files-open-files")
+		//ftp.Post("/send-files-location")
+		//ftp.Post("/send-files-open-files")
 	})
 
 	return app
