@@ -66,5 +66,15 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		customers.Post("/change-state", stateMachineController.ChangeStateAction)
 	})
 
+	app.PartyFunc("/test-ftp", func(ftp iris.Party) {
+		ftpController := &test_controllers.FtpController{
+			DB: routes.DB,
+		}
+
+		ftp.Post("/send-files", ftpController.SendFtpAction)
+		ftp.Post("/send-files-location")
+		ftp.Post("/send-files-open-files")
+	})
+
 	return app
 }

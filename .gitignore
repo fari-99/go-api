@@ -1,4 +1,9 @@
 vendor/
 storages/
-.env
+.idea
 tmp/
+.vscode
+
+.env
+.build
+main

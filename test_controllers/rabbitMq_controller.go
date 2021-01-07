@@ -46,11 +46,11 @@ func (controller *RabbitMqController) TestBatchPublishQueueAction(ctx iris.Conte
 		allMsg = append(allMsg, string(bodyMarshal))
 	}
 
-	//allError := queueSetup.BatchPublish(allMsg)
-	//if len(allError) > 0 {
-	//	_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, allError)
-	//	return
-	//}
+	allError := queueSetup.BatchPublish(allMsg)
+	if len(allError) > 0 {
+		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, allError)
+		return
+	}
 
 	_, _ = configs.NewResponse(ctx, iris.StatusOK, "yee")
 	return

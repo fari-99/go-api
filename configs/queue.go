@@ -258,6 +258,30 @@ func (base *QueueSetup) Publish(message string) error {
 	return err
 }
 
+func (base *QueueSetup) BatchPublish(messages []string) []error {
+	publishConfig := base.queueConfig.QueuePublisherConfig
+
+	var listErr []error
+	for _, message := range messages {
+		publishConfig.Msg.Body = []byte(message)
+
+		helpers.LoggingMessage("Pubilshing Message...", nil)
+		err := base.channel.Publish(
+			"",
+			base.queueName,
+			publishConfig.Mandatory,
+			publishConfig.Immediate,
+			publishConfig.Msg,
+		)
+
+		if err != nil {
+			listErr = append(listErr, err)
+		}
+	}
+
+	return listErr
+}
+
 func (base *QueueSetup) Close() {
 	log.Println("Closing connection")
 	base.closed = true
