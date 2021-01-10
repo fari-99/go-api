@@ -214,7 +214,7 @@ func (base *StorageBase) UploadFiles() (err error) {
 		Filename:         fileName,
 		Mime:             contentTypeData.ContentType,
 		OriginalFilename: fileHeader.Filename,
-		CreatedBy:        0,
+		CreatedBy:        1,
 		Status:           constant.StatusActive,
 	}
 
