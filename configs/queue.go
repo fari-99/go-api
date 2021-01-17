@@ -1,10 +1,10 @@
 package configs
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go-api/constant"
-	"go-api/helpers"
 	"log"
 	"math/rand"
 	"os"
@@ -97,7 +97,7 @@ func (base *QueueSetup) GetQueueUtil() *QueueSetup {
 	queueOnce.Do(func() {
 		err := base.openConnection()
 		if err != nil {
-			helpers.LoggingMessage("error open connection", err.Error())
+			loggingMessage("error open connection", err.Error())
 			panic(err.Error())
 		}
 
@@ -166,13 +166,13 @@ func (base *QueueSetup) AddConsumer(queueDeclare *QueueDeclareConfig, consumerCo
 
 	err := base.openConnection()
 	if err != nil {
-		helpers.LoggingMessage("error open connection", err.Error())
+		loggingMessage("error open connection", err.Error())
 		panic(err.Error())
 	}
 
 	err = base.DeclareQueue()
 	if err != nil {
-		helpers.LoggingMessage("error declare queue after open connection", err.Error())
+		loggingMessage("error declare queue after open connection", err.Error())
 		panic(err.Error())
 	}
 
@@ -182,10 +182,10 @@ func (base *QueueSetup) AddConsumer(queueDeclare *QueueDeclareConfig, consumerCo
 }
 
 func (base *QueueSetup) Consume(consumer ConsumerHandler) {
-	helpers.LoggingMessage("Registering Consumer...", nil)
+	loggingMessage("Registering Consumer...", nil)
 	deliveries, err := base.registerQueueConsumer()
 	if err != nil {
-		helpers.LoggingMessage("Error register queue queueConsumer", err.Error())
+		loggingMessage("Error register queue queueConsumer", err.Error())
 		panic(err.Error())
 	}
 
@@ -233,7 +233,7 @@ func (base *QueueSetup) AddPublisher(queueDeclare *QueueDeclareConfig, publisher
 
 	err := base.DeclareQueue()
 	if err != nil {
-		helpers.LoggingMessage("error declare queue after open connection", err.Error())
+		loggingMessage("error declare queue after open connection", err.Error())
 		panic(err.Error())
 	}
 
@@ -246,7 +246,7 @@ func (base *QueueSetup) Publish(message string) error {
 	publishConfig := base.queueConfig.QueuePublisherConfig
 	publishConfig.Msg.Body = []byte(message)
 
-	helpers.LoggingMessage("Pubilshing Message...", nil)
+	loggingMessage("Pubilshing Message...", nil)
 	err := base.channel.Publish(
 		"",
 		base.queueName,
@@ -265,7 +265,7 @@ func (base *QueueSetup) BatchPublish(messages []string) []error {
 	for _, message := range messages {
 		publishConfig.Msg.Body = []byte(message)
 
-		helpers.LoggingMessage("Pubilshing Message...", nil)
+		loggingMessage("Pubilshing Message...", nil)
 		err := base.channel.Publish(
 			"",
 			base.queueName,
@@ -292,23 +292,23 @@ func (base *QueueSetup) Close() {
 func (base *QueueSetup) reconnect(isRecover bool) {
 	for {
 		time.Sleep(5 * time.Second)
-		helpers.LoggingMessage("Trying to reconnect, please wait...", nil)
+		loggingMessage("Trying to reconnect, please wait...", nil)
 
 		err := <-base.errorConnection
 		if !base.closed || err != nil {
 			if err != nil {
-				helpers.LoggingMessage("Reconnecting after connection closed", err.Error())
+				loggingMessage("Reconnecting after connection closed", err.Error())
 			}
 
 			errorData := base.openConnection()
 			if errorData != nil {
-				helpers.LoggingMessage("-Failed- Open Connection after connection closed", errorData.Error())
+				loggingMessage("-Failed- Open Connection after connection closed", errorData.Error())
 				continue
 			}
 
 			errorData = base.DeclareQueue()
 			if errorData != nil {
-				helpers.LoggingMessage("-Failed- Declare Queue after connection closed", errorData.Error())
+				loggingMessage("-Failed- Declare Queue after connection closed", errorData.Error())
 				continue
 			}
 
@@ -317,7 +317,7 @@ func (base *QueueSetup) reconnect(isRecover bool) {
 			if isRecover {
 				errorData = base.recoverQueueConsumers()
 				if errorData != nil {
-					helpers.LoggingMessage("-Failed- Recover Queue after connection closed", errorData.Error())
+					loggingMessage("-Failed- Recover Queue after connection closed", errorData.Error())
 					continue
 				}
 			}
@@ -326,7 +326,7 @@ func (base *QueueSetup) reconnect(isRecover bool) {
 		}
 	}
 
-	helpers.LoggingMessage("Success reconnect...\n\n", nil)
+	loggingMessage("Success reconnect...\n\n", nil)
 }
 
 func (base *QueueSetup) recoverQueueConsumers() error {
@@ -338,13 +338,13 @@ func (base *QueueSetup) recoverQueueConsumers() error {
 		return err
 	}
 
-	helpers.LoggingMessage("Consumer recovered! Continuing message processing...", nil)
+	loggingMessage("Consumer recovered! Continuing message processing...", nil)
 	base.executeMessageConsumer(consumer, messages, true)
 	return nil
 }
 
 func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliveries <-chan amqp.Delivery, isRecovery bool) {
-	helpers.LoggingMessage("Consumer successfully registered, processing messages...", nil)
+	loggingMessage("Consumer successfully registered, processing messages...", nil)
 
 	if !isRecovery {
 		base.queueConsumer = consumer
@@ -353,7 +353,7 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 	forever := make(chan bool)
 
 	go func() {
-		helpers.LoggingMessage("Consumer Ready", iris.Map{"PID": os.Getpid()})
+		loggingMessage("Consumer Ready", iris.Map{"PID": os.Getpid()})
 
 		isAutoAck := base.queueConfig.QueueConsumerConfig.AutoAck
 
@@ -377,16 +377,16 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 
 func (base *QueueSetup) openConnection() error {
 	for {
-		helpers.LoggingMessage("Trying to open connection, please wait...", nil)
+		loggingMessage("Trying to open connection, please wait...", nil)
 		time.Sleep(5 * time.Second)
 
 		connUrl, err := base.getRabbitConfig()
 		if err != nil {
-			helpers.LoggingMessage("Error get config connection to RabbitMq", err.Error())
+			loggingMessage("Error get config connection to RabbitMq", err.Error())
 			continue
 		}
 
-		helpers.LoggingMessage("Connecting to RabbitMq", connUrl)
+		loggingMessage("Connecting to RabbitMq", connUrl)
 		connection, err := amqp.DialConfig(connUrl, amqp.Config{
 			//SASL:            nil,
 			//Vhost:           "",
@@ -400,7 +400,7 @@ func (base *QueueSetup) openConnection() error {
 		})
 
 		if err != nil {
-			helpers.LoggingMessage("Error get config connection to RabbitMq", err.Error())
+			loggingMessage("Error get config connection to RabbitMq", err.Error())
 			continue
 		}
 
@@ -410,11 +410,11 @@ func (base *QueueSetup) openConnection() error {
 
 		err = base.openChannel()
 		if err != nil {
-			helpers.LoggingMessage("Error open channel", err.Error())
+			loggingMessage("Error open channel", err.Error())
 			continue
 		}
 
-		helpers.LoggingMessage("Connection RabbitMq Established!!", nil)
+		loggingMessage("Connection RabbitMq Established!!", nil)
 		break
 	}
 
@@ -494,4 +494,13 @@ func (base *QueueSetup) getRabbitConfig() (connURL string, err error) {
 		con[random].RabbitPort)
 
 	return connURL, err
+}
+
+func loggingMessage(message string, data interface{}) {
+	if data == nil {
+		return
+	}
+
+	dataMarshal, _ := json.Marshal(data)
+	log.Printf("%s, Data := %s", message, string(dataMarshal))
 }

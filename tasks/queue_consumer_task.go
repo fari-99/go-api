@@ -1,9 +1,13 @@
 package tasks
 
 import (
+	"encoding/json"
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go-api/configs"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/urfave/cli"
 )
@@ -51,6 +55,53 @@ func (base *BaseCommand) getQueueConsumerTask() []cli.Command {
 				queueSetup.Consume(HandleQueueEvents)
 
 				log.Printf("====  Task success ====")
+				return nil
+			},
+		},
+		{
+			Name:        "telegram-messages-commands",
+			Aliases:     []string{"tm"},
+			Usage:       "telegram-messages",
+			Description: "Telegram Messages Handling",
+			Action: func(cliContext *cli.Context) (err error) {
+				bot := configs.GetTelegram()
+
+				timeout, _ := strconv.ParseInt(os.Getenv("TELEGRAM_TIMEOUT"), 10, 64)
+
+				updates, err := bot.GetUpdatesChan(tgbotapi.UpdateConfig{
+					Offset:  0,
+					Limit:   0,
+					Timeout: int(timeout),
+				})
+
+				for update := range updates {
+					if update.Message == nil {
+						continue
+					}
+
+					dataMarshal, _ := json.MarshalIndent(update, "", " ")
+					log.Printf(string(dataMarshal))
+
+					log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+
+					if update.Message.IsCommand() {
+						msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+						switch update.Message.Command() {
+						case "help":
+							msg.Text = "type /sayhi or /status."
+						case "sayhi":
+							msg.Text = "Hi :)"
+						case "status":
+							msg.Text = "I'm ok."
+						default:
+							msg.Text = "I don't know that command"
+						}
+
+						_, _ = bot.Send(msg)
+					}
+
+				}
+
 				return nil
 			},
 		},

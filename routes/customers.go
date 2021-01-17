@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"go-api/configs"
 	"go-api/controllers"
+	"go-api/middleware"
 	"log"
 
 	"github.com/kataras/iris/v12"
@@ -15,16 +15,20 @@ func (routes *Routes) setupCustomerRoute() *iris.Application {
 	db := routes.DB
 	redis := routes.Redis
 
-	authentication := configs.NewMiddleware(configs.MiddlewareConfiguration{})
+	authentication := middleware.NewMiddleware(middleware.MiddlewareConfiguration{})
 
 	// Approver Endpoint collection
 	app.PartyFunc("/customers", func(customers iris.Party) {
-		customerController := &controllers.CustomerController{DB: db, Redis: redis}
+		customerController := &controllers.CustomerController{
+			DB:    db,
+			Redis: redis,
+		}
 		//companyIDPathName := "companyID"
 
 		// authentication data
 		customers.Post("/auth", customerController.AuthenticateAction)
 
+		customers.Get("/details", authentication, customerController.CustomerDetailsAction)
 		customers.Post("/", authentication, customerController.CreateAction) // Create
 		//customers.Get("/{"+companyIDPathName+":int64}", customerController.ReadAction)    // Read
 		//customers.Put("/{"+companyIDPathName+":int64}", customerController.UpdateAction)    // Update

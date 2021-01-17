@@ -15,7 +15,9 @@ func (routes *Routes) setupTokenRoute() *iris.Application {
 
 	// Approver Endpoint collection
 	app.PartyFunc("/token", func(tokens iris.Party) {
-		tokenController := &controllers.TokenController{DB: db}
+		tokenController := &controllers.TokenController{
+			DB: db,
+		}
 		//companyIDPathName := "companyID"
 
 		tokens.Post("/create", tokenController.CreateTokenAction)

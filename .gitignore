@@ -1,8 +1,11 @@
+# Folder
 vendor/
 .idea
 tmp/
 .vscode
 
+# Files
 .env
 .build
 main
+*.exe

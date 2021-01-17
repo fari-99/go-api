@@ -29,7 +29,7 @@ func (controller *TokenController) CreateTokenAction(ctx iris.Context) {
 		return
 	}
 
-	token, err := token_generator.NewJwt().SetSecretKey(secretKey).SetClaimApp(input).SignClaim()
+	token, err := token_generator.NewJwt().SetSecretKey(secretKey).SetClaimApp(input).SignClaims()
 	if err != nil {
 		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
 		return

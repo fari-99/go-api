@@ -1,13 +1,11 @@
 package controllers
 
 import (
-	"encoding/json"
+	"github.com/kataras/iris/v12/sessions"
 	"go-api/configs"
 	"go-api/helpers"
 	"go-api/helpers/token_generator"
 	"go-api/models"
-
-	"github.com/go-redis/redis"
 
 	"github.com/jinzhu/gorm"
 	"github.com/kataras/iris/v12"
@@ -15,7 +13,7 @@ import (
 
 type CustomerController struct {
 	DB    *gorm.DB
-	Redis *redis.Client
+	Redis *sessions.Sessions
 }
 
 func (controller *CustomerController) CreateAction(ctx iris.Context) {
@@ -73,18 +71,51 @@ func (controller *CustomerController) AuthenticateAction(ctx iris.Context) {
 	}
 
 	// generate JWT token
-	token, err := token_generator.NewJwt().SetClaim(customerModel).SignClaim()
+	tokenHelper := token_generator.NewJwt().SetCtx(ctx)
+	tokenHelper, err = tokenHelper.SetClaim(customerModel)
 	if err != nil {
 		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
 		return
 	}
 
-	var customerResult models.CustomerResult
-	dataMarshal, _ := json.Marshal(customerModel)
-	_ = json.Unmarshal(dataMarshal, &customerResult)
+	token, err := tokenHelper.SignClaims()
+	if err != nil {
+		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, err.Error())
+		return
+	}
 
-	customerResult.BearerToken = token
+	dataSession := helpers.SessionData{
+		AccessUuid:  token.AccessUuid,
+		RefreshUuid: token.RefreshUuid,
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, customerResult)
+		UserID:        customerModel.ID,
+		UserDetails:   customerModel,
+		Authorization: true,
+	}
+
+	_ = helpers.SetRedisSession(dataSession, ctx)
+
+	tokenCompiled := map[string]interface{}{
+		"access_token":  token.AccessToken,
+		"refresh_token": token.AccessToken,
+	}
+
+	_, _ = configs.NewResponse(ctx, iris.StatusOK, tokenCompiled)
 	return
+}
+
+func (controller *CustomerController) CustomerDetailsAction(ctx iris.Context) {
+	userUuid := ctx.Values().Get("uuid")
+	customerModel, err := helpers.GetCurrentUser(userUuid.(string), ctx)
+	if err != nil {
+		_, _ = configs.NewResponse(ctx, iris.StatusOK, err.Error())
+		return
+	}
+
+	_, _ = configs.NewResponse(ctx, iris.StatusOK, customerModel)
+	return
+}
+
+func (controller *CustomerController) RefreshTokenAction(ctx iris.Context) {
+
 }

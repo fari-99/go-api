@@ -27,7 +27,6 @@ type EncryptionBase struct {
 
 func NewEncryptionBase() *EncryptionBase {
 	base := &EncryptionBase{
-		passphrase:      []byte(os.Getenv("KEY_PASSPHRASE_STORAGE")),
 		encodeUrlBase64: true,
 		useRandom:       true,
 	}

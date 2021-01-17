@@ -24,7 +24,8 @@ type CustomerResult struct {
 	Email    string `json:"email"`
 	Status   int8   `json:"status"`
 
-	BearerToken string `json:"bearer_token"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
