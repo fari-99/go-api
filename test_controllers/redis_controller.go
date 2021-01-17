@@ -2,9 +2,8 @@ package test_controllers
 
 import (
 	"fmt"
+	"github.com/kataras/iris/v12/sessions"
 	"go-api/configs"
-
-	"github.com/go-redis/redis"
 
 	"github.com/jinzhu/gorm"
 	"github.com/kataras/iris/v12"
@@ -12,31 +11,23 @@ import (
 
 type TestRedisController struct {
 	DB    *gorm.DB
-	Redis *redis.Client
+	Redis *sessions.Sessions
 }
 
 func (controller *TestRedisController) TestRedisAction(ctx iris.Context) {
-	client := controller.Redis
+	redisConfig := controller.Redis
+	sessionTest := redisConfig.Start(ctx)
 
-	err := client.Set("key", "value", 0).Err()
-	if err != nil {
-		panic(err)
-	}
+	sessionTest.Set("key", "value")
 
-	val, err := client.Get("key").Result()
-	if err != nil {
-		panic(err)
-	}
+	val := sessionTest.Get("key")
 	fmt.Println("key", val)
 
-	val2, err := client.Get("key2").Result()
-	if err == redis.Nil {
+	val2 := sessionTest.Get("key2")
+	if val2 == nil {
 		fmt.Println("key2 does not exist")
-	} else if err != nil {
-		panic(err)
-	} else {
-		fmt.Println("key2", val2)
 	}
+
 	_, _ = configs.NewResponse(ctx, iris.StatusOK, "yee")
 	return
 }

@@ -2,7 +2,9 @@ package routes
 
 import (
 	"go-api/test_controllers"
+	"golang.org/x/net/publicsuffix"
 	"log"
+	"strings"
 
 	"github.com/kataras/iris/v12"
 )
@@ -74,6 +76,25 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		ftp.Post("/send-files", ftpController.SendFtpAction)
 		//ftp.Post("/send-files-location")
 		//ftp.Post("/send-files-open-files")
+	})
+
+	app.PartyFunc("/testing", func(test iris.Party) {
+		test.Get("/test", func(context iris.Context) {
+			host := context.Host()
+			if portIdx := strings.IndexByte(host, ':'); portIdx > 0 {
+				host = host[0:portIdx]
+			}
+
+			log.Printf(host)
+			domain, err := publicsuffix.EffectiveTLDPlusOne(host)
+			if err != nil {
+				log.Printf("imhgere")
+				log.Print("." + host)
+			} else {
+				log.Printf("imhgere1")
+				log.Print("." + domain)
+			}
+		})
 	})
 
 	return app
