@@ -1,12 +1,9 @@
 package routes
 
 import (
-	"go-api/test_controllers"
-	"golang.org/x/net/publicsuffix"
-	"log"
-	"strings"
-
 	"github.com/kataras/iris/v12"
+	"go-api/test_controllers"
+	"log"
 )
 
 func (routes *Routes) setupTestRoute() *iris.Application {
@@ -78,23 +75,15 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 		//ftp.Post("/send-files-open-files")
 	})
 
-	app.PartyFunc("/testing", func(test iris.Party) {
-		test.Get("/test", func(context iris.Context) {
-			host := context.Host()
-			if portIdx := strings.IndexByte(host, ':'); portIdx > 0 {
-				host = host[0:portIdx]
-			}
+	app.PartyFunc("/test-crypt", func(test iris.Party) {
+		cryptController := &test_controllers.CryptsController{}
 
-			log.Printf(host)
-			domain, err := publicsuffix.EffectiveTLDPlusOne(host)
-			if err != nil {
-				log.Printf("imhgere")
-				log.Print("." + host)
-			} else {
-				log.Printf("imhgere1")
-				log.Print("." + domain)
-			}
-		})
+		test.Post("/encrypt-data", cryptController.EncryptDecryptAction)
+		test.Post("/encrypt-rsa", cryptController.EncryptDecryptRsaAction)
+		test.Post("/sign-message", cryptController.SignMessageAction)
+		test.Post("/verify-message", cryptController.VerifyMessageAction)
+
+		// TODO: Encrypt Files
 	})
 
 	return app

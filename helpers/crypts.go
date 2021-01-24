@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -23,6 +24,9 @@ type EncryptionBase struct {
 
 	useRandom   bool
 	randomSetup []byte
+
+	rsaPrivateKey string // encode to base64 raw url encoding
+	rsaPublicKey  string // encode to base64 raw url encoding
 }
 
 func NewEncryptionBase() *EncryptionBase {
@@ -34,22 +38,28 @@ func NewEncryptionBase() *EncryptionBase {
 	return base
 }
 
-func (base *EncryptionBase) GenerateRSAKey() error {
+func (base *EncryptionBase) SetRsaKey(privateKey string, publicKey string) *EncryptionBase {
+	base.rsaPrivateKey = privateKey
+	base.rsaPublicKey = publicKey
+	return base
+}
+
+func (base *EncryptionBase) GenerateRSAKey() (privateKey string, publicKey string, err error) {
 	randomness := rand.Reader
 	bitSize := 2048
 
 	key, err := rsa.GenerateKey(randomness, bitSize)
 	if err != nil {
-		return fmt.Errorf("error generate RSA key, err := %s", err.Error())
+		return "", "", fmt.Errorf("error generate RSA key, err := %s", err.Error())
 	}
 
-	privateKey := x509.MarshalPKCS1PrivateKey(key)
-	publicKey := x509.MarshalPKCS1PublicKey(&key.PublicKey)
+	keyPrivate := x509.MarshalPKCS1PrivateKey(key)
+	keyPublic := x509.MarshalPKCS1PublicKey(&key.PublicKey)
 
 	// Save the private key and public key to ENV
-	log.Printf(base64.RawURLEncoding.EncodeToString(privateKey))
-	log.Printf(base64.RawURLEncoding.EncodeToString(publicKey))
-	return nil
+	base.rsaPrivateKey = base64.RawURLEncoding.EncodeToString(keyPrivate)
+	base.rsaPublicKey = base64.RawURLEncoding.EncodeToString(keyPublic)
+	return base.rsaPrivateKey, base.rsaPublicKey, nil
 }
 
 func (base *EncryptionBase) SetPassphrase(passphrase string) *EncryptionBase {
@@ -77,9 +87,7 @@ func (base *EncryptionBase) SetUseRandomness(useRandomness bool, keyRandom strin
 	return base
 }
 
-func (base *EncryptionBase) createHash() string {
-	passphrase := base.passphrase
-
+func (base *EncryptionBase) createHash(passphrase []byte) string {
 	hash := sha256.New()
 	hash.Write(passphrase)
 	return string(hash.Sum(nil))
@@ -89,7 +97,12 @@ func (base *EncryptionBase) EncryptRSA(secretMessage []byte) ([]byte, error) {
 	passphrase := base.passphrase
 	encodeBase64 := base.encodeUrlBase64
 
-	publicKeyMarshal, err := base64.RawURLEncoding.DecodeString(os.Getenv("PUBLIC_KEY_ENCRYPT"))
+	publicKeyBase := base.rsaPublicKey
+	if publicKeyBase == "" {
+		publicKeyBase = os.Getenv("PUBLIC_KEY_ENCRYPT")
+	}
+
+	publicKeyMarshal, err := base64.RawURLEncoding.DecodeString(publicKeyBase)
 	if err != nil {
 		return nil, fmt.Errorf("error decode base64 rsa public key, err := %s", err.Error())
 	}
@@ -120,7 +133,12 @@ func (base *EncryptionBase) DecryptRSA(secretMessage string) ([]byte, error) {
 	passphrase := base.passphrase
 	encodeBase64 := base.encodeUrlBase64
 
-	privateKeyMarshal, err := base64.RawURLEncoding.DecodeString(os.Getenv("PRIVATE_KEY_ENCRYPT"))
+	privateKeyBase := base.rsaPrivateKey
+	if privateKeyBase == "" {
+		privateKeyBase = os.Getenv("PRIVATE_KEY_ENCRYPT")
+	}
+
+	privateKeyMarshal, err := base64.RawURLEncoding.DecodeString(privateKeyBase)
 	if err != nil {
 		return nil, fmt.Errorf("error decode base64 rsa private key, err := %s", err.Error())
 	}
@@ -150,7 +168,7 @@ func (base *EncryptionBase) DecryptRSA(secretMessage string) ([]byte, error) {
 }
 
 func (base *EncryptionBase) Encrypt(data []byte) ([]byte, error) {
-	blockKey, err := aes.NewCipher([]byte(base.createHash()))
+	blockKey, err := aes.NewCipher([]byte(base.createHash(base.passphrase)))
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +201,7 @@ func (base *EncryptionBase) Encrypt(data []byte) ([]byte, error) {
 }
 
 func (base *EncryptionBase) Decrypt(data []byte) ([]byte, error) {
-	blockKey, err := aes.NewCipher([]byte(base.createHash()))
+	blockKey, err := aes.NewCipher([]byte(base.createHash(base.passphrase)))
 	if err != nil {
 		return nil, err
 	}
@@ -209,4 +227,61 @@ func (base *EncryptionBase) Decrypt(data []byte) ([]byte, error) {
 	}
 
 	return plaintext, nil
+}
+
+func (base *EncryptionBase) SignData(message string) (signature string, err error) {
+	hashedMessage := base.createHash([]byte(message))
+
+	privateKeyBase := base.rsaPrivateKey
+	if privateKeyBase == "" {
+		privateKeyBase = os.Getenv("PRIVATE_KEY_ENCRYPT")
+	}
+
+	privateKeyMarshal, err := base64.RawURLEncoding.DecodeString(privateKeyBase)
+	if err != nil {
+		return "", fmt.Errorf("error decode base64 rsa private key, err := %s", err.Error())
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyMarshal)
+	if err != nil {
+		return "", fmt.Errorf("error parse rsa private key, err := %s", err.Error())
+	}
+
+	signatureResult, err := rsa.SignPSS(rand.Reader, privateKey, crypto.SHA256, []byte(hashedMessage), nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to sign the message, err := %s", err.Error())
+	}
+
+	result := signatureResult
+	if base.encodeUrlBase64 {
+		result = []byte(base64.RawURLEncoding.EncodeToString(signatureResult))
+	}
+
+	return string(result), nil
+}
+
+func (base *EncryptionBase) VerifyData(message string, signature string) (isVerified bool, err error) {
+	hashedMessage := base.createHash([]byte(message))
+
+	publicKeyBase := base.rsaPublicKey
+	if publicKeyBase == "" {
+		publicKeyBase = os.Getenv("PUBLIC_KEY_ENCRYPT")
+	}
+
+	publicKeyMarshal, err := base64.RawURLEncoding.DecodeString(publicKeyBase)
+	if err != nil {
+		return false, fmt.Errorf("error decode base64 rsa private key, err := %s", err.Error())
+	}
+
+	publicKey, err := x509.ParsePKCS1PublicKey(publicKeyMarshal)
+	if err != nil {
+		return false, fmt.Errorf("error parse rsa private key, err := %s", err.Error())
+	}
+
+	err = rsa.VerifyPSS(publicKey, crypto.SHA256, []byte(hashedMessage), []byte(signature), nil)
+	if err != nil {
+		return false, nil
+	}
+
+	return true, nil
 }
