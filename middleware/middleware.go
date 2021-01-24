@@ -13,25 +13,26 @@ import (
 	"github.com/kataras/iris/v12/context"
 )
 
-type MiddlewareConfiguration struct {
+type BaseMiddleware struct {
 	AllowedRoles   []string `json:"allowed_roles"`
 	AllowedAppName []string `json:"allowed_app_name"`
 	Whitelist      []string `json:"whitelist"`
 	Blacklist      []string `json:"blacklist"`
 }
 
-func DefaultConfig() MiddlewareConfiguration {
-	config := MiddlewareConfiguration{
+func DefaultConfig() BaseMiddleware {
+	config := BaseMiddleware{
 		AllowedRoles:   make([]string, 0, 2),
 		AllowedAppName: make([]string, 0, 2),
 		Whitelist:      make([]string, 0, 2),
+		Blacklist:      make([]string, 0, 2),
 	}
 
 	return config
 }
 
 // NewMiddleware inits auth middleware config and returns new handler
-func NewMiddleware(config MiddlewareConfiguration) context.Handler {
+func NewMiddleware(config BaseMiddleware) context.Handler {
 	defaultConfig := DefaultConfig()
 
 	// Assign allowed roles configuration
@@ -44,7 +45,7 @@ func NewMiddleware(config MiddlewareConfiguration) context.Handler {
 
 // AuthServe checks user data such as user ID and roles.
 // If the data is valid, continues to next handler
-func (config *MiddlewareConfiguration) AuthServe(ctx iris.Context) {
+func (config *BaseMiddleware) AuthServe(ctx iris.Context) {
 
 	claims, next, err := config.checkAuthHeader(ctx.GetHeader("Authorization"))
 	if err != nil {
@@ -145,7 +146,7 @@ func (config *MiddlewareConfiguration) AuthServe(ctx iris.Context) {
 	ctx.Next()
 }
 
-func (config *MiddlewareConfiguration) checkAuthHeader(authHeader string) (*token_generator.JwtMapClaims, bool, error) {
+func (config *BaseMiddleware) checkAuthHeader(authHeader string) (*token_generator.JwtMapClaims, bool, error) {
 	if len(authHeader) == 0 {
 		return &token_generator.JwtMapClaims{}, false, errors.New("header Authorization Bearer Token is empty")
 	}

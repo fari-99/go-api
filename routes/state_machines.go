@@ -14,7 +14,7 @@ func (routes *Routes) setupStateMachineRoute() *iris.Application {
 	app := routes.irisApp
 	db := routes.DB
 
-	authentication := middleware.NewMiddleware(middleware.MiddlewareConfiguration{})
+	authentication := middleware.NewMiddleware(middleware.BaseMiddleware{})
 
 	// Approver Endpoint collection
 	app.PartyFunc("/state-machine", func(customers iris.Party) {

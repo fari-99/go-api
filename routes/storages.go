@@ -14,7 +14,7 @@ func (routes *Routes) setupStorageRoute() *iris.Application {
 	app := routes.irisApp
 	db := routes.DB
 
-	authentication := middleware.NewMiddleware(middleware.MiddlewareConfiguration{})
+	authentication := middleware.NewMiddleware(middleware.BaseMiddleware{})
 
 	// Storages Endpoint collection
 	app.PartyFunc("/storages", func(storages iris.Party) {

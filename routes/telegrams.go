@@ -15,7 +15,7 @@ func (routes *Routes) setupTelegramRoute() *iris.Application {
 	db := routes.DB
 	redis := routes.Redis
 
-	authentication := middleware.NewMiddleware(middleware.MiddlewareConfiguration{})
+	authentication := middleware.NewMiddleware(middleware.BaseMiddleware{})
 
 	// Approver Endpoint collection
 	app.PartyFunc("/telegrams", func(telegrams iris.Party) {
