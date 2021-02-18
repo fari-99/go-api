@@ -1,10 +1,11 @@
 package test_controllers
 
 import (
+	"github.com/gin-gonic/gin"
 	"go-api/configs"
+	"net/http"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris/v12"
 	"gopkg.in/gomail.v2"
 )
 
@@ -13,7 +14,7 @@ type EmailsController struct {
 	EmailDialer *gomail.Dialer
 }
 
-func (controller *EmailsController) SendEmailAction(ctx iris.Context) {
+func (controller *EmailsController) SendEmailAction(ctx *gin.Context) {
 	dialer := controller.EmailDialer
 
 	m := gomail.NewMessage()
@@ -25,10 +26,10 @@ func (controller *EmailsController) SendEmailAction(ctx iris.Context) {
 	//m.Attach("/home/Alex/lolcat.jpg")
 
 	if err := dialer.DialAndSend(m); err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusOK, err.Error())
+		configs.NewResponse(ctx, http.StatusOK, err.Error())
 		return
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "yee")
+	configs.NewResponse(ctx, http.StatusOK, "yee")
 	return
 }

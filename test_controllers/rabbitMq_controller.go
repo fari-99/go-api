@@ -2,16 +2,16 @@ package test_controllers
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"go-api/configs"
-
-	"github.com/kataras/iris/v12"
+	"net/http"
 )
 
 type RabbitMqController struct {
 	QueueSetup *configs.QueueSetup
 }
 
-func (controller *RabbitMqController) TestPublishQueueAction(ctx iris.Context) {
+func (controller *RabbitMqController) TestPublishQueueAction(ctx *gin.Context) {
 	body := map[string]interface{}{
 		"testing": "testing",
 		"data":    123,
@@ -23,15 +23,15 @@ func (controller *RabbitMqController) TestPublishQueueAction(ctx iris.Context) {
 	queueSetup.AddPublisher(&configs.QueueDeclareConfig{}, &configs.PublisherConfig{})
 	err := queueSetup.Publish(string(bodyMarshal))
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusOK, err.Error())
+		configs.NewResponse(ctx, http.StatusOK, err.Error())
 		return
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "yee")
+	configs.NewResponse(ctx, http.StatusOK, "yee")
 	return
 }
 
-func (controller *RabbitMqController) TestBatchPublishQueueAction(ctx iris.Context) {
+func (controller *RabbitMqController) TestBatchPublishQueueAction(ctx *gin.Context) {
 	queueSetup := controller.QueueSetup.SetQueueName("test-queue")
 	queueSetup.AddPublisher(&configs.QueueDeclareConfig{}, &configs.PublisherConfig{})
 
@@ -48,10 +48,10 @@ func (controller *RabbitMqController) TestBatchPublishQueueAction(ctx iris.Conte
 
 	allError := queueSetup.BatchPublish(allMsg)
 	if len(allError) > 0 {
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, allError)
+		configs.NewResponse(ctx, http.StatusInternalServerError, allError)
 		return
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "yee")
+	configs.NewResponse(ctx, http.StatusOK, "yee")
 	return
 }

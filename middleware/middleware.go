@@ -3,14 +3,12 @@ package middleware
 import (
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go-api/configs"
 	"go-api/helpers"
 	"go-api/helpers/token_generator"
+	"net/http"
 	"strings"
-
-	"github.com/kataras/iris/v12"
-
-	"github.com/kataras/iris/v12/context"
 )
 
 type BaseMiddleware struct {
@@ -31,8 +29,8 @@ func DefaultConfig() BaseMiddleware {
 	return config
 }
 
-// NewMiddleware inits auth middleware config and returns new handler
-func NewMiddleware(config BaseMiddleware) context.Handler {
+// AuthMiddleware inits auth middleware config and returns new handler
+func AuthMiddleware(config BaseMiddleware) gin.HandlerFunc {
 	defaultConfig := DefaultConfig()
 
 	// Assign allowed roles configuration
@@ -45,38 +43,46 @@ func NewMiddleware(config BaseMiddleware) context.Handler {
 
 // AuthServe checks user data such as user ID and roles.
 // If the data is valid, continues to next handler
-func (config *BaseMiddleware) AuthServe(ctx iris.Context) {
+func (config *BaseMiddleware) AuthServe(ctx *gin.Context) {
+	cookie, err := ctx.Request.Cookie("token")
 
-	claims, next, err := config.checkAuthHeader(ctx.GetHeader("Authorization"))
+	var accessToken string
+	if err != nil || err == http.ErrNoCookie {
+		accessToken = ctx.GetHeader("Authorization")
+	} else {
+		accessToken = fmt.Sprintf("Bearer %s", cookie.Value)
+	}
+
+	claims, next, err := config.checkAuthHeader(accessToken)
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
+		configs.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"message":       "You must login to access",
 			"error_message": err.Error(),
 		})
-		ctx.StopExecution()
+		ctx.Abort()
 		return
 	}
 
 	if !next || !claims.TokenData.Authorized {
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
+		configs.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"message": "You must login to access",
 		})
-		ctx.StopExecution()
+		ctx.Abort()
 		return
 	}
 
 	userDetails := claims.UserDetails
 
 	// setup uuid for controller
-	ctx.Values().Set("uuid", claims.Uuid)
-	ctx.Values().Set("user_details", userDetails.ID)
+	ctx.Set("uuid", claims.Uuid)
+	ctx.Set("user_details", userDetails.ID)
 
 	// check app origin
 	if appExists, _, _ := helpers.InArray(claims.TokenData.AppData.AppName, config.AllowedAppName); !appExists && len(config.AllowedAppName) > 0 {
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
+		configs.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"message": fmt.Sprintf("This Application is not supported by our system, please contact admin, app name := %s", claims.TokenData.AppData.AppName),
 		})
-		ctx.StopExecution()
+		ctx.Abort()
 		return
 	}
 
@@ -93,10 +99,10 @@ func (config *BaseMiddleware) AuthServe(ctx iris.Context) {
 
 		// no roles
 		if exists == 0 {
-			_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
+			configs.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 				"message": fmt.Sprintf("You don't have any roles to access this page"),
 			})
-			ctx.StopExecution()
+			ctx.Abort()
 			return
 		}
 	}
@@ -114,10 +120,10 @@ func (config *BaseMiddleware) AuthServe(ctx iris.Context) {
 
 		// ip not on whitelist
 		if exists == 0 {
-			_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
+			configs.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 				"message": fmt.Sprintf("You can't access this page because your IP address is not on our whitelist"),
 			})
-			ctx.StopExecution()
+			ctx.Abort()
 			return
 		}
 	}
@@ -135,10 +141,10 @@ func (config *BaseMiddleware) AuthServe(ctx iris.Context) {
 
 		// ip on blacklist
 		if exists > 0 {
-			_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, iris.Map{
+			configs.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 				"message": fmt.Sprintf("You can't access this page because your IP address is not on our whitelist"),
 			})
-			ctx.StopExecution()
+			ctx.Abort()
 			return
 		}
 	}

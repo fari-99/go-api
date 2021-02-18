@@ -1,26 +1,27 @@
 package controllers
 
 import (
+	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/sessions"
 	"go-api/configs"
+	"net/http"
 )
 
 type TelegramController struct {
 	DB    *gorm.DB
-	Redis *sessions.Sessions
+	Redis *redis.Client
 }
 
 type TelegramAuthentication struct {
 	Username string `json:"username"`
 }
 
-func (controller *TelegramController) AuthenticateAction(ctx iris.Context) {
+func (controller *TelegramController) AuthenticateAction(ctx *gin.Context) {
 	var input TelegramAuthentication
-	err := ctx.ReadJSON(&input)
+	err := ctx.BindJSON(&input)
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 

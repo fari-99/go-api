@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go-api/constant"
 	"log"
 	"math/rand"
@@ -11,8 +12,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/kataras/iris/v12"
 
 	"github.com/streadway/amqp"
 )
@@ -353,7 +352,7 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 	forever := make(chan bool)
 
 	go func() {
-		loggingMessage("Consumer Ready", iris.Map{"PID": os.Getpid()})
+		loggingMessage("Consumer Ready", gin.H{"PID": os.Getpid()})
 
 		isAutoAck := base.queueConfig.QueueConsumerConfig.AutoAck
 
@@ -386,7 +385,6 @@ func (base *QueueSetup) openConnection() error {
 			continue
 		}
 
-		loggingMessage("Connecting to RabbitMq", connUrl)
 		connection, err := amqp.DialConfig(connUrl, amqp.Config{
 			//SASL:            nil,
 			//Vhost:           "",

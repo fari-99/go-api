@@ -2,12 +2,13 @@ package test_controllers
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go-api/configs"
+	"net/http"
 	"time"
 
 	"github.com/go-redis/cache"
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris/v12"
 )
 
 type RedisCacheController struct {
@@ -20,7 +21,7 @@ type CacheObject struct {
 	Num int
 }
 
-func (controller *RedisCacheController) TestRedisCacheAction(ctx iris.Context) {
+func (controller *RedisCacheController) TestRedisCacheAction(ctx *gin.Context) {
 	codec := controller.RedisCache
 
 	key := "mykey"
@@ -40,6 +41,6 @@ func (controller *RedisCacheController) TestRedisCacheAction(ctx iris.Context) {
 		fmt.Println(wanted)
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "yee")
+	configs.NewResponse(ctx, http.StatusOK, "yee")
 	return
 }

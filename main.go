@@ -3,15 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/go-redis/cache"
-	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris/v12/sessions"
+	"github.com/go-redis/redis"
 	"go-api/configs"
 	"go-api/helpers"
 	"go-api/routes"
 	"gopkg.in/gomail.v2"
 	"os"
+
+	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/go-redis/cache"
+	"github.com/jinzhu/gorm"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
@@ -44,7 +46,7 @@ func setupDatabase() *gorm.DB {
 	return configs.DatabaseBase().GetDBConnection()
 }
 
-func setupRedis() *sessions.Sessions {
+func setupRedis() *redis.Client {
 	helpers.LoggingMessage("Setup configuration redis", nil)
 	return configs.GetRedisSessionConfig()
 }

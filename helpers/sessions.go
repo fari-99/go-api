@@ -3,8 +3,6 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/sessions"
 	"go-api/configs"
 	"go-api/models"
 	"log"
@@ -12,38 +10,52 @@ import (
 	"time"
 )
 
+type SessionToken struct {
+	AccessExpiredAt  int64  `json:"access_expired_at"`
+	AccessUuid       string `json:"access_uuid"`
+	RefreshExpiredAt int64  `json:"refresh_expired_at"`
+	RefreshUuid      string `json:"refresh_uuid"`
+}
+
 type SessionData struct {
-	AccessUuid  string `json:"access_uuid"`
-	RefreshUuid string `json:"refresh_uuid"`
+	Token SessionToken
 
 	UserID        int64       `json:"user_id"`
 	UserDetails   interface{} `json:"user_details"`
 	Authorization bool        `json:"authorization"`
 }
 
-func SetRedisSession(data SessionData, ctx iris.Context) (redisSession *sessions.Session) {
-	sessionConfig := configs.GetRedisSessionConfig()
+func SetRedisSession(data SessionData) error {
+	redisSession := configs.GetRedisSessionConfig()
 	dataMarshal, _ := json.Marshal(data.UserDetails)
 
-	s := sessionConfig.Start(ctx)
-	s.Set(fmt.Sprintf("%s", data.AccessUuid), string(dataMarshal))
-	s.Set(fmt.Sprintf("%s", data.RefreshUuid), string(dataMarshal))
+	accessExpired := time.Unix(data.Token.AccessExpiredAt, 0)
+	refreshExpired := time.Unix(data.Token.RefreshExpiredAt, 0)
+	now := time.Now()
 
-	return s
+	err := redisSession.Set(data.Token.AccessUuid, string(dataMarshal), accessExpired.Sub(now)).Err()
+	if err != nil {
+		return fmt.Errorf("error set redis session access token, err := %s", err.Error())
+	}
+
+	err = redisSession.Set(data.Token.RefreshUuid, string(dataMarshal), refreshExpired.Sub(now)).Err()
+	if err != nil {
+		return fmt.Errorf("error set redis session refresh token, err := %s", err.Error())
+	}
+
+	return nil
 }
 
-func GetCurrentUser(uuidIdentifier string, ctx iris.Context) (models.Customers, error) {
-	sessionConfig := configs.GetRedisSessionConfig()
+func GetCurrentUser(uuidIdentifier string) (models.Customers, error) {
+	redisSession := configs.GetRedisSessionConfig()
 
-	s := sessionConfig.Start(ctx)
-	dataCookie := s.Get(fmt.Sprintf("%s", uuidIdentifier))
-
-	if dataCookie == nil {
-		return models.Customers{}, fmt.Errorf("cookie is not valid")
+	redisData, err := redisSession.Get(uuidIdentifier).Result()
+	if err != nil {
+		return models.Customers{}, err
 	}
 
 	var userData models.Customers
-	_ = json.Unmarshal([]byte(dataCookie.(string)), &userData)
+	_ = json.Unmarshal([]byte(redisData), &userData)
 
 	return userData, nil
 }

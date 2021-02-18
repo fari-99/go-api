@@ -4,21 +4,20 @@ import (
 	"go-api/controllers"
 	"go-api/middleware"
 	"log"
-
-	"github.com/kataras/iris/v12"
 )
 
-func (routes *Routes) setupTelegramRoute() *iris.Application {
+func (routes *Routes) setupTelegramRoute() {
 	log.Println("Setup Telegram router")
 
-	app := routes.irisApp
+	app := routes.ginApp
 	db := routes.DB
 	redis := routes.Redis
 
-	authentication := middleware.NewMiddleware(middleware.BaseMiddleware{})
+	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 
 	// Approver Endpoint collection
-	app.PartyFunc("/telegrams", func(telegrams iris.Party) {
+	telegrams := app.Group("/telegrams").Use(authentication)
+	{
 		telegramController := &controllers.TelegramController{
 			DB:    db,
 			Redis: redis,
@@ -26,8 +25,6 @@ func (routes *Routes) setupTelegramRoute() *iris.Application {
 		//companyIDPathName := "companyID"
 
 		// authentication data
-		telegrams.Post("/authenticate", authentication, telegramController.AuthenticateAction)
-	})
-
-	return app
+		telegrams.POST("/authenticate", authentication, telegramController.AuthenticateAction)
+	}
 }

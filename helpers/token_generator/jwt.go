@@ -2,8 +2,8 @@ package token_generator
 
 import (
 	_ "crypto"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/kataras/iris/v12"
 	"go-api/models"
 	"os"
 	"strconv"
@@ -18,7 +18,7 @@ type BaseJwt struct {
 	SigningMethod jwt.SigningMethod `json:"signing_method"`
 	MapClaims     *JwtMapClaims     `json:"map_claims"`
 
-	ctx iris.Context
+	ctx *gin.Context
 }
 
 type JwtMapClaims struct {
@@ -29,10 +29,12 @@ type JwtMapClaims struct {
 }
 
 type SignedToken struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	AccessUuid   string `json:"access_uuid"`
-	RefreshUuid  string `json:"refresh_uuid"`
+	AccessToken      string `json:"access_token"`
+	RefreshToken     string `json:"refresh_token"`
+	AccessExpiredAt  int64  `json:"access_expired_at"`
+	AccessUuid       string `json:"access_uuid"`
+	RefreshUuid      string `json:"refresh_uuid"`
+	RefreshExpiredAt int64  `json:"refresh_expired_at"`
 }
 
 func NewJwt() *BaseJwt {
@@ -45,7 +47,7 @@ func NewJwt() *BaseJwt {
 	return &base
 }
 
-func (base *BaseJwt) SetCtx(ctx iris.Context) *BaseJwt {
+func (base *BaseJwt) SetCtx(ctx *gin.Context) *BaseJwt {
 	base.ctx = ctx
 	return base
 }
@@ -84,8 +86,8 @@ func (base *BaseJwt) getAppData() *AppData {
 	var appData AppData
 	if base.ctx != nil {
 		ctx := base.ctx
-		appData.UserAgent = ctx.Request().UserAgent()
-		appData.IPList = append(appData.IPList, ctx.RemoteAddr())
+		appData.UserAgent = ctx.Request.UserAgent()
+		appData.IPList = append(appData.IPList, ctx.Request.RemoteAddr)
 	}
 
 	appData.AppName = os.Getenv("GO_API_NAME")
@@ -109,21 +111,23 @@ func (base *BaseJwt) SignClaims() (signedToken *SignedToken, err error) {
 	accessUuid := uuid.New().String()
 	refreshUuid := uuid.New().String()
 
-	accessToken, err := base.signClaims("access_token", accessUuid)
+	accessToken, accessExpired, err := base.signClaims("access_token", accessUuid)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := base.signClaims("refresh_token", refreshUuid)
+	refreshToken, refreshExpired, err := base.signClaims("refresh_token", refreshUuid)
 	if err != nil {
 		return nil, err
 	}
 
 	token := &SignedToken{
-		AccessToken:  accessToken,
-		AccessUuid:   accessUuid,
-		RefreshToken: refreshToken,
-		RefreshUuid:  refreshUuid,
+		AccessToken:      accessToken,
+		AccessUuid:       accessUuid,
+		AccessExpiredAt:  accessExpired,
+		RefreshToken:     refreshToken,
+		RefreshUuid:      refreshUuid,
+		RefreshExpiredAt: refreshExpired,
 	}
 
 	return token, nil
@@ -134,7 +138,7 @@ All JWT uuid, must be signed with ACCESS UUID from JWT UUID
 so that we can made only one refresh token for many device,
 but still have one access token
 */
-func (base *BaseJwt) signClaims(typeClaims string, accessUuid string) (signedToken string, err error) {
+func (base *BaseJwt) signClaims(typeClaims string, accessUuid string) (signedToken string, expiredAt int64, err error) {
 	expiredDate := base.GetExpiredDate(typeClaims)
 
 	mapClaims := base.MapClaims
@@ -150,7 +154,7 @@ func (base *BaseJwt) signClaims(typeClaims string, accessUuid string) (signedTok
 		signedToken, err = token.SignedString(base.RefreshToken)
 	}
 
-	return signedToken, err
+	return signedToken, expiredDate, err
 }
 
 func (base *BaseJwt) GetExpiredDate(typeClaims string) int64 {

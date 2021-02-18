@@ -3,6 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"go-api/models"
 	"log"
 	"os"
@@ -22,6 +23,15 @@ func IsJSONString(s string) bool {
 func IsJSON(s string) bool {
 	var js map[string]interface{}
 	return json.Unmarshal([]byte(s), &js) == nil
+}
+
+func ParamsDefault(ctx *gin.Context, key string, defaultValue string) string {
+	value, exists := ctx.Params.Get(key)
+	if !exists {
+		value = defaultValue
+	}
+
+	return value
 }
 
 // GeneratePassword generates bcrypt hash string of the given plaintext password

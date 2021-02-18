@@ -2,9 +2,10 @@ package test_controllers
 
 import (
 	"encoding/base64"
-	"github.com/kataras/iris/v12"
+	"github.com/gin-gonic/gin"
 	"go-api/configs"
 	"go-api/helpers"
+	"net/http"
 )
 
 type CryptsController struct{}
@@ -15,15 +16,15 @@ type InputEncryptDecrypt struct {
 	RsaRandomness string `json:"rsa_randomness"` // rsa
 }
 
-func (controller *CryptsController) EncryptDecryptAction(ctx iris.Context) {
+func (controller *CryptsController) EncryptDecryptAction(ctx *gin.Context) {
 	var input InputEncryptDecrypt
-	_ = ctx.ReadJSON(&input)
+	_ = ctx.BindJSON(&input)
 
 	encryptHelper := helpers.NewEncryptionBase()
 	encryptHelper.SetPassphrase(input.Passphrase)
 	encrypted, err := encryptHelper.Encrypt([]byte(input.Data))
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -31,7 +32,7 @@ func (controller *CryptsController) EncryptDecryptAction(ctx iris.Context) {
 	decryptHelper.SetPassphrase(input.Passphrase)
 	decrypted, err := decryptHelper.Decrypt(encrypted)
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -40,13 +41,13 @@ func (controller *CryptsController) EncryptDecryptAction(ctx iris.Context) {
 		"decrypt": string(decrypted),
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, result)
+	configs.NewResponse(ctx, http.StatusOK, result)
 	return
 }
 
-func (controller *CryptsController) EncryptDecryptRsaAction(ctx iris.Context) {
+func (controller *CryptsController) EncryptDecryptRsaAction(ctx *gin.Context) {
 	var input InputEncryptDecrypt
-	_ = ctx.ReadJSON(&input)
+	_ = ctx.BindJSON(&input)
 
 	var useRandomness bool
 	if input.RsaRandomness != "" {
@@ -58,13 +59,13 @@ func (controller *CryptsController) EncryptDecryptRsaAction(ctx iris.Context) {
 	encryptHelper.SetPassphrase(input.Passphrase)
 	privateKey, publicKey, err := encryptHelper.GenerateRSAKey()
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	encrypted, err := encryptHelper.EncryptRSA([]byte(input.Data))
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -75,7 +76,7 @@ func (controller *CryptsController) EncryptDecryptRsaAction(ctx iris.Context) {
 
 	decrypted, err := decryptHelper.DecryptRSA(string(encrypted))
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -88,7 +89,7 @@ func (controller *CryptsController) EncryptDecryptRsaAction(ctx iris.Context) {
 		"decrypt": string(decrypted),
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, result)
+	configs.NewResponse(ctx, http.StatusOK, result)
 	return
 }
 
@@ -96,14 +97,14 @@ type InputSignMessage struct {
 	Messages string `json:"messages"`
 }
 
-func (controller *CryptsController) SignMessageAction(ctx iris.Context) {
+func (controller *CryptsController) SignMessageAction(ctx *gin.Context) {
 	var input InputSignMessage
-	_ = ctx.ReadJSON(&input)
+	_ = ctx.BindJSON(&input)
 
 	signHelper := helpers.NewEncryptionBase()
 	signature, err := signHelper.SignData(input.Messages)
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -112,7 +113,7 @@ func (controller *CryptsController) SignMessageAction(ctx iris.Context) {
 		"signature": signature,
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, result)
+	configs.NewResponse(ctx, http.StatusOK, result)
 	return
 }
 
@@ -121,24 +122,24 @@ type InputVerifyMessage struct {
 	Signature string `json:"signature"`
 }
 
-func (controller *CryptsController) VerifyMessageAction(ctx iris.Context) {
+func (controller *CryptsController) VerifyMessageAction(ctx *gin.Context) {
 	var input InputVerifyMessage
-	_ = ctx.ReadJSON(&input)
+	_ = ctx.BindJSON(&input)
 
 	signature, _ := base64.RawURLEncoding.DecodeString(input.Signature)
 
 	signHelper := helpers.NewEncryptionBase()
 	isVerified, err := signHelper.VerifyData(input.Message, string(signature))
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if !isVerified {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, "this message is not valid")
+		configs.NewResponse(ctx, http.StatusBadRequest, "this message is not valid")
 		return
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "this message is valid")
+	configs.NewResponse(ctx, http.StatusOK, "this message is valid")
 	return
 }

@@ -2,32 +2,30 @@ package test_controllers
 
 import (
 	"bytes"
+	"github.com/gin-gonic/gin"
 	"go-api/configs"
 	"go-api/helpers"
 	"io"
+	"net/http"
 	"os"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris/v12"
 )
 
 type FtpController struct {
 	DB *gorm.DB
 }
 
-func (controller *FtpController) SendFtpAction(ctx iris.Context) {
-	// Get the max post value size passed via iris.WithPostMaxMemory.
-	maxSize := ctx.Application().ConfigurationReadOnly().GetPostMaxMemory()
-
-	err := ctx.Request().ParseMultipartForm(maxSize)
+func (controller *FtpController) SendFtpAction(ctx *gin.Context) {
+	err := ctx.Request.ParseMultipartForm(8 << 20) // 8 MB
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	helpersFtp := helpers.BaseHelperFtp(true).SetCredential(helpers.FtpCredential{})
 
-	form := ctx.Request().MultipartForm
+	form := ctx.Request.MultipartForm
 	files := form.File["files[]"]
 	var listError []string
 	for _, file := range files {
@@ -52,10 +50,10 @@ func (controller *FtpController) SendFtpAction(ctx iris.Context) {
 	}
 
 	if len(listError) > 0 {
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, listError)
+		configs.NewResponse(ctx, http.StatusInternalServerError, listError)
 		return
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "success send file ftp")
+	configs.NewResponse(ctx, http.StatusOK, "success send file ftp")
 	return
 }

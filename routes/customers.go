@@ -4,48 +4,31 @@ import (
 	"go-api/controllers"
 	"go-api/middleware"
 	"log"
-
-	"github.com/kataras/iris/v12"
 )
 
-func (routes *Routes) setupCustomerRoute() *iris.Application {
+func (routes *Routes) setupCustomerRoute() {
 	log.Println("Setup Customer router")
 
-	app := routes.irisApp
+	app := routes.ginApp
 	db := routes.DB
 	redis := routes.Redis
 
-	authentication := middleware.NewMiddleware(middleware.BaseMiddleware{})
+	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
+	customerController := controllers.CustomerController{
+		DB:    db,
+		Redis: redis,
+	}
 
-	// Approver Endpoint collection
-	app.PartyFunc("/customers", func(customers iris.Party) {
-		customerController := &controllers.CustomerController{
-			DB:    db,
-			Redis: redis,
-		}
-		//companyIDPathName := "companyID"
-
+	// Customer Endpoint collection
+	customersPublic := app.Group("/customers")
+	{
 		// authentication data
-		customers.Post("/auth", customerController.AuthenticateAction)
+		customersPublic.POST("/auth", customerController.AuthenticateAction)
+	}
 
-		customers.Get("/details", authentication, customerController.CustomerDetailsAction)
-		customers.Post("/", authentication, customerController.CreateAction) // Create
-		//customers.Get("/{"+companyIDPathName+":int64}", customerController.ReadAction)    // Read
-		//customers.Put("/{"+companyIDPathName+":int64}", customerController.UpdateAction)    // Update
-		//customers.Delete("/{"+companyIDPathName+":int64}", customerController.DeleteAction) // Delete
-
-		//customers.PartyFunc("/"+companyIDPathName+"/customer-cars", func(customerCars router.Party) {
-		//	customerCarsController := &controllers.CustomerCarController{DB: db}
-		//	companyCarIDPathName := "companyCarID"
-		//
-		//	customerCars.Use(authentication)
-		//
-		//	customerCars.Post("/", customerCarsController.CreateAction)                                   // Create
-		//	customerCars.Get("/{"+companyCarIDPathName+":int64}", customerCarsController.ReadAction)      // Read
-		//	customerCars.Put("/{"+companyCarIDPathName+":int64}", customerCarsController.UpdateAction)    // Update
-		//	customerCars.Delete("/{"+companyCarIDPathName+":int64}", customerCarsController.DeleteAction) // Delete
-		//})
-	})
-
-	return app
+	customersPrivate := app.Group("/customers").Use(authentication)
+	{
+		customersPrivate.GET("/details", customerController.CustomerDetailsAction)
+		customersPrivate.POST("/", customerController.CreateAction) //
+	}
 }

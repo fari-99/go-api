@@ -4,27 +4,24 @@ import (
 	"go-api/controllers"
 	"go-api/middleware"
 	"log"
-
-	"github.com/kataras/iris/v12"
 )
 
-func (routes *Routes) setupStorageRoute() *iris.Application {
+func (routes *Routes) setupStorageRoute() {
 	log.Println("Setup Storage router")
 
-	app := routes.irisApp
+	app := routes.ginApp
 	db := routes.DB
 
-	authentication := middleware.NewMiddleware(middleware.BaseMiddleware{})
+	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 
 	// Storages Endpoint collection
-	app.PartyFunc("/storages", func(storages iris.Party) {
+	storages := app.Group("/storages").Use(authentication)
+	{
 		storageController := &controllers.StorageController{
 			DB: db,
 		}
 
-		storages.Get("/{:id}", authentication, storageController.DetailAction)
-		storages.Post("/upload", authentication, storageController.UploadAction)
-	})
-
-	return app
+		storages.GET("/{:id}", authentication, storageController.DetailAction)
+		storages.POST("/upload", authentication, storageController.UploadAction)
+	}
 }

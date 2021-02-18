@@ -1,22 +1,23 @@
 package controllers
 
 import (
+	"github.com/gin-gonic/gin"
 	"go-api/configs"
+	"net/http"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris/v12"
 )
 
 type StateMachineController struct {
 	DB *gorm.DB
 }
 
-func (controller *StateMachineController) GetStateTransactionAction(ctx iris.Context) {
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "Yey")
+func (controller *StateMachineController) GetStateTransactionAction(ctx *gin.Context) {
+	configs.NewResponse(ctx, http.StatusOK, "Yey")
 	return
 }
 
-func (controller *StateMachineController) ChangeStateAction(ctx iris.Context) {
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, "Yey")
+func (controller *StateMachineController) ChangeStateAction(ctx *gin.Context) {
+	configs.NewResponse(ctx, http.StatusOK, "Yey")
 	return
 }

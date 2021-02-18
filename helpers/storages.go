@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/gin-gonic/gin"
 	"go-api/constant"
 	"go-api/models"
 	"image"
@@ -24,8 +25,6 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	"github.com/kataras/iris/v12"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -43,7 +42,7 @@ type StorageBase struct {
 	fileInput *multipart.FileHeader
 	fileType  string
 
-	ctx       iris.Context
+	ctx       *gin.Context
 	db        *gorm.DB
 	s3Enabled bool
 }
@@ -61,7 +60,7 @@ func NewStorageBase(fileHeader *multipart.FileHeader, fileType string, db *gorm.
 	return storageBase
 }
 
-func (base *StorageBase) SetCtx(ctx iris.Context) *StorageBase {
+func (base *StorageBase) SetCtx(ctx *gin.Context) *StorageBase {
 	base.ctx = ctx
 	return base
 }

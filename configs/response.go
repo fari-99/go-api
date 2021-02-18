@@ -1,6 +1,9 @@
 package configs
 
-import "github.com/kataras/iris/v12"
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
 
 type Response struct {
 	StatusCode int         `json:"status"`
@@ -20,9 +23,9 @@ func getDefaultError(err error) Response {
 	}
 
 	defaultError := Response{
-		StatusCode: iris.StatusInternalServerError,
+		StatusCode: http.StatusInternalServerError,
 		Success:    false,
-		Error: iris.Map{
+		Error: gin.H{
 			"message": errMsg,
 		},
 	}
@@ -30,7 +33,7 @@ func getDefaultError(err error) Response {
 	return defaultError
 }
 
-func NewResponse(ctx iris.Context, statusCode int, data interface{}) (int, error) {
+func NewResponse(ctx *gin.Context, statusCode int, data interface{}) {
 	response := Response{
 		StatusCode: statusCode,
 		Success:    isSuccess(statusCode),
@@ -43,13 +46,6 @@ func NewResponse(ctx iris.Context, statusCode int, data interface{}) (int, error
 		response.Error = data
 	}
 
-	// adding status code
-	ctx.StatusCode(statusCode)
-
 	// send data as json
-	n, err := ctx.JSON(response)
-	if err != nil {
-		n, err = ctx.JSON(getDefaultError(err))
-	}
-	return n, err
+	ctx.JSON(statusCode, response)
 }

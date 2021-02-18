@@ -3,12 +3,13 @@ package test_controllers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go-api/bussiness_flow"
 	"go-api/configs"
 	"go-api/models"
+	"net/http"
 
 	"github.com/jinzhu/gorm"
-	"github.com/kataras/iris/v12"
 )
 
 type FiniteStateController struct {
@@ -22,18 +23,18 @@ type InputFSM struct {
 	DataID         int64  `json:"data_id"`
 }
 
-func (controller *FiniteStateController) GetAvailableTransitionsAction(ctx iris.Context) {
+func (controller *FiniteStateController) GetAvailableTransitionsAction(ctx *gin.Context) {
 	var input InputFSM
-	err := ctx.ReadJSON(&input)
+	err := ctx.BindJSON(&input)
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	var transactionModel models.Transactions
 	err = controller.DB.First(&transactionModel, input.DataID).Error
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusNotFound, err.Error())
+		configs.NewResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -49,7 +50,7 @@ func (controller *FiniteStateController) GetAvailableTransitionsAction(ctx iris.
 		dataTransitions)
 	if err != nil {
 		msg := fmt.Errorf("error create base, err := %s", err.Error())
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, msg.Error())
+		configs.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
 		return
 	}
 
@@ -57,7 +58,7 @@ func (controller *FiniteStateController) GetAvailableTransitionsAction(ctx iris.
 	currentProperties, err := baseSM.GetStateProperties()
 	if err != nil {
 		msg := fmt.Errorf("error get current properties, err := %s", err.Error())
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, msg.Error())
+		configs.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
 		return
 	}
 
@@ -65,29 +66,29 @@ func (controller *FiniteStateController) GetAvailableTransitionsAction(ctx iris.
 	availableTransitions, err := baseSM.GetAvailableTransitions()
 	if err != nil {
 		msg := fmt.Errorf("error get available transition, err := %s", err.Error())
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, msg.Error())
+		configs.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
 		return
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, iris.Map{
+	configs.NewResponse(ctx, http.StatusOK, gin.H{
 		"currentProperties":    currentProperties,
 		"availableTransitions": availableTransitions,
 	})
 	return
 }
 
-func (controller *FiniteStateController) ChangeStateAction(ctx iris.Context) {
+func (controller *FiniteStateController) ChangeStateAction(ctx *gin.Context) {
 	var input InputFSM
-	err := ctx.ReadJSON(&input)
+	err := ctx.BindJSON(&input)
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusBadRequest, err.Error())
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	var transactionModel models.Transactions
 	err = controller.DB.First(&transactionModel, input.DataID).Error
 	if err != nil {
-		_, _ = configs.NewResponse(ctx, iris.StatusNotFound, err.Error())
+		configs.NewResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
 
@@ -103,7 +104,7 @@ func (controller *FiniteStateController) ChangeStateAction(ctx iris.Context) {
 		dataTransitions)
 	if err != nil {
 		msg := fmt.Errorf("error create base, err := %s", err.Error())
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, msg.Error())
+		configs.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
 		return
 	}
 
@@ -111,14 +112,14 @@ func (controller *FiniteStateController) ChangeStateAction(ctx iris.Context) {
 	isChanged, err := baseSM.ChangeStateMachine()
 	if err != nil {
 		msg := fmt.Errorf("state not changed, err := %s", err.Error())
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, msg.Error())
+		configs.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
 		return
 	}
 
 	constraitValue, err := baseSM.GetStatusByName(baseSM.Fsm.Current())
 	if err != nil {
 		msg := fmt.Errorf("can't get status by name, err := %s", err.Error())
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, msg.Error())
+		configs.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
 		return
 	}
 
@@ -128,11 +129,11 @@ func (controller *FiniteStateController) ChangeStateAction(ctx iris.Context) {
 	currentProperties, err := baseSM.GetStateProperties()
 	if err != nil {
 		msg := fmt.Errorf("can't get state properties, err := %s", err.Error())
-		_, _ = configs.NewResponse(ctx, iris.StatusInternalServerError, msg.Error())
+		configs.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
 		return
 	}
 
-	_, _ = configs.NewResponse(ctx, iris.StatusOK, iris.Map{
+	configs.NewResponse(ctx, http.StatusOK, gin.H{
 		"is_changed":           isChanged,
 		"transition_used_name": input.TransitionName,
 		"new_state_value":      constraitValue,

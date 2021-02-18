@@ -1,16 +1,16 @@
 package routes
 
 import (
-	"github.com/kataras/iris/v12"
 	"go-api/test_controllers"
 	"log"
 )
 
-func (routes *Routes) setupTestRoute() *iris.Application {
-	app := routes.irisApp
+func (routes *Routes) setupTestRoute() {
+	app := routes.ginApp
 
 	// Redis Test Endpoint collection
-	app.PartyFunc("/test-redis", func(customers iris.Party) {
+	testRedis := app.Group("/test-redis")
+	{
 		log.Println("Setup Test Redis router")
 
 		testRedisController := &test_controllers.TestRedisController{
@@ -18,11 +18,12 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 			Redis: routes.Redis,
 		}
 
-		customers.Post("/", testRedisController.TestRedisAction)
-	})
+		testRedis.POST("/", testRedisController.TestRedisAction)
+	}
 
 	// Redis Cache Test Endpoint collection
-	app.PartyFunc("/test-redis-cache", func(customers iris.Party) {
+	redisCache := app.Group("/test-redis-cache")
+	{
 		log.Println("Setup Test Redis Cache router")
 
 		testRedisController := &test_controllers.RedisCacheController{
@@ -30,22 +31,24 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 			RedisCache: routes.RedisCache,
 		}
 
-		customers.Post("/", testRedisController.TestRedisCacheAction)
-	})
+		redisCache.POST("/", testRedisController.TestRedisCacheAction)
+	}
 
 	// Redis Cache Test Endpoint collection
-	app.PartyFunc("/test-rabbit", func(customers iris.Party) {
+	testRabbit := app.Group("/test-rabbit")
+	{
 		log.Println("Setup Test RabbitMq Connection router")
 
 		testRabbitMqQueueController := &test_controllers.RabbitMqController{
 			QueueSetup: routes.Queue,
 		}
 
-		customers.Post("/queue", testRabbitMqQueueController.TestPublishQueueAction)
-		customers.Post("/batch-queue", testRabbitMqQueueController.TestBatchPublishQueueAction)
-	})
+		testRabbit.POST("/queue", testRabbitMqQueueController.TestPublishQueueAction)
+		testRabbit.POST("/batch-queue", testRabbitMqQueueController.TestBatchPublishQueueAction)
+	}
 
-	app.PartyFunc("/test-email", func(emails iris.Party) {
+	testEmail := app.Group("/test-email")
+	{
 		log.Printf("Setup Test EmailDialler Connection router")
 
 		testEmailController := &test_controllers.EmailsController{
@@ -53,38 +56,39 @@ func (routes *Routes) setupTestRoute() *iris.Application {
 			EmailDialer: routes.EmailDialler,
 		}
 
-		emails.Post("/send-email", testEmailController.SendEmailAction)
-	})
+		testEmail.POST("/send-email", testEmailController.SendEmailAction)
+	}
 
-	app.PartyFunc("/test-state-machine", func(customers iris.Party) {
+	testStateMachine := app.Group("/test-state-machine")
+	{
 		stateMachineController := &test_controllers.FiniteStateController{
 			DB: routes.DB,
 		}
 
-		customers.Post("/get-state", stateMachineController.GetAvailableTransitionsAction)
-		customers.Post("/change-state", stateMachineController.ChangeStateAction)
-	})
+		testStateMachine.POST("/get-state", stateMachineController.GetAvailableTransitionsAction)
+		testStateMachine.POST("/change-state", stateMachineController.ChangeStateAction)
+	}
 
-	app.PartyFunc("/test-ftp", func(ftp iris.Party) {
+	testFtp := app.Group("/test-ftp")
+	{
 		ftpController := &test_controllers.FtpController{
 			DB: routes.DB,
 		}
 
-		ftp.Post("/send-files", ftpController.SendFtpAction)
-		//ftp.Post("/send-files-location")
-		//ftp.Post("/send-files-open-files")
-	})
+		testFtp.POST("/send-files", ftpController.SendFtpAction)
+		//testFtp.POST("/send-files-location")
+		//testFtp.POST("/send-files-open-files")
+	}
 
-	app.PartyFunc("/test-crypt", func(test iris.Party) {
+	testCrypt := app.Group("/test-crypt")
+	{
 		cryptController := &test_controllers.CryptsController{}
 
-		test.Post("/encrypt-data", cryptController.EncryptDecryptAction)
-		test.Post("/encrypt-rsa", cryptController.EncryptDecryptRsaAction)
-		test.Post("/sign-message", cryptController.SignMessageAction)
-		test.Post("/verify-message", cryptController.VerifyMessageAction)
+		testCrypt.POST("/encrypt-data", cryptController.EncryptDecryptAction)
+		testCrypt.POST("/encrypt-rsa", cryptController.EncryptDecryptRsaAction)
+		testCrypt.POST("/sign-message", cryptController.SignMessageAction)
+		testCrypt.POST("/verify-message", cryptController.VerifyMessageAction)
 
 		// TODO: Encrypt Files
-	})
-
-	return app
+	}
 }
