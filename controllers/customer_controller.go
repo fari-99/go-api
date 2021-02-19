@@ -9,6 +9,7 @@ import (
 	"go-api/helpers/token_generator"
 	"go-api/models"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -113,7 +114,7 @@ func (controller *CustomerController) AuthenticateAction(ctx *gin.Context) {
 		Name:     "token",
 		Value:    token.AccessToken,
 		Path:     "/",
-		Domain:   ".fadhlan.loc",
+		Domain:   os.Getenv("PROJECT_DOMAIN"),
 		Expires:  time.Unix(token.AccessExpiredAt, 0),
 		Secure:   false,
 		HttpOnly: true,
