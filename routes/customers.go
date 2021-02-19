@@ -14,7 +14,7 @@ func (routes *Routes) setupCustomerRoute() {
 	redis := routes.Redis
 
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
-	customerController := controllers.CustomerController{
+	customerController := &controllers.CustomerController{
 		DB:    db,
 		Redis: redis,
 	}

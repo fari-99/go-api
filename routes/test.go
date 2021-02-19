@@ -91,4 +91,14 @@ func (routes *Routes) setupTestRoute() {
 
 		// TODO: Encrypt Files
 	}
+
+	socials := app.Group("/test-social")
+	{
+		socialController := &test_controllers.TestSocialController{
+			DB:       routes.DB,
+			Telegram: routes.Telegram,
+		}
+
+		socials.POST("/telegram", socialController.TestTelegramAction)
+	}
 }

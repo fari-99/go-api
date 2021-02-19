@@ -6,8 +6,8 @@ import (
 	"log"
 )
 
-func (routes *Routes) setupTelegramRoute() {
-	log.Println("Setup Telegram router")
+func (routes *Routes) setupSocialRoute() {
+	log.Println("Setup Social router")
 
 	app := routes.ginApp
 	db := routes.DB
@@ -16,7 +16,7 @@ func (routes *Routes) setupTelegramRoute() {
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 
 	// Approver Endpoint collection
-	telegrams := app.Group("/telegrams").Use(authentication)
+	telegrams := app.Group("/socials").Use(authentication)
 	{
 		telegramController := &controllers.TelegramController{
 			DB:    db,
@@ -25,6 +25,6 @@ func (routes *Routes) setupTelegramRoute() {
 		//companyIDPathName := "companyID"
 
 		// authentication data
-		telegrams.POST("/authenticate", authentication, telegramController.AuthenticateAction)
+		telegrams.POST("/telegram/bind", telegramController.AuthenticateAction)
 	}
 }

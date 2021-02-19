@@ -21,7 +21,7 @@ func (routes *Routes) setupStorageRoute() {
 			DB: db,
 		}
 
-		storages.GET("/{:id}", authentication, storageController.DetailAction)
-		storages.POST("/upload", authentication, storageController.UploadAction)
+		storages.GET("/{:id}", storageController.DetailAction)
+		storages.POST("/upload", storageController.UploadAction)
 	}
 }

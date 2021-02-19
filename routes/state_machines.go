@@ -22,6 +22,6 @@ func (routes *Routes) setupStateMachineRoute() {
 		}
 
 		stateMachine.POST("/get-state", stateMachineController.GetStateTransactionAction)
-		stateMachine.POST("/change-state", authentication, stateMachineController.ChangeStateAction)
+		stateMachine.POST("/change-state", stateMachineController.ChangeStateAction)
 	}
 }

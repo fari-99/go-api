@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-redis/redis"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go-api/configs"
 	"go-api/helpers"
 	"go-api/routes"
@@ -38,7 +39,13 @@ func main() {
 	routesSetup.Queue = setupRabbitMqQueue()
 	routesSetup.EmailDialler = setupEmail()
 	routesSetup.ElasticSearch = setupElasticSearch()
+	routesSetup.Telegram = setupTelegram()
 	routesSetup.Setup(host, port)
+}
+
+func setupTelegram() *tgbotapi.BotAPI {
+	helpers.LoggingMessage("Setup Telegram", nil)
+	return configs.GetTelegram()
 }
 
 func setupDatabase() *gorm.DB {
