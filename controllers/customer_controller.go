@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/go-redis/redis"
 	"github.com/jinzhu/gorm"
 	"go-api/configs"
+	"go-api/constant"
 	"go-api/helpers"
 	"go-api/helpers/token_generator"
 	"go-api/models"
@@ -18,9 +21,113 @@ type CustomerController struct {
 	Redis *redis.Client
 }
 
+func (controller *CustomerController) RegisterAction(ctx *gin.Context) {
+	db := controller.DB
+	customerType := ctx.Param("customerType")
+
+	var err error
+	switch customerType {
+	case "b2c":
+		err = createCustomerB2C(ctx, db)
+	case "b2b":
+		err = createCustomerB2B(ctx, db)
+	default:
+		err = fmt.Errorf("company type is not found")
+	}
+
+	if err != nil {
+		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	configs.NewResponse(ctx, http.StatusOK, "yey")
+	return
+}
+
+func createCustomerB2C(ctx *gin.Context, db *gorm.DB) error {
+	var input models.CustomerRegisterB2CInput
+	err := ctx.BindJSON(&input)
+	if err != nil {
+		return err
+	}
+
+	var validate *validator.Validate
+	validate = validator.New()
+
+	err = validate.Struct(input)
+	if err != nil {
+		return err
+	}
+
+	password, err := helpers.GeneratePassword(input.Password)
+	if err != nil {
+		return err
+	}
+
+	userModel := models.Customers{
+		Username: input.Username,
+		Password: password,
+		Email:    input.Email,
+		Status:   constant.StatusActive,
+	}
+
+	err = db.Create(&userModel).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func createCustomerB2B(ctx *gin.Context, db *gorm.DB) error {
+	var input models.CustomerRegisterB2BInput
+	err := ctx.BindJSON(&input)
+	if err != nil {
+		return err
+	}
+
+	var validate *validator.Validate
+	validate = validator.New()
+
+	err = validate.Struct(input)
+	if err != nil {
+		return err
+	}
+
+	password, err := helpers.GeneratePassword(input.Password)
+	if err != nil {
+		return err
+	}
+
+	companyModel := models.Companies{
+		Name:   input.CompanyName,
+		Status: constant.StatusActive,
+	}
+
+	err = db.Create(&companyModel).Error
+	if err != nil {
+		return err
+	}
+
+	userModel := models.Customers{
+		Username:  input.Username,
+		CompanyID: companyModel.ID,
+		Password:  password,
+		Email:     input.Email,
+		Status:    constant.StatusActive,
+	}
+
+	err = db.Create(&userModel).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (controller *CustomerController) CreateAction(ctx *gin.Context) {
 	db := controller.DB
-	var input models.Customers
+	var input models.CustomerCreateInput
 	err := ctx.BindJSON(&input)
 	if err != nil {
 		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())

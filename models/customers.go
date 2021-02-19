@@ -3,19 +3,39 @@ package models
 import "time"
 
 type Customers struct {
-	ID       int64  `gorm:"primary_key:id" json:"id"`
-	Username string `gorm:"column:username" json:"username"`
-	Password string `gorm:"column:password" json:"password"`
-	Email    string `gorm:"column:email" json:"email"`
-	Status   int8   `gorm:"column:status" json:"status"`
+	ID        int64  `gorm:"primary_key:id" json:"id"`
+	CompanyID int64  `gorm:"column:company_id" json:"company_id"`
+	Username  string `gorm:"column:username" json:"username"`
+	Password  string `gorm:"column:password" json:"password"`
+	Email     string `gorm:"column:email" json:"email"`
+	Status    int8   `gorm:"column:status" json:"status"`
 
 	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at" sql:"DEFAULT:NULL"`
 }
 
+type CustomerRegisterB2CInput struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	Email    string `json:"email" validate:"required"`
+}
+
+type CustomerRegisterB2BInput struct {
+	Username    string `json:"username" validate:"required"`
+	CompanyName string `json:"company_name" validate:"required"`
+	Password    string `json:"password" validate:"required"`
+	Email       string `json:"email" validate:"required"`
+}
+
+type CustomerCreateInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
+}
+
 func (Customers) TableName() string {
-	return "users"
+	return "customers"
 }
 
 type CustomerResult struct {

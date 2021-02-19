@@ -24,11 +24,12 @@ func (routes *Routes) setupCustomerRoute() {
 	{
 		// authentication data
 		customersPublic.POST("/auth", customerController.AuthenticateAction)
+		customersPublic.POST("/registers/:customerType", customerController.RegisterAction)
 	}
 
 	customersPrivate := app.Group("/customers").Use(authentication)
 	{
 		customersPrivate.GET("/details", customerController.CustomerDetailsAction)
-		customersPrivate.POST("/", customerController.CreateAction) //
+		customersPrivate.POST("/create", customerController.CreateAction) //
 	}
 }
