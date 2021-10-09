@@ -14,7 +14,7 @@ func (routes *Routes) setupCustomerRoute() {
 	redis := routes.Redis
 
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
-	customerController := controllers.CustomerController{
+	customerController := &controllers.CustomerController{
 		DB:    db,
 		Redis: redis,
 	}
@@ -26,9 +26,23 @@ func (routes *Routes) setupCustomerRoute() {
 		customersPublic.POST("/auth", customerController.AuthenticateAction)
 	}
 
-	customersPrivate := app.Group("/customers").Use(authentication)
+	customersPrivate := app.Group("/customers")
 	{
+		customersPrivate.Use(authentication)
 		customersPrivate.GET("/details", customerController.CustomerDetailsAction)
-		customersPrivate.POST("/", customerController.CreateAction) //
+		customersPrivate.POST("/create", customerController.CreateAction)
+
+		customersPrivate2FA := customersPrivate.Group("/2fa")
+		{
+			log.Println("Setup Customer 2FA router")
+			customers2FAController := &controllers.TwoFactorAuthController{
+				DB:    db,
+				Redis: redis,
+			}
+
+			customersPrivate2FA.POST("/create", customers2FAController.CreateNewAuth)
+			customersPrivate2FA.POST("/validate", customers2FAController.ValidateAuth)
+			customersPrivate2FA.GET("/recovery-code", customers2FAController.GenerateRecoveryCode)
+		}
 	}
 }

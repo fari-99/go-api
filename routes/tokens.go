@@ -11,13 +11,12 @@ func (routes *Routes) setupTokenRoute() {
 	app := routes.ginApp
 	db := routes.DB
 
-	// Approver Endpoint collection
+	// Token Endpoint collection
 	tokens := app.Group("/token")
 	{
 		tokenController := &controllers.TokenController{
 			DB: db,
 		}
-		//companyIDPathName := "companyID"
 
 		tokens.POST("/create", tokenController.CreateTokenAction)
 		tokens.POST("/check", tokenController.CheckTokenAction)

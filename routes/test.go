@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"go-api/middleware"
 	"go-api/test_controllers"
 	"log"
 )
@@ -71,6 +72,8 @@ func (routes *Routes) setupTestRoute() {
 
 	testFtp := app.Group("/test-ftp")
 	{
+		log.Println("Setup Test FTP router")
+
 		ftpController := &test_controllers.FtpController{
 			DB: routes.DB,
 		}
@@ -82,6 +85,7 @@ func (routes *Routes) setupTestRoute() {
 
 	testCrypt := app.Group("/test-crypt")
 	{
+		log.Println("Setup Test Encryption router")
 		cryptController := &test_controllers.CryptsController{}
 
 		testCrypt.POST("/encrypt-data", cryptController.EncryptDecryptAction)
@@ -90,5 +94,20 @@ func (routes *Routes) setupTestRoute() {
 		testCrypt.POST("/verify-message", cryptController.VerifyMessageAction)
 
 		// TODO: Encrypt Files
+	}
+
+	twoFactorAuth := app.Group("/test-two-auth")
+	{
+		log.Println("Setup Test 2FA router")
+		twoFactorAuthController := &test_controllers.TwoFactorAuthController{
+			DB: routes.DB,
+		}
+
+		twoFactorAuth.POST("/new", twoFactorAuthController.NewAuth)
+		twoFactorAuth.POST("/validate", twoFactorAuthController.Validate)
+
+		otpMiddleware := middleware.OTPMiddleware(middleware.BaseMiddleware{})
+		authMiddleware := middleware.AuthMiddleware(middleware.BaseMiddleware{})
+		twoFactorAuth.Use(authMiddleware, otpMiddleware).GET("/test", twoFactorAuthController.TestMiddleware)
 	}
 }
