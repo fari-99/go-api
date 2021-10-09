@@ -6,10 +6,9 @@ require (
 	github.com/aws/aws-sdk-go v1.37.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
-	github.com/disintegration/imaging v1.6.2
+	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/elastic/go-elasticsearch/v7 v7.10.0
-	github.com/gin-gonic/gin v1.6.3
-	github.com/go-playground/validator/v10 v10.2.0
+	github.com/gin-gonic/gin v1.7.0
 	github.com/go-redis/cache v6.4.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
