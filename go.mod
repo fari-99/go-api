@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/aws/aws-sdk-go v1.40.59
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
 	github.com/elastic/go-elasticsearch/v7 v7.15.0
 	github.com/gin-gonic/gin v1.7.4
@@ -12,6 +11,7 @@ require (
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/jinzhu/gorm v1.9.16
 	github.com/jlaffaye/ftp v0.0.0-20210307004419-5d4190119067
