@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/go-redis/redis"
 	"go-api/configs"
 	"go-api/helpers"
 	"go-api/routes"
-	"gopkg.in/gomail.v2"
 	"os"
+
+	"github.com/go-redis/redis"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"gopkg.in/gomail.v2"
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/cache"
@@ -38,7 +40,13 @@ func main() {
 	routesSetup.Queue = setupRabbitMqQueue()
 	routesSetup.EmailDialler = setupEmail()
 	routesSetup.ElasticSearch = setupElasticSearch()
+	routesSetup.Telegram = setupTelegram()
 	routesSetup.Setup(host, port)
+}
+
+func setupTelegram() *tgbotapi.BotAPI {
+	helpers.LoggingMessage("Setup Telegram", nil)
+	return configs.GetTelegram()
 }
 
 func setupDatabase() *gorm.DB {

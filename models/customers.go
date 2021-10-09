@@ -15,7 +15,7 @@ type Customers struct {
 }
 
 func (Customers) TableName() string {
-	return "users"
+	return "customers"
 }
 
 type CustomerResult struct {

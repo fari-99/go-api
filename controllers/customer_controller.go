@@ -139,7 +139,3 @@ func (controller *CustomerController) CustomerDetailsAction(ctx *gin.Context) {
 	configs.NewResponse(ctx, http.StatusOK, customerModel)
 	return
 }
-
-func (controller *CustomerController) RefreshTokenAction(ctx *gin.Context) {
-
-}

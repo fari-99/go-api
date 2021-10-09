@@ -87,6 +87,11 @@ func (base *EncryptionBase) SetUseRandomness(useRandomness bool, keyRandom strin
 	return base
 }
 
+func (base *EncryptionBase) SetEncodeBase64(useEncode64 bool) *EncryptionBase {
+	base.encodeUrlBase64 = useEncode64
+	return base
+}
+
 func (base *EncryptionBase) createHash(passphrase []byte) string {
 	hash := sha256.New()
 	hash.Write(passphrase)
@@ -284,4 +289,27 @@ func (base *EncryptionBase) VerifyData(message string, signature string) (isVeri
 	}
 
 	return true, nil
+}
+
+func GenerateRandString(strSize int, randType string) string {
+	var dictionary string
+	switch randType {
+	case "alphanum":
+		dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	case "alpha":
+		dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	case "number":
+		dictionary = "0123456789"
+	default:
+		dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	}
+
+	randString := make([]byte, strSize)
+	_, _ = rand.Read(randString)
+
+	for k, v := range randString {
+		randString[k] = dictionary[v%byte(len(dictionary))]
+	}
+
+	return string(randString)
 }

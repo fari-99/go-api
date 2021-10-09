@@ -3,7 +3,6 @@ package controllers
 import (
 	"bytes"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"go-api/configs"
 	"go-api/helpers"
 	"go-api/models"
@@ -11,12 +10,15 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/nfnt/resize"
+	"github.com/spf13/cast"
 )
 
 type StorageController struct {
@@ -145,11 +147,24 @@ func (controller *StorageController) GetImages(ctx *gin.Context) {
 		return
 	}
 
-	configs.NewResponse(ctx, http.StatusOK, "yey")
+	responseWriter := ctx.Writer
+	responseWriter.Header().Set("Content-Type", storageModel.Mime)
+	responseWriter.WriteHeader(http.StatusOK)
+	_, _ = io.Copy(responseWriter, buf)
 	return
 }
 
 func (controller *StorageController) DetailAction(ctx *gin.Context) {
-	configs.NewResponse(ctx, http.StatusOK, "yey")
+	storageID, _ := ctx.Params.Get("storageID")
+	var storageModel models.Storages
+	err := controller.DB.Where(&models.Storages{Id: cast.ToInt64(storageID)}).First(&storageModel).Error
+	if err != nil && gorm.IsRecordNotFoundError(err) {
+		configs.NewResponse(ctx, http.StatusNotFound, gin.H{
+			"message": fmt.Sprintf("files not found"),
+		})
+		return
+	}
+
+	configs.NewResponse(ctx, http.StatusOK, storageModel)
 	return
 }
