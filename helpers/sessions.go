@@ -46,15 +46,15 @@ func SetRedisSession(data SessionData) error {
 	return nil
 }
 
-func GetCurrentUser(uuidIdentifier string) (models.Customers, error) {
+func GetCurrentUser(uuidIdentifier string) (models.Users, error) {
 	redisSession := configs.GetRedisSessionConfig()
 
 	redisData, err := redisSession.Get(uuidIdentifier).Result()
 	if err != nil {
-		return models.Customers{}, err
+		return models.Users{}, err
 	}
 
-	var userData models.Customers
+	var userData models.Users
 	_ = json.Unmarshal([]byte(redisData), &userData)
 
 	return userData, nil

@@ -13,21 +13,21 @@ import (
 	"time"
 )
 
-type CustomerController struct {
+type UserController struct {
 	DB    *gorm.DB
 	Redis *redis.Client
 }
 
-func (controller *CustomerController) CreateAction(ctx *gin.Context) {
+func (controller *UserController) CreateAction(ctx *gin.Context) {
 	db := controller.DB
-	var input models.Customers
+	var input models.Users
 	err := ctx.BindJSON(&input)
 	if err != nil {
 		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var userModel models.Customers
+	var userModel models.Users
 	if !db.Debug().Where("username = ? OR email = ?", input.Username, input.Email).Find(&userModel).RecordNotFound() {
 		configs.NewResponse(ctx, http.StatusInternalServerError, "Username or EmailDialler already created")
 		return
@@ -51,8 +51,8 @@ func (controller *CustomerController) CreateAction(ctx *gin.Context) {
 	return
 }
 
-func (controller *CustomerController) AuthenticateAction(ctx *gin.Context) {
-	var input models.Customers
+func (controller *UserController) AuthenticateAction(ctx *gin.Context) {
+	var input models.Users
 	err := ctx.BindJSON(&input)
 	if err != nil {
 		configs.NewResponse(ctx, http.StatusBadRequest, err.Error())
@@ -60,13 +60,13 @@ func (controller *CustomerController) AuthenticateAction(ctx *gin.Context) {
 	}
 
 	db := controller.DB
-	var customerModel models.Customers
-	if db.Where(&models.Customers{Email: input.Email}).Find(&customerModel).RecordNotFound() {
+	var userModel models.Users
+	if db.Where(&models.Users{Email: input.Email}).Find(&userModel).RecordNotFound() {
 		configs.NewResponse(ctx, http.StatusOK, "User not found")
 		return
 	}
 
-	err = helpers.AuthenticatePassword(&customerModel, input.Password)
+	err = helpers.AuthenticatePassword(&userModel, input.Password)
 	if err != nil {
 		configs.NewResponse(ctx, http.StatusOK, err.Error())
 		return
@@ -74,7 +74,7 @@ func (controller *CustomerController) AuthenticateAction(ctx *gin.Context) {
 
 	// generate JWT token
 	tokenHelper := token_generator.NewJwt().SetCtx(ctx)
-	tokenHelper, err = tokenHelper.SetClaim(customerModel)
+	tokenHelper, err = tokenHelper.SetClaim(userModel)
 	if err != nil {
 		configs.NewResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -94,8 +94,8 @@ func (controller *CustomerController) AuthenticateAction(ctx *gin.Context) {
 			RefreshUuid:      token.RefreshUuid,
 		},
 
-		UserID:        customerModel.ID,
-		UserDetails:   customerModel,
+		UserID:        userModel.ID,
+		UserDetails:   userModel,
 		Authorization: true,
 	}
 
@@ -124,18 +124,18 @@ func (controller *CustomerController) AuthenticateAction(ctx *gin.Context) {
 	return
 }
 
-func (controller *CustomerController) CustomerDetailsAction(ctx *gin.Context) {
+func (controller *UserController) UserDetailsAction(ctx *gin.Context) {
 	userUuid, exists := ctx.Get("uuid")
 	if !exists {
-		configs.NewResponse(ctx, http.StatusOK, "Customer not login or authentication failed")
+		configs.NewResponse(ctx, http.StatusOK, "User not login or authentication failed")
 	}
 
-	customerModel, err := helpers.GetCurrentUser(userUuid.(string))
+	userModel, err := helpers.GetCurrentUser(userUuid.(string))
 	if err != nil {
 		configs.NewResponse(ctx, http.StatusOK, err.Error())
 		return
 	}
 
-	configs.NewResponse(ctx, http.StatusOK, customerModel)
+	configs.NewResponse(ctx, http.StatusOK, userModel)
 	return
 }

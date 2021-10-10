@@ -38,7 +38,7 @@ func NewRouteBase() *Routes {
 func (routes *Routes) Setup(host string, port string) {
 	app := routes.ginApp
 
-	routes.setupCustomerRoute()
+	routes.setupUserRoute()
 	routes.setupTokenRoute()
 	routes.setupStorageRoute()
 

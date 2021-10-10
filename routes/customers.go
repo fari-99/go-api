@@ -6,43 +6,43 @@ import (
 	"log"
 )
 
-func (routes *Routes) setupCustomerRoute() {
-	log.Println("Setup Customer router")
+func (routes *Routes) setupUserRoute() {
+	log.Println("Setup User router")
 
 	app := routes.ginApp
 	db := routes.DB
 	redis := routes.Redis
 
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
-	customerController := &controllers.CustomerController{
+	userController := &controllers.UserController{
 		DB:    db,
 		Redis: redis,
 	}
 
 	// Customer Endpoint collection
-	customersPublic := app.Group("/customers")
+	usersPublic := app.Group("/customers")
 	{
 		// authentication data
-		customersPublic.POST("/auth", customerController.AuthenticateAction)
+		usersPublic.POST("/auth", userController.AuthenticateAction)
 	}
 
-	customersPrivate := app.Group("/customers")
+	usersPrivate := app.Group("/customers")
 	{
-		customersPrivate.Use(authentication)
-		customersPrivate.GET("/details", customerController.CustomerDetailsAction)
-		customersPrivate.POST("/create", customerController.CreateAction)
+		usersPrivate.Use(authentication)
+		usersPrivate.GET("/details", userController.UserDetailsAction)
+		usersPrivate.POST("/create", userController.CreateAction)
 
-		customersPrivate2FA := customersPrivate.Group("/2fa")
+		usersPrivate2FA := usersPrivate.Group("/2fa")
 		{
-			log.Println("Setup Customer 2FA router")
-			customers2FAController := &controllers.TwoFactorAuthController{
+			log.Println("Setup User 2FA router")
+			users2FAController := &controllers.TwoFactorAuthController{
 				DB:    db,
 				Redis: redis,
 			}
 
-			customersPrivate2FA.POST("/create", customers2FAController.CreateNewAuth)
-			customersPrivate2FA.POST("/validate", customers2FAController.ValidateAuth)
-			customersPrivate2FA.GET("/recovery-code", customers2FAController.GenerateRecoveryCode)
+			usersPrivate2FA.POST("/create", users2FAController.CreateNewAuth)
+			usersPrivate2FA.POST("/validate", users2FAController.ValidateAuth)
+			usersPrivate2FA.GET("/recovery-code", users2FAController.GenerateRecoveryCode)
 		}
 	}
 }

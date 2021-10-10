@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Customers struct {
+type Users struct {
 	ID       int64  `gorm:"primary_key:id" json:"id"`
 	Username string `gorm:"column:username" json:"username"`
 	Password string `gorm:"column:password" json:"password"`
@@ -14,11 +14,11 @@ type Customers struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at" sql:"DEFAULT:NULL"`
 }
 
-func (Customers) TableName() string {
-	return "customers"
+func (Users) TableName() string {
+	return "users"
 }
 
-type CustomerResult struct {
+type UserResult struct {
 	ID       int64  `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`

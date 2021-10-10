@@ -31,11 +31,11 @@ type TokenGenerator struct {
 	Type string `json:"type"`
 }
 
-func EncryptUserDetails(customer models.Customers) (string, error) {
+func EncryptUserDetails(user models.Users) (string, error) {
 	userDetails := UserDetails{
-		ID:       customer.ID,
-		Email:    customer.Email,
-		Username: customer.Username,
+		ID:       user.ID,
+		Email:    user.Email,
+		Username: user.Username,
 	}
 
 	dataMarshal, _ := json.Marshal(userDetails)
