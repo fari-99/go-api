@@ -4,7 +4,7 @@ import (
 	_ "crypto"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"go-api/models"
+	"go-api/modules/models"
 	"os"
 	"strconv"
 	"time"
@@ -193,12 +193,15 @@ func (base *BaseJwt) ParseToken(jwtToken string) (*JwtMapClaims, error) {
 	}
 
 	if claims, ok := token.Claims.(*JwtMapClaims); ok && token.Valid {
-		userDetails, err := DecryptUserDetails(claims.TokenData.UserDetails)
-		if err != nil {
-			return nil, err
+		if claims.TokenData.UserDetails != "" {
+			userDetails, err := DecryptUserDetails(claims.TokenData.UserDetails)
+			if err != nil {
+				return nil, err
+			}
+
+			claims.UserDetails = &userDetails
 		}
 
-		claims.UserDetails = &userDetails
 		return claims, nil
 	}
 

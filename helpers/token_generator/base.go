@@ -2,8 +2,8 @@ package token_generator
 
 import (
 	"encoding/json"
-	"go-api/helpers"
-	"go-api/models"
+	"go-api/helpers/crypts"
+	"go-api/modules/models"
 	"os"
 )
 
@@ -40,14 +40,14 @@ func EncryptUserDetails(customer models.Customers) (string, error) {
 
 	dataMarshal, _ := json.Marshal(userDetails)
 
-	encryptionHelper := helpers.NewEncryptionBase().SetPassphrase(os.Getenv("USER_DETAILS_PASSPHRASE"))
+	encryptionHelper := crypts.NewEncryptionBase().SetPassphrase(os.Getenv("USER_DETAILS_PASSPHRASE"))
 	encryptedData, err := encryptionHelper.Encrypt(dataMarshal)
 
 	return string(encryptedData), err
 }
 
 func DecryptUserDetails(secretMessage string) (UserDetails, error) {
-	encryptionHelper := helpers.NewEncryptionBase().SetPassphrase(os.Getenv("USER_DETAILS_PASSPHRASE"))
+	encryptionHelper := crypts.NewEncryptionBase().SetPassphrase(os.Getenv("USER_DETAILS_PASSPHRASE"))
 	decryptedData, err := encryptionHelper.Decrypt([]byte(secretMessage))
 	if err != nil {
 		return UserDetails{}, err

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"go-api/models"
+	"go-api/modules/models"
 	"log"
 	"os"
 	"reflect"

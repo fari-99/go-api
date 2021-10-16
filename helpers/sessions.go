@@ -3,8 +3,8 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"go-api/configs"
-	"go-api/models"
+	"go-api/modules/configs"
+	"go-api/modules/models"
 	"log"
 	"os"
 	"time"
