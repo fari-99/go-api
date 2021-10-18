@@ -7,6 +7,7 @@ require (
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
 	github.com/elastic/go-elasticsearch/v7 v7.15.0
 	github.com/gin-gonic/gin v1.7.4
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-redis/cache v6.4.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.6.0

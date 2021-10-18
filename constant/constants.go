@@ -7,16 +7,6 @@ const StatusActive = 99
 const StatusNonActive = 98
 const StatusDeleted = 97
 
-const CustomerRolesAdmin = 1
-const CustomerRolesPic = 2
-const CustomerRolesFinance = 3
-const CustomerRolesStaff = 4
-
-const SellerRolesAdmin = 1
-const SellerRolesPic = 2
-const SellerRolesFinance = 3
-const SellerRolesStaff = 4
-
 const SuccessCode = 200
 const ErrorDataCode = 400
 const InternalErrorCode = 500

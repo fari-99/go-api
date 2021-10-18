@@ -15,7 +15,7 @@ type Storages struct {
 	Mime             string     `gorm:"column:mime" json:"mime"`
 	OriginalFilename string     `gorm:"column:original_filename" json:"original_filename"`
 	Status           int8       `gorm:"column:status" json:"status"`
-	CreatedBy        int32      `gorm:"column:created_by" json:"created_by"`
+	CreatedBy        int64      `gorm:"column:created_by" json:"created_by"`
 	CreatedAt        time.Time  `gorm:"column:created_at" json:"created_at"`
 	DeletedAt        *time.Time `gorm:"column:deleted_at" json:"deleted_at"`
 }

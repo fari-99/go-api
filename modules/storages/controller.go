@@ -3,11 +3,12 @@ package storages
 import (
 	"bytes"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/nfnt/resize"
+	"github.com/spf13/cast"
 	"go-api/helpers"
 	"go-api/helpers/crypts"
 	"go-api/helpers/storages"
-	"go-api/modules/configs"
-	"go-api/modules/models"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -16,39 +17,67 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	"github.com/nfnt/resize"
-	"github.com/spf13/cast"
 )
 
-type StorageController struct {
-	*configs.DI
+type controller struct {
+	service Service
 }
 
-func (controller *StorageController) UploadAction(ctx *gin.Context) {
+func (c controller) DetailAction(ctx *gin.Context) {
+	storageID, isExist := ctx.Params.Get("storageID")
+	if !isExist {
+		helpers.NewResponse(ctx, http.StatusOK, gin.H{
+			"message": "storage id not found",
+		})
+		return
+	}
+
+	storageModel, notFound, err := c.service.GetDetail(ctx, cast.ToInt64(storageID))
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusOK, gin.H{
+			"error":         err.Error(),
+			"error_message": "error getting storage data",
+		})
+		return
+	} else if !notFound {
+		helpers.NewResponse(ctx, http.StatusOK, gin.H{
+			"error_message": "storage id not found",
+		})
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, storageModel)
+	return
+}
+
+func (c controller) UploadAction(ctx *gin.Context) {
 	err := ctx.Request.ParseMultipartForm(8 << 20) // 8 MB
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed parsing multipart form, please try again",
+		})
 		return
 	}
 
 	form := ctx.Request.MultipartForm
-	files := form.File["files[]"]
-	for _, file := range files {
-		err = storages.NewStorageBase(file, "test", controller.DB).SetCtx(ctx).UploadFiles()
-		if err != nil {
-			helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
-			return
-		}
+	storageModels, err := c.service.Uploads(ctx, form)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed upload files, please try again",
+		})
+		return
 	}
 
-	helpers.NewResponse(ctx, http.StatusOK, "Success upload files")
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"message":  "success upload files",
+		"storages": storageModels,
+	})
 	return
 }
 
-func (controller *StorageController) GetImages(ctx *gin.Context) {
+func (c controller) GetImages(ctx *gin.Context) {
 	methodType := helpers.ParamsDefault(ctx, "methodType", "resize")
 	imageSize := helpers.ParamsDefault(ctx, "imageSize", "180x180")
 	storageIDEncrypted, _ := ctx.Params.Get("storageID")
@@ -70,17 +99,22 @@ func (controller *StorageController) GetImages(ctx *gin.Context) {
 		return
 	}
 
-	var storageModel models.Storages
-	err = controller.DB.Where(&models.Storages{Id: storageID}).First(&storageModel).Error
-	if err != nil && gorm.IsRecordNotFoundError(err) {
+	storageModel, notFound, err := c.service.GetDetail(ctx, storageID)
+	if notFound {
 		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
-			"message": fmt.Sprintf("files not found"),
+			"error_message": "file not found",
+		})
+		return
+	} else if err != nil {
+		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
+			"error":         err.Error(),
+			"error_message": "error get detail storage",
 		})
 		return
 	}
 
-	storageHelpers := storages.NewStorageBase(nil, "", controller.DB)
-	file, err := storageHelpers.GetFiles(storageModel)
+	storageHelpers := storages.NewStorageBase(nil, "")
+	file, err := storageHelpers.GetFiles(*storageModel)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
 			"message": fmt.Sprintf("error open file, %s", err.Error()),
@@ -153,20 +187,5 @@ func (controller *StorageController) GetImages(ctx *gin.Context) {
 	responseWriter.Header().Set("Content-Type", storageModel.Mime)
 	responseWriter.WriteHeader(http.StatusOK)
 	_, _ = io.Copy(responseWriter, buf)
-	return
-}
-
-func (controller *StorageController) DetailAction(ctx *gin.Context) {
-	storageID, _ := ctx.Params.Get("storageID")
-	var storageModel models.Storages
-	err := controller.DB.Where(&models.Storages{Id: cast.ToInt64(storageID)}).First(&storageModel).Error
-	if err != nil && gorm.IsRecordNotFoundError(err) {
-		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
-			"message": fmt.Sprintf("files not found"),
-		})
-		return
-	}
-
-	helpers.NewResponse(ctx, http.StatusOK, storageModel)
 	return
 }

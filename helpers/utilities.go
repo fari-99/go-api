@@ -50,7 +50,7 @@ func GeneratePassword(password string) (hash string, err error) {
 	return
 }
 
-func AuthenticatePassword(customerModel *models.Customers, password string) error {
+func AuthenticatePassword(customerModel *models.Users, password string) error {
 	errCheck := bcrypt.CompareHashAndPassword([]byte(customerModel.Password), []byte(password))
 	if errCheck != nil {
 		return errCheck

@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"go-api/modules/auths"
 	"go-api/modules/configs"
+	"go-api/modules/middleware"
 	"go-api/modules/state_machine"
 	"go-api/modules/storages"
 	"go-api/modules/telegrams"
-	"go-api/modules/tokens"
+	"go-api/modules/twoFA"
 	"go-api/modules/users"
 	"log"
 	"os"
@@ -31,11 +33,32 @@ func main() {
 
 	// Setup routes and run application
 	app := configs.GetGinApplication()
-	state_machine.NewRoute(app)
-	storages.NewRoute(app)
-	telegrams.NewRoute(app)
-	tokens.NewRoute(app)
-	users.NewRoute(app)
+	di := configs.DIInit()
+	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
+	//otpMiddleware := middleware.OTPMiddleware(middleware.BaseMiddleware{})
+
+	auths.NewRegistrator(app.Group(""),
+		auths.NewService(auths.NewRepository(di)))
+
+	state_machine.NewRegistrator(app.Group(""),
+		state_machine.NewService(state_machine.NewRepository(di)),
+		authentication)
+
+	storages.NewRegistrator(app.Group(""),
+		storages.NewService(storages.NewRepository(di)),
+		authentication)
+
+	telegrams.NewRegistrator(app.Group(""),
+		telegrams.NewService(telegrams.NewRepository(di)),
+		authentication)
+
+	twoFA.NewRegistrator(app.Group(""),
+		twoFA.NewService(twoFA.NewRepository(di)),
+		authentication)
+
+	users.NewRegistrator(app.Group(""),
+		users.NewService(users.NewRepository(di)),
+		authentication)
 
 	applicationRun := fmt.Sprintf("%s:%s", host, port)
 	log.Printf("Run application on %s", applicationRun)

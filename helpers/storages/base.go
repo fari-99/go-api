@@ -2,7 +2,6 @@ package storages
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"go-api/constant"
 	"go-api/modules/models"
@@ -31,30 +30,29 @@ type StorageBase struct {
 	fileInput *multipart.FileHeader
 	fileType  string
 
-	ctx       *gin.Context
+	createdBy int64
 	db        *gorm.DB
 	s3Enabled bool
 }
 
-func NewStorageBase(fileHeader *multipart.FileHeader, fileType string, db *gorm.DB) *StorageBase {
+func NewStorageBase(fileHeader *multipart.FileHeader, fileType string) *StorageBase {
 	s3Enable, _ := strconv.ParseBool(os.Getenv("S3_ENABLE"))
 
 	storageBase := &StorageBase{
 		fileInput: fileHeader,
 		fileType:  fileType,
 		s3Enabled: s3Enable,
-		db:        db,
 	}
 
 	return storageBase
 }
 
-func (base *StorageBase) SetCtx(ctx *gin.Context) *StorageBase {
-	base.ctx = ctx
+func (base *StorageBase) SetCreatedBy(userID int64) *StorageBase {
+	base.createdBy = userID
 	return base
 }
 
-func (base *StorageBase) UploadFiles() (err error) {
+func (base *StorageBase) UploadFiles() (storageModel *models.Storages, err error) {
 	fileHeader := base.fileInput
 	fileType := base.fileType
 
@@ -96,25 +94,20 @@ func (base *StorageBase) UploadFiles() (err error) {
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	storageModel := models.Storages{
+	storageModel = &models.Storages{
 		Type:             fileType,
 		Path:             datePath,
 		Filename:         fileName,
 		Mime:             contentTypeData.ContentType,
 		OriginalFilename: fileHeader.Filename,
-		CreatedBy:        1,
+		CreatedBy:        base.createdBy,
 		Status:           constant.StatusActive,
 	}
 
-	if err = base.db.Create(&storageModel).Error; err != nil {
-		err = fmt.Errorf("failed save storage data, err := %s", err.Error())
-		return
-	}
-
-	return
+	return storageModel, nil
 }
 
 func (base *StorageBase) GetFiles(storageModel models.Storages) (files *os.File, err error) {
