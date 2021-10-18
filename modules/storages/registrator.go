@@ -6,7 +6,7 @@ import (
 )
 
 func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.HandlerFunc) {
-	log.Println("Setup State Machine router")
+	log.Println("Setup Storage router")
 	control := controller{service: service}
 
 	// Storages Endpoint collection
