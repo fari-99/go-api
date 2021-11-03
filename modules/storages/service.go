@@ -1,7 +1,9 @@
 package storages
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"go-api/constant"
 	"go-api/helpers"
 	"go-api/helpers/storages"
 	"go-api/modules/models"
@@ -36,24 +38,33 @@ func (s service) Uploads(ctx *gin.Context, form *multipart.Form) ([]models.Stora
 	for _, files := range formFile {
 		for _, file := range files {
 			storageBase := storages.NewStorageBase(file, fileType[0])
-
-			if currentUser != nil {
-				storageBase.SetCreatedBy(currentUser.ID)
-			}
-
-			storageModel, err := storageBase.UploadFiles()
+			storageData, err := storageBase.UploadFiles()
 			if err != nil {
 				return nil, err
 			}
 
-			savedModel, err := s.repo.Create(ctx, *storageModel)
-			if err != nil {
-				continue
+			storageModel := models.Storages{
+				Type:             storageData.Type,
+				Path:             storageData.Path,
+				Filename:         storageData.Filename,
+				Mime:             storageData.Mime,
+				OriginalFilename: storageData.OriginalFilename,
+				Status:           constant.StatusActive,
+				CreatedBy:        currentUser.ID,
 			}
 
-			storageModels = append(storageModels, savedModel)
+			storageModels = append(storageModels, storageModel)
 		}
 	}
 
-	return storageModels, nil
+	if len(storageModels) == 0 {
+		return nil, fmt.Errorf("failed to upload your files, please try again")
+	}
+
+	results, err := s.repo.Create(ctx, storageModels)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

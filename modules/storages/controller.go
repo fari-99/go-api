@@ -114,7 +114,7 @@ func (c controller) GetImages(ctx *gin.Context) {
 	}
 
 	storageHelpers := storages.NewStorageBase(nil, "")
-	file, err := storageHelpers.GetFiles(*storageModel)
+	file, err := storageHelpers.GetFiles(storageModel.Type, storageModel.Path, storageModel.Filename)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
 			"message": fmt.Sprintf("error open file, %s", err.Error()),

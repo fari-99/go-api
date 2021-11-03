@@ -9,7 +9,7 @@ import (
 
 type Repository interface {
 	GetDetail(ctx *gin.Context, storageID int64) (storageModel *models.Storages, notFound bool, err error)
-	Create(ctx *gin.Context, storageModel models.Storages) (models.Storages, error)
+	Create(ctx *gin.Context, storageModel []models.Storages) ([]models.Storages, error)
 }
 
 type repository struct {
@@ -34,12 +34,20 @@ func (r repository) GetDetail(ctx *gin.Context, storageID int64) (*models.Storag
 	return &storageModel, false, nil
 }
 
-func (r repository) Create(ctx *gin.Context, storageModel models.Storages) (models.Storages, error) {
-	db := r.DB
-	err := db.Create(&storageModel).Error
-	if err != nil {
-		return models.Storages{}, err
+func (r repository) Create(ctx *gin.Context, storageModels []models.Storages) ([]models.Storages, error) {
+	tx := r.DB.Begin()
+
+	var savedModels []models.Storages
+	for _, storageModel := range storageModels {
+		err := tx.Create(&storageModel).Error
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		savedModels = append(savedModels, storageModel)
 	}
 
-	return storageModel, nil
+	tx.Commit()
+	return savedModels, nil
 }

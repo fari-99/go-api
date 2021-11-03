@@ -3,7 +3,9 @@ module go-api
 go 1.15
 
 require (
+	cloud.google.com/go/storage v1.18.2
 	github.com/aws/aws-sdk-go v1.40.59
+	github.com/biezhi/gorm-paginator/pagination v0.0.0-20190124091837-7a5c8ed20334
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
 	github.com/elastic/go-elasticsearch/v7 v7.15.0
 	github.com/gin-gonic/gin v1.7.4

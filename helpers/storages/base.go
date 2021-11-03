@@ -2,9 +2,7 @@ package storages
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"go-api/constant"
-	"go-api/modules/models"
+	"github.com/spf13/cast"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -13,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 )
 
@@ -30,29 +27,33 @@ type StorageBase struct {
 	fileInput *multipart.FileHeader
 	fileType  string
 
-	createdBy int64
-	db        *gorm.DB
-	s3Enabled bool
+	s3Enabled  bool
+	gcsEnabled bool
+}
+
+type StorageData struct {
+	Type             string `json:"type"`
+	Path             string `json:"path"`
+	Filename         string `json:"filename"`
+	Mime             string `json:"mime"`
+	OriginalFilename string `json:"original_filename"`
 }
 
 func NewStorageBase(fileHeader *multipart.FileHeader, fileType string) *StorageBase {
-	s3Enable, _ := strconv.ParseBool(os.Getenv("S3_ENABLE"))
+	s3Enable := cast.ToBool(os.Getenv("S3_ENABLE"))
+	gcsEnable := cast.ToBool(os.Getenv("GCS_ENABLED"))
 
 	storageBase := &StorageBase{
-		fileInput: fileHeader,
-		fileType:  fileType,
-		s3Enabled: s3Enable,
+		fileInput:  fileHeader,
+		fileType:   fileType,
+		s3Enabled:  s3Enable,
+		gcsEnabled: gcsEnable,
 	}
 
 	return storageBase
 }
 
-func (base *StorageBase) SetCreatedBy(userID int64) *StorageBase {
-	base.createdBy = userID
-	return base
-}
-
-func (base *StorageBase) UploadFiles() (storageModel *models.Storages, err error) {
+func (base *StorageBase) UploadFiles() (storageModel *StorageData, err error) {
 	fileHeader := base.fileInput
 	fileType := base.fileType
 
@@ -88,33 +89,35 @@ func (base *StorageBase) UploadFiles() (storageModel *models.Storages, err error
 	contentTypeData.Filename = fileName
 
 	if base.s3Enabled {
-		err = base.S3Upload(contentTypeData, scaled, file)
+		err = base.s3Upload(contentTypeData, scaled, file)
+	} else if base.gcsEnabled {
+		err = base.gcsUpload(contentTypeData, scaled, file)
 	} else {
-		err = base.LocalUpload(contentTypeData, scaled, file)
+		err = base.localUpload(contentTypeData, scaled, file)
 	}
 
 	if err != nil {
 		return nil, err
 	}
 
-	storageModel = &models.Storages{
+	storageModel = &StorageData{
 		Type:             fileType,
 		Path:             datePath,
 		Filename:         fileName,
 		Mime:             contentTypeData.ContentType,
 		OriginalFilename: fileHeader.Filename,
-		CreatedBy:        base.createdBy,
-		Status:           constant.StatusActive,
 	}
 
 	return storageModel, nil
 }
 
-func (base *StorageBase) GetFiles(storageModel models.Storages) (files *os.File, err error) {
+func (base *StorageBase) GetFiles(storageType, storagePath, filename string) (files *os.File, err error) {
 	if base.s3Enabled {
-		return base.S3GetFile(storageModel)
+		return base.s3GetFile(storageType, storagePath, filename)
+	} else if base.gcsEnabled {
+		return base.gcsGetFile(storageType, storagePath, filename)
 	} else {
-		return base.LocalGetFile(storageModel)
+		return base.localGetFile(storageType, storagePath, filename)
 	}
 }
 

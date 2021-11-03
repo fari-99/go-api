@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"go-api/modules/models"
 	"image/jpeg"
 	"io"
 	"io/ioutil"
@@ -40,7 +39,7 @@ func (base *StorageBase) s3Session() (sessionConfig *session.Session, err error)
 	return sessionCfg, nil
 }
 
-func (base *StorageBase) S3Upload(contentTypeData FileData, scaled int, file multipart.File) error {
+func (base *StorageBase) s3Upload(contentTypeData FileData, scaled int, file multipart.File) error {
 	sessionCfg, err := base.s3Session()
 	if err != nil {
 		return fmt.Errorf("failed create session, err := %s", err.Error())
@@ -49,7 +48,7 @@ func (base *StorageBase) S3Upload(contentTypeData FileData, scaled int, file mul
 	uploader := s3manager.NewUploader(sessionCfg)
 
 	// create temp file
-	fileAws, err := ioutil.TempFile(os.TempDir(), "prefix")
+	fileTemp, err := ioutil.TempFile(os.TempDir(), "prefix")
 	if err != nil {
 		return fmt.Errorf("bad AWS credentials, err := %s", err.Error())
 	}
@@ -59,28 +58,28 @@ func (base *StorageBase) S3Upload(contentTypeData FileData, scaled int, file mul
 		// change all image mime to image/jpegjpeg
 		var opt jpeg.Options
 		opt.Quality = scaled
-		err = jpeg.Encode(fileAws, contentTypeData.ImageFile, &opt)
+		err = jpeg.Encode(fileTemp, contentTypeData.ImageFile, &opt)
 		contentTypeData.ContentType = "image/jpeg"
 
 		if err != nil {
-			return fmt.Errorf("encode image failed, err := %s", err.Error())
+			return fmt.Errorf("encode image failed -s3-, err := %s", err.Error())
 		}
 	} else {
-		_, err = io.Copy(fileAws, file)
+		_, err = io.Copy(fileTemp, file)
 		if err != nil {
-			return fmt.Errorf("error copying data, err := %s", err.Error())
+			return fmt.Errorf("error copying data -s3-, err := %s", err.Error())
 		}
 	}
 
-	_, err = fileAws.Seek(0, 0)
+	_, err = fileTemp.Seek(0, 0)
 	if err != nil {
-		return fmt.Errorf("bad AWS credentials, err := %s", err.Error())
+		return fmt.Errorf("error seek file aws to start, err := %s", err.Error())
 	}
 
 	params := &s3manager.UploadInput{
 		Bucket:      aws.String(os.Getenv("S3_BUCKET")),
 		Key:         aws.String(contentTypeData.StoragePath + contentTypeData.Filename),
-		Body:        fileAws,
+		Body:        fileTemp,
 		ContentType: aws.String(contentTypeData.ContentType),
 	}
 
@@ -93,7 +92,7 @@ func (base *StorageBase) S3Upload(contentTypeData FileData, scaled int, file mul
 	return nil
 }
 
-func (base *StorageBase) S3GetFile(storageModel models.Storages) (files *os.File, err error) {
+func (base *StorageBase) s3GetFile(storageType, storagePath, filename string) (files *os.File, err error) {
 	// Storage on S3
 	sessionCfg, err := base.s3Session()
 	if err != nil {
@@ -101,19 +100,19 @@ func (base *StorageBase) S3GetFile(storageModel models.Storages) (files *os.File
 	}
 
 	downloader := s3manager.NewDownloader(sessionCfg)
-	fileAws, err := ioutil.TempFile(os.TempDir(), "prefix")
+	fileTemp, err := ioutil.TempFile(os.TempDir(), "prefix")
 	if err != nil {
-		return nil, fmt.Errorf("bad AWS credentials, err := %s", err.Error())
+		return nil, fmt.Errorf("failed to create temp file, err := %s", err.Error())
 	}
 
-	storagePath := os.Getenv("STORAGE_PATH") + "/" + storageModel.Type + storageModel.Path + storageModel.Filename
-	_, err = downloader.Download(fileAws, &s3.GetObjectInput{
+	filePath := os.Getenv("STORAGE_PATH") + "/" + storageType + storagePath + filename
+	_, err = downloader.Download(fileTemp, &s3.GetObjectInput{
 		Bucket: aws.String(os.Getenv("S3_BUCKET")),
-		Key:    aws.String(storagePath),
+		Key:    aws.String(filePath),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to download file, %v", err)
 	}
 
-	return fileAws, nil
+	return fileTemp, nil
 }

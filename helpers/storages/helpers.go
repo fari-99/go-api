@@ -15,14 +15,16 @@ func (base *StorageBase) generatePath(sType string) (string, string, error) {
 
 	var storagePath string
 	if base.s3Enabled {
-		storagePath = os.Getenv("STORAGE_PATH")
+		storagePath = os.Getenv("S3_STORAGE_PATH")
+	} else if base.gcsEnabled {
+		storagePath = os.Getenv("GCS_LOCATION")
 	} else {
 		storagePath = os.Getenv("LOCAL_STORAGE_PATH")
 	}
 
 	filePath := fmt.Sprintf("%s/%s/%s", storagePath, sType, datePath)
 
-	if !base.s3Enabled {
+	if !base.s3Enabled && !base.gcsEnabled {
 		err := os.MkdirAll(filePath, 0711)
 		if err != nil {
 			return filePath, datePath, err
