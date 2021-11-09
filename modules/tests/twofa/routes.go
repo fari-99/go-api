@@ -1,10 +1,11 @@
 package twofa
 
 import (
-	"github.com/gin-gonic/gin"
 	"go-api/modules/configs"
 	"go-api/modules/middleware"
 	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 func NewRoute(app *gin.Engine) {
@@ -19,7 +20,7 @@ func NewRoute(app *gin.Engine) {
 		twoFactorAuth.POST("/new", twoFactorAuthController.NewAuth)
 		twoFactorAuth.POST("/validate", twoFactorAuthController.Validate)
 
-		otpMiddleware := middleware.OTPMiddleware(middleware.BaseMiddleware{})
+		otpMiddleware := middleware.OTPMiddleware()
 		authMiddleware := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 		twoFactorAuth.Use(authMiddleware, otpMiddleware).GET("/test", twoFactorAuthController.TestMiddleware)
 	}
