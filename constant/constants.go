@@ -17,4 +17,8 @@ const TransactionDone = 3
 const TransactionComplete = 4
 const TransactionDelete = 5
 
-const QueueDefaultName = "test-queue"
+const NotificationTypeEmail = 1
+const NotificationTypeTelegram = 2
+const NotificationTypeWhatsapp = 3
+const NotificationTypeSMS = 4
+const NotificationTypePushNotification = 5

@@ -2,8 +2,8 @@ package tasks
 
 import (
 	"encoding/json"
-	"fmt"
 	"go-api/modules/configs"
+	"go-api/modules/configs/rabbitmq"
 	"log"
 	"os"
 	"strconv"
@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func (base *BaseCommand) getQueueConsumerTask() []cli.Command {
+func (base *BaseCommand) getTestingCommands() []cli.Command {
 	command := []cli.Command{
 		{
 			Name:        "queue-test-consumer",
@@ -32,30 +32,30 @@ func (base *BaseCommand) getQueueConsumerTask() []cli.Command {
 				queueName := base.GetFlags(cliContext, "queue-name")
 				log.Printf("Queue Name := %s", queueName)
 
-				queueSetup := configs.NewBaseQueue().SetQueueName(queueName)
-
-				configQueueDeclare := &configs.QueueDeclareConfig{
-					Durable:    false,
-					AutoDelete: false,
-					Exclusive:  false,
-					NoWait:     false,
-					Args:       nil,
-				}
-
-				configConsumer := &configs.ConsumerConfig{
-					Consumer:  "",
-					AutoAck:   false,
-					Exclusive: false,
-					NoLocal:   false,
-					NoWait:    false,
-					Args:      nil,
-				}
-
-				queueSetup.AddConsumer(configQueueDeclare, configConsumer)
+				queueSetup := rabbitmq.NewBaseQueue("", "email-queue")
+				queueSetup.SetupQueue(nil, nil)
+				queueSetup.AddConsumer(false)
 				queueSetup.Consume(HandleQueueEvents)
 
 				log.Printf("====  Task success ====")
 				return nil
+			},
+		},
+		{
+			Name:        "exchange-test-event",
+			Aliases:     []string{"ete"},
+			Usage:       "exchange-test-event",
+			Description: "Exchange testing",
+			Action: func(ctx *cli.Context) (err error) {
+				log.Printf("====  Running task exchange test consumer ====")
+
+				queueSetup := rabbitmq.NewBaseQueue("", "test-queue")
+				queueSetup.SetupExchange(nil)
+				queueSetup.SetupQueue(nil, nil)
+				queueSetup.SetupQueueBind(nil)
+				queueSetup.AddConsumerExchange(false)
+				queueSetup.Consume(HandleQueueEvents)
+				return
 			},
 		},
 		{
@@ -110,6 +110,7 @@ func (base *BaseCommand) getQueueConsumerTask() []cli.Command {
 	return command
 }
 
-func HandleQueueEvents(body string) {
-	log.Printf(fmt.Sprint(body))
+func HandleQueueEvents(body rabbitmq.ConsumerHandlerData) {
+	bodyMarshal, _ := json.Marshal(body)
+	log.Printf(string(bodyMarshal))
 }

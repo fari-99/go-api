@@ -2,15 +2,17 @@ package users
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"go-api/modules/configs"
 	"go-api/modules/models"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 )
 
 type Repository interface {
 	GetDetails(ctx *gin.Context, userID int64) (*models.Users, bool, error)
 	CreateUser(ctx *gin.Context, userModel models.Users) (*models.Users, error)
+	GetRoles(ctx *gin.Context) ([]models.Roles, error)
 }
 
 type repository struct {
@@ -19,6 +21,16 @@ type repository struct {
 
 func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
+}
+
+func (r repository) GetRoles(ctx *gin.Context) ([]models.Roles, error) {
+	var roles []models.Roles
+	err := r.DB.Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return roles, nil
 }
 
 func (r repository) GetDetails(ctx *gin.Context, userID int64) (*models.Users, bool, error) {

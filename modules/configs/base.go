@@ -1,6 +1,8 @@
 package configs
 
 import (
+	"go-api/modules/configs/rabbitmq"
+
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/cache"
 	"github.com/go-redis/redis"
@@ -13,7 +15,7 @@ type DI struct {
 	DB            *gorm.DB
 	Redis         *redis.Client
 	RedisCache    *cache.Codec
-	Queue         *QueueSetup
+	Queue         *rabbitmq.QueueSetup
 	EmailDialler  *gomail.Dialer
 	ElasticSearch *elasticsearch.Client
 	Telegram      *tgbotapi.BotAPI
@@ -24,7 +26,7 @@ func DIInit() *DI {
 		DB:            DatabaseBase().GetDBConnection(),
 		ElasticSearch: GetElasticSearch(),
 		EmailDialler:  GetEmail(),
-		Queue:         NewBaseQueue().GetQueueUtil(),
+		Queue:         rabbitmq.NewBaseQueue("", ""),
 		Redis:         GetRedisSessionConfig(),
 		RedisCache:    GetRedisCache(),
 		Telegram:      GetTelegram(),

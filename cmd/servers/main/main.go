@@ -6,9 +6,10 @@ import (
 	"go-api/modules/auths"
 	"go-api/modules/configs"
 	"go-api/modules/middleware"
+	"go-api/modules/notifications"
+	"go-api/modules/permissions"
 	"go-api/modules/state_machine"
 	"go-api/modules/storages"
-	"go-api/modules/telegrams"
 	"go-api/modules/twoFA"
 	"go-api/modules/users"
 	"log"
@@ -35,7 +36,8 @@ func main() {
 	app := configs.GetGinApplication()
 	di := configs.DIInit()
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
-	//otpMiddleware := middleware.OTPMiddleware(middleware.BaseMiddleware{})
+	//otpMiddleware := middleware.OTPMiddleware()
+	//rbacMiddleware := middleware.PermissionMiddleware()
 
 	auths.NewRegistrator(app.Group(""),
 		auths.NewService(auths.NewRepository(di)))
@@ -48,8 +50,8 @@ func main() {
 		storages.NewService(storages.NewRepository(di)),
 		authentication)
 
-	telegrams.NewRegistrator(app.Group(""),
-		telegrams.NewService(telegrams.NewRepository(di)),
+	notifications.NewRegistrator(app.Group(""),
+		notifications.NewService(notifications.NewRepository(di)),
 		authentication)
 
 	twoFA.NewRegistrator(app.Group(""),
@@ -58,6 +60,10 @@ func main() {
 
 	users.NewRegistrator(app.Group(""),
 		users.NewService(users.NewRepository(di)),
+		authentication)
+
+	permissions.NewRegistrator(app.Group(""),
+		permissions.NewService(permissions.NewRepository(di)),
 		authentication)
 
 	applicationRun := fmt.Sprintf("%s:%s", host, port)
