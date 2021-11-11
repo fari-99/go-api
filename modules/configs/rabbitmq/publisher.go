@@ -63,13 +63,13 @@ func (base *QueueSetup) AddPublisher(queueDeclare *QueueDeclareConfig, publisher
 	return base
 }
 
-func (base *QueueSetup) Publish(exchangeName, message string) error {
+func (base *QueueSetup) Publish(message string) error {
 	publishConfig := base.queueConfig.QueuePublisherConfig
 	publishConfig.Msg.Body = []byte(message)
 
 	loggingMessage("Publishing Message...", nil)
 	err := base.channel.Publish(
-		exchangeName,
+		base.exchangeName,
 		base.queueName,
 		publishConfig.Mandatory,
 		publishConfig.Immediate,
@@ -79,7 +79,7 @@ func (base *QueueSetup) Publish(exchangeName, message string) error {
 	return err
 }
 
-func (base *QueueSetup) BatchPublish(exchangeName string, messages []string) []error {
+func (base *QueueSetup) BatchPublish(messages []string) []error {
 	publishConfig := base.queueConfig.QueuePublisherConfig
 
 	var listErr []error
@@ -88,7 +88,7 @@ func (base *QueueSetup) BatchPublish(exchangeName string, messages []string) []e
 
 		loggingMessage("Publishing Message...", nil)
 		err := base.channel.Publish(
-			exchangeName,
+			base.exchangeName,
 			base.queueName,
 			publishConfig.Mandatory,
 			publishConfig.Immediate,

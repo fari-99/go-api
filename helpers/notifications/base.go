@@ -2,7 +2,6 @@ package notifications
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"go-api/constant/constant_models"
 	"html/template"
@@ -37,7 +36,7 @@ type CompiledNotification struct {
 	Body    string `json:"body"`
 }
 
-func NewNotificationHelper(templatesData []interface{}) (*NotificationHelper, error) {
+func NewNotificationHelper(templatesData []NotificationTemplate) (*NotificationHelper, error) {
 	base := NotificationHelper{}
 	err := base.setNotificationTemplate(templatesData)
 	if err != nil {
@@ -47,18 +46,14 @@ func NewNotificationHelper(templatesData []interface{}) (*NotificationHelper, er
 	return &base, nil
 }
 
-func (base *NotificationHelper) setNotificationTemplate(templatesData []interface{}) error {
+func (base *NotificationHelper) setNotificationTemplate(templatesData []NotificationTemplate) error {
 	var notificationTemplates []NotificationTemplate
 	for _, templateData := range templatesData {
-		var notificationTemplate NotificationTemplate
-		tempMarshal, _ := json.Marshal(templateData)
-		_ = json.Unmarshal(tempMarshal, &notificationTemplate)
-
-		if err := notificationTemplate.Validate(); err != nil {
+		if err := templateData.Validate(); err != nil {
 			return err
 		}
 
-		notificationTemplates = append(notificationTemplates, notificationTemplate)
+		notificationTemplates = append(notificationTemplates, templateData)
 	}
 
 	base.notificationTemplates = notificationTemplates

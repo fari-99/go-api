@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"go-api/constant"
 	"go-api/modules/configs"
 	"go-api/modules/configs/rabbitmq"
 	"go-api/modules/tasks/handlers"
@@ -19,7 +20,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 				db := configs.DatabaseBase().GetDBConnection()
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
 
-				queueSetup := rabbitmq.NewBaseQueue("", "notification-queue")
+				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationTemplate)
 				queueSetup.SetupExchange(nil)
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.SetupQueueBind(nil)
@@ -35,17 +36,12 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Description: "Send generated template using email",
 			Action: func(ctx *cli.Context) (err error) {
 				db := configs.DatabaseBase().GetDBConnection()
-				botAPI := configs.GetTelegram()
-				twilioInit := configs.GetTwilioRestClient()
-
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
-				baseEvent.SetTelegram(botAPI)
-				baseEvent.SetTwilio(twilioInit)
 
-				queueSetup := rabbitmq.NewBaseQueue("", "email-queue")
+				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationEmail)
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
-				queueSetup.Consume(baseEvent.NotificationsHandler)
+				queueSetup.Consume(baseEvent.NotificationEmailHandler)
 				return
 			},
 		},
@@ -57,16 +53,14 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Action: func(ctx *cli.Context) (err error) {
 				db := configs.DatabaseBase().GetDBConnection()
 				botAPI := configs.GetTelegram()
-				twilioInit := configs.GetTwilioRestClient()
 
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
 				baseEvent.SetTelegram(botAPI)
-				baseEvent.SetTwilio(twilioInit)
 
-				queueSetup := rabbitmq.NewBaseQueue("", "telegram-queue")
+				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationTelegram)
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
-				queueSetup.Consume(baseEvent.NotificationsHandler)
+				queueSetup.Consume(baseEvent.NotificationTelegramHandler)
 				return
 			},
 		},
@@ -77,17 +71,15 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Description: "Send generated template using whatsapp",
 			Action: func(ctx *cli.Context) (err error) {
 				db := configs.DatabaseBase().GetDBConnection()
-				botAPI := configs.GetTelegram()
 				twilioInit := configs.GetTwilioRestClient()
 
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
-				baseEvent.SetTelegram(botAPI)
 				baseEvent.SetTwilio(twilioInit)
 
-				queueSetup := rabbitmq.NewBaseQueue("", "whatsapp-queue")
+				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationWhatsapp)
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
-				queueSetup.Consume(baseEvent.NotificationsHandler)
+				queueSetup.Consume(baseEvent.NotificationWhatsappHandler)
 				return
 			},
 		},

@@ -8,7 +8,7 @@ import (
 )
 
 type Storages struct {
-	Id               int64      `gorm:"primary_key:id" json:"id"`
+	ID               int64      `gorm:"primary_key:id" json:"id"`
 	Type             string     `gorm:"column:type" json:"type"`
 	Path             string     `gorm:"column:path" json:"path"`
 	Filename         string     `gorm:"column:filename" json:"filename"`

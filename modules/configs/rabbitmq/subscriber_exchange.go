@@ -71,11 +71,10 @@ func (base *QueueSetup) AddConsumerExchange(isReconnect bool) *QueueSetup {
 }
 
 func (base *QueueSetup) exchangeDeclare() error {
-	exchangeName := base.exchangeName
 	exchangeDeclareConfig := base.exchangeConfig.ExchangeDeclareConfig
 
 	return base.channel.ExchangeDeclare(
-		exchangeName,
+		base.exchangeName,
 		exchangeDeclareConfig.Kind,
 		exchangeDeclareConfig.Durable,
 		exchangeDeclareConfig.AutoDelete,
@@ -86,14 +85,12 @@ func (base *QueueSetup) exchangeDeclare() error {
 }
 
 func (base *QueueSetup) bindQueue() error {
-	queueName := base.queueName
-	exchangeName := base.exchangeName
 	queueBindConfig := base.queueConfig.QueueBindConfig
 
 	return base.channel.QueueBind(
-		queueName,
+		base.queueName,
 		queueBindConfig.RoutingKey,
-		exchangeName,
+		base.exchangeName,
 		queueBindConfig.NoWait,
 		queueBindConfig.Args)
 }
