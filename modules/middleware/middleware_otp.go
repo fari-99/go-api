@@ -2,9 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/dgryski/dgoogauth"
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"go-api/constant"
 	"go-api/helpers"
 	"go-api/helpers/crypts"
@@ -12,15 +9,17 @@ import (
 	"go-api/modules/models"
 	"net/http"
 	"os"
+
+	"github.com/dgryski/dgoogauth"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 )
 
-func OTPMiddleware(config BaseMiddleware) gin.HandlerFunc {
-	defaultConfig := DefaultConfig()
-
-	return defaultConfig.otpServe
+func OTPMiddleware() gin.HandlerFunc {
+	return otpServe
 }
 
-func (config *BaseMiddleware) otpServe(ctx *gin.Context) {
+func otpServe(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
 

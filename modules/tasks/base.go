@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"log"
+	"os"
 
 	"github.com/urfave/cli"
 )
@@ -37,10 +38,18 @@ func (base *BaseCommand) GetFlags(cliContext *cli.Context, flagName string) stri
 }
 
 func (base *BaseCommand) CommandQueueTask() *BaseCommand {
-	queueConsumerCommands := base.getQueueConsumerTask()
 	commands := base.Commands
-	for _, queueConsumerCommand := range queueConsumerCommands {
-		commands = append(commands, queueConsumerCommand)
+
+	if os.Getenv("APP_STATE") == "test" {
+		queueConsumerCommands := base.getTestingCommands()
+		for _, queueConsumerCommand := range queueConsumerCommands {
+			commands = append(commands, queueConsumerCommand)
+		}
+	}
+
+	queueCommands := base.getNotificationCommands()
+	for _, queueCommand := range queueCommands {
+		commands = append(commands, queueCommand)
 	}
 
 	base.Commands = commands

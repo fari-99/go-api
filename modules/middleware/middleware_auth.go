@@ -3,22 +3,17 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"go-api/helpers"
 	"go-api/helpers/token_generator"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 // AuthMiddleware inits auth middleware config and returns new handler
 func AuthMiddleware(config BaseMiddleware) gin.HandlerFunc {
 	defaultConfig := DefaultConfig()
-
-	// Assign allowed roles configuration
-	if len(config.AllowedRoles) > 0 {
-		defaultConfig.AllowedRoles = config.AllowedRoles
-	}
-
 	return defaultConfig.authServe
 }
 
@@ -65,27 +60,6 @@ func (config *BaseMiddleware) authServe(ctx *gin.Context) {
 		})
 		ctx.Abort()
 		return
-	}
-
-	// check user roles
-	if len(userDetails.UserRoles) > 0 && len(config.AllowedRoles) > 0 {
-		var exists int
-		for _, userRole := range userDetails.UserRoles {
-			roleExists, _, _ := helpers.InArray(userRole, config.AllowedRoles)
-			if roleExists {
-				exists++
-				break
-			}
-		}
-
-		// no roles
-		if exists == 0 {
-			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
-				"message": fmt.Sprintf("You don't have any roles to access this page"),
-			})
-			ctx.Abort()
-			return
-		}
 	}
 
 	// check whitelist (all in the whitelist can access, otherwise can't)

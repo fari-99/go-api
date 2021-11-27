@@ -57,7 +57,7 @@ func (base *BaseJwt) SetSecretKey(secretKey string) *BaseJwt {
 	return base
 }
 
-func (base *BaseJwt) SetClaim(customer models.Customers) (*BaseJwt, error) {
+func (base *BaseJwt) SetClaim(customer models.Users) (*BaseJwt, error) {
 	timeDate := time.Now()
 	expiredDate := timeDate.AddDate(0, 0, 1).Unix()
 

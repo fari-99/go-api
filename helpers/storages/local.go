@@ -2,7 +2,6 @@ package storages
 
 import (
 	"fmt"
-	"go-api/modules/models"
 	"image/jpeg"
 	"io"
 	"log"
@@ -10,7 +9,7 @@ import (
 	"os"
 )
 
-func (base *StorageBase) LocalUpload(contentTypeData FileData, scaled int, file multipart.File) error {
+func (base *StorageBase) localUpload(contentTypeData FileData, scaled int, file multipart.File) error {
 	storagePath := contentTypeData.StoragePath
 	fileName := contentTypeData.Filename
 
@@ -44,9 +43,9 @@ func (base *StorageBase) LocalUpload(contentTypeData FileData, scaled int, file 
 	return err
 }
 
-func (base *StorageBase) LocalGetFile(storageModel models.Storages) (files *os.File, err error) {
-	storagePath := os.Getenv("LOCAL_STORAGE_PATH") + "/" + storageModel.Type + storageModel.Path + storageModel.Filename
-	file, err := os.Open(storagePath)
+func (base *StorageBase) localGetFile(storageType, storagePath, filename string) (files *os.File, err error) {
+	filePath := os.Getenv("LOCAL_STORAGE_PATH") + "/" + storageType + storagePath + filename
+	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("error open file, %s", err.Error())
 	}

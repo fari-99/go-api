@@ -31,7 +31,7 @@ type TokenGenerator struct {
 	Type string `json:"type"`
 }
 
-func EncryptUserDetails(customer models.Customers) (string, error) {
+func EncryptUserDetails(customer models.Users) (string, error) {
 	userDetails := UserDetails{
 		ID:       customer.ID,
 		Email:    customer.Email,

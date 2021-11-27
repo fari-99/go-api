@@ -3,10 +3,16 @@ module go-api
 go 1.15
 
 require (
+	cloud.google.com/go/storage v1.18.2
+	github.com/Blank-Xu/sql-adapter v0.0.0-20210714092925-0bdd0d548758
+	github.com/assembla/cony v0.3.2 // indirect
 	github.com/aws/aws-sdk-go v1.40.59
+	github.com/biezhi/gorm-paginator/pagination v0.0.0-20190124091837-7a5c8ed20334
+	github.com/casbin/casbin/v2 v2.39.0
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
 	github.com/elastic/go-elasticsearch/v7 v7.15.0
 	github.com/gin-gonic/gin v1.7.4
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-redis/cache v6.4.0+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.6.0
@@ -22,6 +28,7 @@ require (
 	github.com/spf13/cast v1.4.1
 	github.com/streadway/amqp v1.0.0
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
+	github.com/twilio/twilio-go v0.17.0
 	github.com/urfave/cli v1.22.5
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
