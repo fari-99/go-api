@@ -1,9 +1,13 @@
 package auths
 
 import (
+	"errors"
+
 	"go-api/helpers"
 	"go-api/modules/configs"
 	"go-api/modules/models"
+
+	"gorm.io/gorm"
 )
 
 type Repository interface {
@@ -22,11 +26,12 @@ func (r repository) AuthenticatePassword(input RequestAuthUser) (*models.Users, 
 	db := r.DB
 
 	var customerModel models.Users
-	if db.Where(&models.Users{Email: input.Email}).Find(&customerModel).RecordNotFound() {
+	err := db.Where(&models.Users{Email: input.Email}).Find(&customerModel).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	}
 
-	err := helpers.AuthenticatePassword(&customerModel, input.Password)
+	err = helpers.AuthenticatePassword(&customerModel, input.Password)
 	if err != nil {
 		return nil, false, err
 	}

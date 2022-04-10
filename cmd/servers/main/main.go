@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-api/modules/auths"
 	"go-api/modules/configs"
+	"go-api/modules/hasura"
 	"go-api/modules/middleware"
 	"go-api/modules/notifications"
 	"go-api/modules/permissions"
@@ -65,6 +66,9 @@ func main() {
 	permissions.NewRegistrator(app.Group(""),
 		permissions.NewService(permissions.NewRepository(di)),
 		authentication)
+
+	hasura.NewRegistrator(app.Group(""),
+		hasura.NewService(hasura.NewRepository(di)))
 
 	applicationRun := fmt.Sprintf("%s:%s", host, port)
 	log.Printf("Run application on %s", applicationRun)

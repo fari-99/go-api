@@ -2,11 +2,12 @@ package auths
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"go-api/helpers"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type controller struct {

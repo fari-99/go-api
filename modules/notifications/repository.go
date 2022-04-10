@@ -2,15 +2,16 @@ package notifications
 
 import (
 	"fmt"
-	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"go-api/modules/configs"
+
+	"github.com/dmitryburov/gorm-paginator"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Repository interface {
 	GetDetail(ctx *gin.Context, id int64) (interface{}, bool, error)
-	GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *pagination.Paginator, error)
+	GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *paginator.Pagination, error)
 	Create(ctx *gin.Context, model interface{}) (interface{}, error)
 	Update(ctx *gin.Context, model interface{}) (interface{}, error)
 	Delete(ctx *gin.Context, id int64) error
@@ -38,19 +39,24 @@ func (r repository) GetDetail(ctx *gin.Context, id int64) (interface{}, bool, er
 	return model, false, nil
 }
 
-func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *pagination.Paginator, error) {
+func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *paginator.Pagination, error) {
 	db := r.DB
 
 	var models []interface{}
-	paginator := pagination.Paging(&pagination.Param{
-		DB:      db,
-		Page:    filter.Page,
-		Limit:   filter.Limit,
-		OrderBy: []string{filter.OrderBy},
-		ShowSQL: false,
+	page, err := paginator.Pages(&paginator.Param{
+		DB: db,
+		Paging: &paginator.Paging{
+			Page:    filter.Page,
+			OrderBy: []string{filter.OrderBy},
+			Limit:   filter.Limit,
+			ShowSQL: false,
+		},
 	}, &models)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	return models, paginator, nil
+	return models, page, nil
 }
 
 func (r repository) Create(ctx *gin.Context, model interface{}) (interface{}, error) {
