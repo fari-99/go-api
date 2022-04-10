@@ -1,12 +1,14 @@
 package twoFA
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"errors"
 	"go-api/constant"
 	"go-api/helpers/crypts"
 	"go-api/modules/configs"
 	"go-api/modules/models"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Repository interface {
@@ -26,7 +28,7 @@ func NewRepository(di *configs.DI) Repository {
 func (r repository) GetDetails(ctx *gin.Context, userID int64) (*models.TwoAuths, bool, error) {
 	var twoAuthModel models.TwoAuths
 	err := r.DB.Where(&models.TwoAuths{UserID: userID, Status: constant.StatusActive}).First(&twoAuthModel).Error
-	if err != nil && gorm.IsRecordNotFoundError(err) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
 		return nil, false, err

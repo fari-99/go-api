@@ -4,9 +4,9 @@ import (
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/jinzhu/gorm"
 	"github.com/twilio/twilio-go"
 	"github.com/urfave/cli"
+	"gorm.io/gorm"
 )
 
 type BaseEventHandler struct {

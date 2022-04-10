@@ -1,12 +1,13 @@
 package users
 
 import (
+	"errors"
 	"fmt"
 	"go-api/modules/configs"
 	"go-api/modules/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Repository interface {
@@ -51,11 +52,12 @@ func (r repository) CreateUser(ctx *gin.Context, userModel models.Users) (*model
 	db := r.DB
 
 	var isExist models.Users
-	if !db.Debug().Where("username = ? OR email = ?", userModel.Username, userModel.Email).Find(&isExist).RecordNotFound() {
+	err := db.Debug().Where("username = ? OR email = ?", userModel.Username, userModel.Email).Find(&isExist).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("user with that username or email already created")
 	}
 
-	err := db.Create(&userModel).Error
+	err = db.Create(&userModel).Error
 	if err != nil {
 		return nil, err
 	}

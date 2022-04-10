@@ -1,11 +1,12 @@
 package storages
 
 import (
+	"errors"
 	"go-api/modules/configs"
 	"go-api/modules/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Repository interface {
@@ -26,7 +27,7 @@ func (r repository) GetDetail(ctx *gin.Context, storageID int64) (*models.Storag
 
 	var storageModel models.Storages
 	err := db.Where(&models.Storages{ID: storageID}).First(&storageModel).Error
-	if err != nil && gorm.IsRecordNotFoundError(err) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
 		return nil, false, err

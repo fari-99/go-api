@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"go-api/constant"
 	"go-api/helpers"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/dgryski/dgoogauth"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func OTPMiddleware() gin.HandlerFunc {
@@ -57,11 +58,11 @@ func otpServe(ctx *gin.Context) {
 }
 
 func getUserTwoAuthenticationModel(userID int64) (*models.TwoAuths, error) {
-	db := configs.DatabaseBase().GetDBConnection()
+	db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
 
 	var twoAuthModel models.TwoAuths
 	err := db.Where(&models.TwoAuths{UserID: userID, Status: constant.StatusActive}).First(&twoAuthModel).Error
-	if err != nil && gorm.IsRecordNotFoundError(err) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("please setup your two auth notification first, or your configuration is not found")
 	} else if err != nil {
 		return nil, err

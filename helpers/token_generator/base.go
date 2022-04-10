@@ -21,6 +21,11 @@ type UserDetails struct {
 	UserRoles []string `json:"user_roles"`
 }
 
+type HasuraClaim struct {
+	AllowedRoles []string `json:"x-hasura-allowed-roles"`
+	DefaultRole  string   `json:"x-hasura-default-role"`
+}
+
 type AppData struct {
 	AppName   string   `json:"app_name"`
 	IPList    []string `json:"ip_list,omitempty"`

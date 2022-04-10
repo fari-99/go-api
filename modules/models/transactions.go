@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Transactions struct {
@@ -34,6 +34,6 @@ func (model *Transactions) generateTransactionNo(tx *gorm.DB) string {
 
 func (model *Transactions) AfterCreate(tx *gorm.DB) {
 	if model.TransactionNo == "" || len(model.TransactionNo) == 0 {
-		tx.Model(model).Update(&Transactions{TransactionNo: model.generateTransactionNo(tx)})
+		tx.Model(model).Updates(&Transactions{TransactionNo: model.generateTransactionNo(tx)})
 	}
 }

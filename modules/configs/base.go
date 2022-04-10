@@ -7,8 +7,8 @@ import (
 	"github.com/go-redis/cache"
 	"github.com/go-redis/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/jinzhu/gorm"
 	"gopkg.in/gomail.v2"
+	"gorm.io/gorm"
 )
 
 type DI struct {
@@ -23,7 +23,7 @@ type DI struct {
 
 func DIInit() *DI {
 	di := &DI{
-		DB:            DatabaseBase().GetDBConnection(),
+		DB:            DatabaseBase(MySQLType).GetMysqlConnection(),
 		ElasticSearch: GetElasticSearch(),
 		EmailDialler:  GetEmail(),
 		Queue:         rabbitmq.NewBaseQueue("", ""),

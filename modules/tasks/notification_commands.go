@@ -17,7 +17,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Usage:       "handler-notifications-event",
 			Description: "Generate Notification template to send to respected notification type",
 			Action: func(ctx *cli.Context) (err error) {
-				db := configs.DatabaseBase().GetDBConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
 
 				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationTemplate)
@@ -35,7 +35,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Usage:       "handler-notification-email-event",
 			Description: "Send generated template using email",
 			Action: func(ctx *cli.Context) (err error) {
-				db := configs.DatabaseBase().GetDBConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
 
 				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationEmail)
@@ -51,7 +51,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Usage:       "handler-notification-telegram-event",
 			Description: "Send generated template using telegram",
 			Action: func(ctx *cli.Context) (err error) {
-				db := configs.DatabaseBase().GetDBConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
 				botAPI := configs.GetTelegram()
 
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
@@ -70,7 +70,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Usage:       "handler-notification-whatsapp-event",
 			Description: "Send generated template using whatsapp",
 			Action: func(ctx *cli.Context) (err error) {
-				db := configs.DatabaseBase().GetDBConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
 				twilioInit := configs.GetTwilioRestClient()
 
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)

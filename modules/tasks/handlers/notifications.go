@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"go-api/constant"
 	"go-api/constant/constant_models"
@@ -11,7 +12,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 func (base *BaseEventHandler) NotificationsHandler(body rabbitmq.ConsumerHandlerData) {
@@ -132,7 +133,7 @@ func getUserDetails(db *gorm.DB, userID int64) (*models.Users, bool, error) {
 
 	var actionBy models.Users
 	err := db.Where(&models.Users{ID: userID}).First(&actionBy).Error
-	if err != nil && gorm.IsRecordNotFoundError(err) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, false, nil
 	} else if err != nil {
 		return nil, false, err

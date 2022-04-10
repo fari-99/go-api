@@ -1,10 +1,13 @@
 package users
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"go-api/constant"
 	"go-api/helpers"
 	"go-api/modules/models"
+
+	"github.com/gin-gonic/gin"
+	"github.com/nbutton23/zxcvbn-go"
 )
 
 type Service interface {
@@ -24,18 +27,24 @@ func (s service) CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.
 		return nil, err
 	}
 
+	var userInput []string
+	checkPassword := zxcvbn.PasswordStrength(input.Password, userInput)
+	if checkPassword.Score <= 2 {
+		return nil, fmt.Errorf("your password not good enough, please try again")
+	}
+
 	password, err := helpers.GeneratePassword(input.Password)
 	if err != nil {
 		return nil, err
 	}
 
 	userModel := models.Users{
-		Username:  input.Username,
-		Password:  password,
-		Email:     input.Email,
-		Status:    constant.StatusActive,
+		Username: input.Username,
+		Password: password,
+		Email:    input.Email,
+		Status:   constant.StatusActive,
 	}
 
-	savedModel, err := s.repo.CreateUser(ctx,userModel)
+	savedModel, err := s.repo.CreateUser(ctx, userModel)
 	return savedModel, err
 }

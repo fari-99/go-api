@@ -2,12 +2,13 @@ package token_generator
 
 import (
 	_ "crypto"
-	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go-api/modules/models"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -25,6 +26,7 @@ type JwtMapClaims struct {
 	Uuid        string       `json:"uuid"`
 	TokenData   TokenData    `json:"token_data"`
 	UserDetails *UserDetails `json:"user_details"`
+	HasuraClaim HasuraClaim  `json:"hasura_claim"`
 	jwt.StandardClaims
 }
 
@@ -72,9 +74,14 @@ func (base *BaseJwt) SetClaim(customer models.Users) (*BaseJwt, error) {
 			UserDetails: userDetails,
 			AppData:     base.getAppData(),
 		},
+		HasuraClaim: HasuraClaim{
+			AllowedRoles: []string{"customer", "merchant"},
+			DefaultRole:  "customer",
+		},
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt:  timeDate.Unix(),
 			ExpiresAt: expiredDate,
+			Issuer:    os.Getenv("APP_NAME"),
 		},
 	}
 

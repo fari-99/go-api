@@ -4,7 +4,7 @@ import (
 	"go-api/constant"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Storages struct {
@@ -24,7 +24,7 @@ func (Storages) TableName() string {
 	return "storages"
 }
 
-func (storage *Storages) BeforeDelete(scope *gorm.Scope) (err error) {
-	scope.DB().Model(storage).Update("status", constant.StatusDeleted)
+func (storage *Storages) BeforeDelete(tx *gorm.DB) (err error) {
+	tx.Model(storage).Update("status", constant.StatusDeleted)
 	return
 }
