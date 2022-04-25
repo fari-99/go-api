@@ -21,7 +21,7 @@ Go version : go 1.12.8
 1. NoSql (Mongo)
 
 ## Install
-1. install go version at least version 1.12.8 ([download](https://golang.org/dl/))
+1. install go version at least version 1.18 ([download](https://golang.org/dl/))
 1. run `go get github.com/pilu/fresh`
 1. clone this repo on `GOPATH/src`
 1. `cp .env.example .env`, and check your local setup.
