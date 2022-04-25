@@ -5,6 +5,7 @@ go 1.15
 require (
 	cloud.google.com/go/storage v1.18.2
 	github.com/Blank-Xu/sql-adapter v0.0.0-20210714092925-0bdd0d548758
+	github.com/Shopify/sarama v1.32.0
 	github.com/aws/aws-sdk-go v1.40.59
 	github.com/casbin/casbin/v2 v2.39.0
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
@@ -32,7 +33,7 @@ require (
 	github.com/twilio/twilio-go v0.17.0
 	github.com/urfave/cli v1.22.5
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/mysql v1.3.3

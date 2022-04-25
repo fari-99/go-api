@@ -8,6 +8,7 @@ import (
 	"go-api/modules/tests/emails"
 	"go-api/modules/tests/finite_states"
 	"go-api/modules/tests/ftps"
+	"go-api/modules/tests/kafka"
 	"go-api/modules/tests/rabbitmq"
 	"go-api/modules/tests/redis"
 	"go-api/modules/tests/redis_cache"
@@ -42,6 +43,7 @@ func main() {
 	redis.NewRoute(app)
 	redis_cache.NewRoute(app)
 	twofa.NewRoute(app)
+	kafka.NewRoute(app)
 
 	applicationRun := fmt.Sprintf("%s:%s", host, port)
 	log.Printf("Run application on %s", applicationRun)
