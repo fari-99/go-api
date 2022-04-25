@@ -3,6 +3,7 @@ package tasks
 import (
 	"encoding/json"
 	"go-api/modules/configs"
+	"go-api/modules/configs/kafka"
 	"go-api/modules/configs/rabbitmq"
 	"log"
 	"os"
@@ -55,6 +56,33 @@ func (base *BaseCommand) getTestingCommands() []cli.Command {
 				queueSetup.SetupQueueBind(nil)
 				queueSetup.AddConsumerExchange(false)
 				queueSetup.Consume(HandleQueueEvents)
+				return
+			},
+		},
+		{
+			Name:        "kafka-test-event",
+			Aliases:     []string{"kte"},
+			Usage:       "kafka-test-event",
+			Description: "Kafka Consumer Testing",
+			Action: func(ctx *cli.Context) (err error) {
+				log.Printf("====  Running Kafka Consumer Testing ====")
+
+				kafkaConsumer, err := kafka.NewConsumer("consumerGroup", nil)
+				if err != nil {
+					panic(err)
+				}
+
+				consumerData := make(chan interface{}, 1)
+				kafkaConsumer.Subscribe(kafka.NewConsumerHandler(consumerData))
+
+				data := <-consumerData
+				dataMarshal, err := json.Marshal(data)
+				if err != nil {
+					panic(err)
+				}
+
+				log.Printf(string(dataMarshal))
+
 				return
 			},
 		},

@@ -1,4 +1,4 @@
-FROM golang:1.13
+FROM golang:1.18
 
 ARG APP_NAME
 ENV APP_NAME=go-api
