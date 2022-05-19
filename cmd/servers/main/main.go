@@ -39,8 +39,10 @@ func main() {
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 	//otpMiddleware := middleware.OTPMiddleware()
 	//rbacMiddleware := middleware.PermissionMiddleware()
-	//version0 := middleware.VersionMiddleware("v0", true) # example deprecated
-	//version1 := middleware.VersionMiddleware("v1", false) # example still used
+	//versions := middleware.VersionMiddleware(map[string]bool{
+	//	"v0": false,
+	//	"v1": true,
+	//})
 
 	auths.NewRegistrator(app.Group(""),
 		auths.NewService(auths.NewRepository(di)))
