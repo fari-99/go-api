@@ -50,7 +50,7 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:     "refresh_token",
-		Value:    token.AccessToken,
+		Value:    token.RefreshToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
 		Expires:  time.Unix(token.RefreshExpiredAt, 0),
@@ -78,7 +78,7 @@ func (c controller) RefreshSession(ctx *gin.Context) {
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
-		Name:     "token",
+		Name:     "access_token",
 		Value:    newToken.AccessToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
@@ -89,7 +89,7 @@ func (c controller) RefreshSession(ctx *gin.Context) {
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:     "refresh_token",
-		Value:    newToken.AccessToken,
+		Value:    newToken.RefreshToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
 		Expires:  time.Unix(newToken.RefreshExpiredAt, 0),

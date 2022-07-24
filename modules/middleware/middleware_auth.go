@@ -18,10 +18,15 @@ func AuthMiddleware(config BaseMiddleware) gin.HandlerFunc {
 	return defaultConfig.authServe
 }
 
+func RefreshAuthMiddleware(config BaseMiddleware) gin.HandlerFunc {
+	defaultConfig := DefaultConfig()
+	return defaultConfig.refreshServe
+}
+
 // authServe checks user data such as user ID and roles.
 // If the data is valid, continues to next handler
 func (base *BaseMiddleware) authServe(ctx *gin.Context) {
-	cookie, err := ctx.Request.Cookie("token")
+	cookie, err := ctx.Request.Cookie("access_token")
 
 	var accessToken string
 	if err != nil || err == http.ErrNoCookie {
@@ -48,6 +53,43 @@ func (base *BaseMiddleware) authServe(ctx *gin.Context) {
 		return
 	}
 
+	base.checkAuth(ctx, claims)
+}
+
+// authServe checks user data such as user ID and roles.
+// If the data is valid, continues to next handler
+func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
+	cookie, err := ctx.Request.Cookie("refresh_token")
+
+	var accessToken string
+	if err != nil || err == http.ErrNoCookie {
+		accessToken = ctx.GetHeader("Authorization")
+	} else {
+		accessToken = fmt.Sprintf("Bearer %s", cookie.Value)
+	}
+
+	claims, next, err := base.checkAuthHeader(accessToken)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+			"message":       "You must login to access",
+			"error_message": err.Error(),
+		})
+		ctx.Abort()
+		return
+	}
+
+	if !next || !claims.TokenData.Authorized {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+			"message": "You must login to access",
+		})
+		ctx.Abort()
+		return
+	}
+
+	base.checkAuth(ctx, claims)
+}
+
+func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.JwtMapClaims) {
 	userDetails := claims.UserDetails
 
 	// setup uuid for controller
