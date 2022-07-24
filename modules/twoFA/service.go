@@ -3,12 +3,14 @@ package twoFA
 import (
 	"encoding/base32"
 	"fmt"
+	"os"
+
 	"github.com/gin-gonic/gin"
+
 	"go-api/constant"
 	"go-api/helpers"
 	"go-api/helpers/crypts"
 	"go-api/modules/models"
-	"os"
 )
 
 type Service interface {

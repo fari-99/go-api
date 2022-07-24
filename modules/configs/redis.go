@@ -2,11 +2,12 @@ package configs
 
 import (
 	"fmt"
-	"github.com/go-redis/redis"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/go-redis/redis"
 )
 
 type redisSessionConfig struct {

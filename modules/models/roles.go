@@ -11,6 +11,6 @@ type Roles struct {
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at"`
 }
 
-func (model Roles) TableName() string {
+func (Roles) TableName() string {
 	return "roles"
 }

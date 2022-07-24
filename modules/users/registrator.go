@@ -1,8 +1,9 @@
 package users
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.HandlerFunc) {
@@ -11,7 +12,8 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 
 	userPrivate := app.Group("/users")
 	{
-		userPrivate.Use(authHandler)
+		//userPrivate.Use(authHandler)
 		userPrivate.POST("/create", control.CreateAction)
+		userPrivate.POST("/profile", control.UserProfileAction)
 	}
 }

@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"go-api/helpers"
-	"go-api/modules/configs"
 	"net/http"
 	"strings"
+
+	"go-api/helpers"
+	"go-api/modules/configs"
 
 	"github.com/gin-gonic/gin"
 

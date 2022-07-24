@@ -3,6 +3,7 @@ package users
 import (
 	"errors"
 	"fmt"
+
 	"go-api/modules/configs"
 	"go-api/modules/models"
 
@@ -11,7 +12,7 @@ import (
 )
 
 type Repository interface {
-	GetDetails(ctx *gin.Context, userID int64) (*models.Users, bool, error)
+	GetDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
 	CreateUser(ctx *gin.Context, userModel models.Users) (*models.Users, error)
 	GetRoles(ctx *gin.Context) ([]models.Roles, error)
 }
@@ -34,7 +35,7 @@ func (r repository) GetRoles(ctx *gin.Context) ([]models.Roles, error) {
 	return roles, nil
 }
 
-func (r repository) GetDetails(ctx *gin.Context, userID int64) (*models.Users, bool, error) {
+func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
 	db := r.DB
 
 	var userModel models.Users

@@ -14,3 +14,7 @@ type NotificationTemplates struct {
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
 	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at" sql:"DEFAULT:NULL"`
 }
+
+func (NotificationTemplates) TableName() string {
+	return "notification_templates"
+}

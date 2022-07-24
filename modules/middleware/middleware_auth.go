@@ -3,10 +3,11 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"go-api/helpers"
-	"go-api/helpers/token_generator"
 	"net/http"
 	"strings"
+
+	"go-api/helpers"
+	"go-api/helpers/token_generator"
 
 	"github.com/gin-gonic/gin"
 )

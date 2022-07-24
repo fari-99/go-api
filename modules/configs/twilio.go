@@ -15,7 +15,7 @@ var twilioOnce sync.Once
 
 func GetTwilioRestClient() *twilio.RestClient {
 	twilioOnce.Do(func() {
-		client := twilio.NewRestClientWithParams(twilio.RestClientParams{
+		client := twilio.NewRestClientWithParams(twilio.ClientParams{
 			Username: os.Getenv("TWILIO_ACCOUNT_SID"),
 			Password: os.Getenv("TWILIO_AUTH_TOKEN"),
 		})
