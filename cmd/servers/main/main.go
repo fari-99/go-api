@@ -38,6 +38,7 @@ func main() {
 	app := configs.GetGinApplication()
 	di := configs.DIInit()
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
+	refreshAuth := middleware.RefreshAuthMiddleware(middleware.BaseMiddleware{})
 	//otpMiddleware := middleware.OTPMiddleware()
 	//rbacMiddleware := middleware.PermissionMiddleware()
 	//versions := middleware.VersionMiddleware(map[string]bool{
@@ -46,7 +47,7 @@ func main() {
 	//})
 
 	auths.NewRegistrator(app.Group(""),
-		auths.NewService(auths.NewRepository(di)), authentication)
+		auths.NewService(auths.NewRepository(di)), authentication, refreshAuth)
 
 	state_machine.NewRegistrator(app.Group(""),
 		state_machine.NewService(state_machine.NewRepository(di)),
