@@ -2,6 +2,7 @@ package twoFA
 
 import (
 	"errors"
+
 	"go-api/constant"
 	"go-api/helpers/crypts"
 	"go-api/modules/configs"
@@ -12,9 +13,9 @@ import (
 )
 
 type Repository interface {
-	GetDetails(ctx *gin.Context, userID int64) (*models.TwoAuths, bool, error)
+	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
 	CreateConfigs(ctx *gin.Context, twoAuthModel models.TwoAuths) (models.TwoAuths, error)
-	GenerateRecoveryCode(userID int64) ([]string, error)
+	GenerateRecoveryCode(userID uint64) ([]string, error)
 }
 
 type repository struct {
@@ -25,7 +26,7 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) GetDetails(ctx *gin.Context, userID int64) (*models.TwoAuths, bool, error) {
+func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error) {
 	var twoAuthModel models.TwoAuths
 	err := r.DB.Where(&models.TwoAuths{UserID: userID, Status: constant.StatusActive}).First(&twoAuthModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -46,7 +47,7 @@ func (r repository) CreateConfigs(ctx *gin.Context, twoAuthModel models.TwoAuths
 	return twoAuthModel, nil
 }
 
-func (r repository) GenerateRecoveryCode(userID int64) ([]string, error) {
+func (r repository) GenerateRecoveryCode(userID uint64) ([]string, error) {
 	tx := r.DB.Begin()
 	var oldRecoveryCodeModels []models.TwoAuthRecoveries
 	err := tx.Where(&models.TwoAuthRecoveries{UserID: userID, Status: constant.StatusActive}).Find(&oldRecoveryCodeModels).Error

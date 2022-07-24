@@ -3,13 +3,14 @@ package middleware
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"os"
+
 	"go-api/constant"
 	"go-api/helpers"
 	"go-api/helpers/crypts"
 	"go-api/modules/configs"
 	"go-api/modules/models"
-	"net/http"
-	"os"
 
 	"github.com/dgryski/dgoogauth"
 	"github.com/gin-gonic/gin"
@@ -57,7 +58,7 @@ func otpServe(ctx *gin.Context) {
 	}
 }
 
-func getUserTwoAuthenticationModel(userID int64) (*models.TwoAuths, error) {
+func getUserTwoAuthenticationModel(userID uint64) (*models.TwoAuths, error) {
 	db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
 
 	var twoAuthModel models.TwoAuths

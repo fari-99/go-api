@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"github.com/spf13/cast"
 	"log"
 	"os"
 	"strconv"
@@ -140,22 +141,27 @@ func (base *DatabaseConfig) GetMysqlConnection() *gorm.DB {
 	}()
 
 	dbOnce.Do(func() {
-		log.Println("Initialize database connection...")
+		log.Println("Initialize mysql database connection...")
 
 		db, err := base.SetConnection()
 		if err != nil {
 			panic(err)
 		}
 
-		maxLifetime, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"), 10, 64)
-		maxIdleConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"), 10, 64)
-		maxOpenConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"), 10, 64)
+		maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
+		maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
+		maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
 
-		sqlDB, _ := db.DB()
+		sqlDB, err := db.DB()
+		if err != nil {
+			panic(err)
+		}
+
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
 		sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
 		sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
 
+		log.Printf("success initialize mysql database connection")
 		dbInstance = &dbUtil{
 			db: db,
 		}
@@ -172,22 +178,27 @@ func (base *DatabaseConfig) GetPostgresConnection() *gorm.DB {
 	}()
 
 	dbOnce.Do(func() {
-		log.Println("Initialize database connection...")
+		log.Println("Initialize postgres database connection...")
 
 		db, err := base.SetConnection()
 		if err != nil {
 			panic(err)
 		}
 
-		maxLifetime, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"), 10, 64)
-		maxIdleConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"), 10, 64)
-		maxOpenConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"), 10, 64)
+		maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
+		maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
+		maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
 
-		sqlDB, _ := db.DB()
+		sqlDB, err := db.DB()
+		if err != nil {
+			panic(err)
+		}
+
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
 		sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
 		sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
 
+		log.Printf("success initialize postgres database connection")
 		dbInstance = &dbUtil{
 			db: db,
 		}

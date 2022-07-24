@@ -2,9 +2,10 @@ package token_generator
 
 import (
 	"encoding/json"
+	"os"
+
 	"go-api/helpers/crypts"
 	"go-api/modules/models"
-	"os"
 )
 
 type TokenData struct {
@@ -15,7 +16,7 @@ type TokenData struct {
 }
 
 type UserDetails struct {
-	ID        int64    `json:"id,omitempty"`
+	ID        uint64   `json:"id,omitempty"`
 	Email     string   `json:"email,omitempty"`
 	Username  string   `json:"username,omitempty"`
 	UserRoles []string `json:"user_roles"`

@@ -3,8 +3,8 @@ package models
 import "time"
 
 type TwoAuths struct {
-	ID      int64  `gorm:"column:id" json:"id"`
-	UserID  int64  `gorm:"column:user_id" json:"user_id"`
+	ID      uint64 `gorm:"column:id" json:"id"`
+	UserID  uint64 `gorm:"column:user_id" json:"user_id"`
 	Account string `gorm:"column:account" json:"account"`
 	Issuer  string `gorm:"column:issuer" json:"issuer"`
 	Secret  string `gorm:"column:secret" json:"secret"`
@@ -16,5 +16,5 @@ type TwoAuths struct {
 }
 
 func (Transactions) TwoAuths() string {
-	return "transactions"
+	return "two_fa"
 }

@@ -10,9 +10,10 @@ import (
 )
 
 type Transactions struct {
-	ID            int64  `gorm:"column:id" json:"id"`
+	ID            uint64 `gorm:"column:id" json:"id"`
 	TransactionNo string `gorm:"column:transaction_no" json:"transaction_no"`
-	Status        int8   `gorm:"column:status" json:"status"`
+	Status        uint8  `gorm:"column:status" json:"status"`
+	CreatedBy     uint64 `gorm:"column:created_by" json:"created_by"`
 
 	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
@@ -24,7 +25,7 @@ func (Transactions) TableName() string {
 }
 
 func (model *Transactions) generateTransactionNo(tx *gorm.DB) string {
-	modelID := strconv.FormatInt(model.ID, 10)
+	modelID := strconv.FormatInt(int64(model.ID), 64)
 	referenceNo := strconv.FormatInt(rand.Int63n(100000), 10)
 	dateFormat := time.Now().Format("060102")
 

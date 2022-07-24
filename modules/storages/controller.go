@@ -3,12 +3,6 @@ package storages
 import (
 	"bytes"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/nfnt/resize"
-	"github.com/spf13/cast"
-	"go-api/helpers"
-	"go-api/helpers/crypts"
-	"go-api/helpers/storages"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -16,7 +10,14 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/nfnt/resize"
+	"github.com/spf13/cast"
+
+	"go-api/helpers"
+	"go-api/helpers/crypts"
+	"go-api/helpers/storages"
 )
 
 type controller struct {
@@ -32,7 +33,7 @@ func (c controller) DetailAction(ctx *gin.Context) {
 		return
 	}
 
-	storageModel, notFound, err := c.service.GetDetail(ctx, cast.ToInt64(storageID))
+	storageModel, notFound, err := c.service.GetDetail(ctx, cast.ToUint64(storageID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusOK, gin.H{
 			"error":         err.Error(),
@@ -91,15 +92,7 @@ func (c controller) GetImages(ctx *gin.Context) {
 		return
 	}
 
-	storageID, err := strconv.ParseInt(string(storageIDDecrypted), 10, 64)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-			"message": fmt.Sprintf("storageID is not found, error := %s", err.Error()),
-		})
-		return
-	}
-
-	storageModel, notFound, err := c.service.GetDetail(ctx, storageID)
+	storageModel, notFound, err := c.service.GetDetail(ctx, cast.ToUint64(string(storageIDDecrypted)))
 	if notFound {
 		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
 			"error_message": "file not found",

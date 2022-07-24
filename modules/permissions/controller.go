@@ -2,12 +2,13 @@ package permissions
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+
 	"go-api/constant/constant_models"
 	"go-api/helpers"
 	"go-api/modules/configs"
 	"go-api/modules/middleware"
-	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )

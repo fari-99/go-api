@@ -3,6 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+
 	"go-api/modules/auths"
 	"go-api/modules/configs"
 	"go-api/modules/hasura"
@@ -13,8 +16,6 @@ import (
 	"go-api/modules/storages"
 	"go-api/modules/twoFA"
 	"go-api/modules/users"
-	"log"
-	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -45,7 +46,7 @@ func main() {
 	//})
 
 	auths.NewRegistrator(app.Group(""),
-		auths.NewService(auths.NewRepository(di)))
+		auths.NewService(auths.NewRepository(di)), authentication)
 
 	state_machine.NewRegistrator(app.Group(""),
 		state_machine.NewService(state_machine.NewRepository(di)),

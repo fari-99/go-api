@@ -2,10 +2,11 @@ package token_generator
 
 import (
 	_ "crypto"
-	"go-api/modules/models"
 	"os"
 	"strconv"
 	"time"
+
+	"go-api/modules/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -31,11 +32,10 @@ type JwtMapClaims struct {
 }
 
 type SignedToken struct {
+	Uuid             string `json:"uuid"`
 	AccessToken      string `json:"access_token"`
 	RefreshToken     string `json:"refresh_token"`
 	AccessExpiredAt  int64  `json:"access_expired_at"`
-	AccessUuid       string `json:"access_uuid"`
-	RefreshUuid      string `json:"refresh_uuid"`
 	RefreshExpiredAt int64  `json:"refresh_expired_at"`
 }
 
@@ -61,7 +61,6 @@ func (base *BaseJwt) SetSecretKey(secretKey string) *BaseJwt {
 
 func (base *BaseJwt) SetClaim(customer models.Users) (*BaseJwt, error) {
 	timeDate := time.Now()
-	expiredDate := timeDate.AddDate(0, 0, 1).Unix()
 
 	userDetails, err := EncryptUserDetails(customer)
 	if err != nil {
@@ -80,7 +79,7 @@ func (base *BaseJwt) SetClaim(customer models.Users) (*BaseJwt, error) {
 		},
 		StandardClaims: jwt.StandardClaims{
 			IssuedAt:  timeDate.Unix(),
-			ExpiresAt: expiredDate,
+			ExpiresAt: timeDate.AddDate(0, 0, 1).Unix(), // default 1 day
 			Issuer:    os.Getenv("APP_NAME"),
 		},
 	}
@@ -116,24 +115,21 @@ func (base *BaseJwt) SetClaimApp(appData AppData) *BaseJwt {
 
 func (base *BaseJwt) SignClaims() (signedToken *SignedToken, err error) {
 	accessUuid := uuid.New().String()
-	refreshUuid := uuid.New().String()
-
 	accessToken, accessExpired, err := base.signClaims("access_token", accessUuid)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, refreshExpired, err := base.signClaims("refresh_token", refreshUuid)
+	refreshToken, refreshExpired, err := base.signClaims("refresh_token", accessUuid)
 	if err != nil {
 		return nil, err
 	}
 
 	token := &SignedToken{
+		Uuid:             accessUuid,
 		AccessToken:      accessToken,
-		AccessUuid:       accessUuid,
 		AccessExpiredAt:  accessExpired,
 		RefreshToken:     refreshToken,
-		RefreshUuid:      refreshUuid,
 		RefreshExpiredAt: refreshExpired,
 	}
 
@@ -152,14 +148,8 @@ func (base *BaseJwt) signClaims(typeClaims string, accessUuid string) (signedTok
 	mapClaims.Uuid = accessUuid
 	mapClaims.StandardClaims.ExpiresAt = expiredDate
 
-	switch typeClaims {
-	case "access_token":
-		token := jwt.NewWithClaims(base.SigningMethod, mapClaims)
-		signedToken, err = token.SignedString(base.SecretToken)
-	case "refresh_token":
-		token := jwt.NewWithClaims(base.SigningMethod, mapClaims)
-		signedToken, err = token.SignedString(base.RefreshToken)
-	}
+	token := jwt.NewWithClaims(base.SigningMethod, mapClaims)
+	signedToken, err = token.SignedString(base.SecretToken)
 
 	return signedToken, expiredDate, err
 }
@@ -178,16 +168,19 @@ func (base *BaseJwt) GetExpiredDate(typeClaims string) int64 {
 		tokenExpiredType = os.Getenv("JWT_REFRESH_TOKEN_EXPIRED_TYPE")
 	}
 
+	var expiredTime int64
 	switch tokenExpiredType {
 	case "days":
-		return timeDate.AddDate(0, 0, int(tokenExpired)).Unix()
+		expiredTime = timeDate.AddDate(0, 0, int(tokenExpired)).Unix()
 	case "months":
-		return timeDate.AddDate(0, int(tokenExpired), 0).Unix()
+		expiredTime = timeDate.AddDate(0, int(tokenExpired), 0).Unix()
 	case "years":
-		return timeDate.AddDate(int(tokenExpired), 0, 0).Unix()
+		expiredTime = timeDate.AddDate(int(tokenExpired), 0, 0).Unix()
 	default:
 		panic("token expired date type is not supported, please pick (days, months, years)")
 	}
+
+	return expiredTime
 }
 
 func (base *BaseJwt) ParseToken(jwtToken string) (*JwtMapClaims, error) {

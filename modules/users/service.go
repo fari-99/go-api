@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+
 	"go-api/constant"
 	"go-api/helpers"
 	"go-api/modules/models"
@@ -12,6 +13,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error)
+	UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error)
 }
 
 type service struct {
@@ -20,6 +22,25 @@ type service struct {
 
 func NewService(repo Repository) Service {
 	return service{repo: repo}
+}
+
+func (s service) UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error) {
+	userModel, notFound, err := s.repo.GetDetails(ctx, userID)
+	if err != nil {
+		return models.UserProfile{}, err
+	} else if notFound {
+		return models.UserProfile{}, fmt.Errorf("user not found")
+	}
+
+	userProfile := models.UserProfile{
+		Username:  userModel.Username,
+		Email:     userModel.Email,
+		Status:    userModel.Status,
+		CreatedAt: userModel.CreatedAt,
+		UpdatedAt: userModel.UpdatedAt,
+	}
+
+	return userProfile, nil
 }
 
 func (s service) CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error) {

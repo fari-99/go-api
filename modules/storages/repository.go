@@ -2,6 +2,7 @@ package storages
 
 import (
 	"errors"
+
 	"go-api/modules/configs"
 	"go-api/modules/models"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type Repository interface {
-	GetDetail(ctx *gin.Context, storageID int64) (storageModel *models.Storages, notFound bool, err error)
+	GetDetail(ctx *gin.Context, storageID uint64) (storageModel *models.Storages, notFound bool, err error)
 	Create(ctx *gin.Context, storageModel []models.Storages) ([]models.Storages, error)
 }
 
@@ -22,7 +23,7 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) GetDetail(ctx *gin.Context, storageID int64) (*models.Storages, bool, error) {
+func (r repository) GetDetail(ctx *gin.Context, storageID uint64) (*models.Storages, bool, error) {
 	db := r.DB
 
 	var storageModel models.Storages
