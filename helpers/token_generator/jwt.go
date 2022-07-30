@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"go-api/helpers"
 	"go-api/modules/models"
 
 	"github.com/gin-gonic/gin"
@@ -168,19 +169,12 @@ func (base *BaseJwt) GetExpiredDate(typeClaims string) int64 {
 		tokenExpiredType = os.Getenv("JWT_REFRESH_TOKEN_EXPIRED_TYPE")
 	}
 
-	var expiredTime int64
-	switch tokenExpiredType {
-	case "days":
-		expiredTime = timeDate.AddDate(0, 0, int(tokenExpired)).Unix()
-	case "months":
-		expiredTime = timeDate.AddDate(0, int(tokenExpired), 0).Unix()
-	case "years":
-		expiredTime = timeDate.AddDate(int(tokenExpired), 0, 0).Unix()
-	default:
-		panic("token expired date type is not supported, please pick (days, months, years)")
+	expiredTime, err := helpers.AddTime(timeDate, tokenExpired, tokenExpiredType)
+	if err != nil {
+		panic(err.Error())
 	}
 
-	return expiredTime
+	return expiredTime.Unix()
 }
 
 func (base *BaseJwt) ParseToken(jwtToken string) (*JwtMapClaims, error) {

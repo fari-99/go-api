@@ -3,12 +3,16 @@ package helpers
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gin-gonic/gin"
-	"go-api/modules/models"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
 	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"go-api/modules/models"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -98,4 +102,25 @@ func Recover(message string) {
 	}
 
 	return
+}
+
+func AddTime(yourTime time.Time, addedTime int64, timeType string) (resultTime time.Time, err error) {
+	switch timeType {
+	case "seconds":
+		resultTime = yourTime.Add(time.Second * time.Duration(addedTime))
+	case "minutes":
+		resultTime = yourTime.Add(time.Minute * time.Duration(addedTime))
+	case "hours":
+		resultTime = yourTime.Add(time.Hour * time.Duration(addedTime))
+	case "days":
+		resultTime = yourTime.AddDate(0, 0, int(addedTime))
+	case "months":
+		resultTime = yourTime.AddDate(0, int(addedTime), 0)
+	case "years":
+		resultTime = yourTime.AddDate(int(addedTime), 0, 0)
+	default:
+		err = fmt.Errorf("token expired date type is not supported, please pick (days, months, years)")
+	}
+
+	return resultTime, err
 }
