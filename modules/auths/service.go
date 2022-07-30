@@ -32,15 +32,16 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 	// delete current access & refresh token using del (del uuid:access_token) (del uuid:refresh_token)
 	// create new access & refresh token
 
-	uuidSession, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUserRefresh(uuidSession.(string))
+	oldUuidSession, _ := ctx.Get("uuid")
+	oldUuid := oldUuidSession.(string)
+	currentUser, _ := helpers.GetCurrentUserRefresh(oldUuid)
 
-	_, isExistRefresh, err := helpers.CheckToken(currentUser.Username, uuidSession.(string))
+	_, isExistRefresh, err := helpers.CheckToken(currentUser.Username, oldUuid)
 	if err != nil || !isExistRefresh {
 		return nil, isExistRefresh, err
 	}
 
-	_, err = helpers.RemoveRedisSession(currentUser.Username, uuidSession.(string))
+	_, err = helpers.RemoveRedisSession(currentUser.Username, oldUuid)
 	if err != nil {
 		return nil, false, err
 	}
@@ -51,6 +52,13 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 	}
 
 	_, err = s.setRedisSession(token, currentUser)
+	if err != nil {
+		return nil, false, err
+	}
+
+	// set new uuid to new uuid so it can be checked
+	newUuid := token.Uuid
+	err = helpers.SetFamily(currentUser.Username, oldUuid, newUuid, token.RefreshExpiredAt)
 	if err != nil {
 		return nil, false, err
 	}

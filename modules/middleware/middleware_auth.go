@@ -96,6 +96,29 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 	ctx.Set("uuid", claims.Uuid)
 	ctx.Set("user_details", userDetails.ID)
 
+	_, err := helpers.GetCurrentUser(claims.Uuid)
+	if err != nil {
+		if isUsed, err := helpers.CheckFamily("", claims.Uuid); err != nil {
+			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
+			ctx.Abort()
+			return
+		} else if isUsed {
+			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+				"message": fmt.Sprintf("this token already used, please re-authenticate your account"),
+			})
+			ctx.Abort()
+			return
+		}
+
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("authentication error, please re-login"),
+		})
+		ctx.Abort()
+		return
+	}
+
 	// check app origin
 	if appExists, _, _ := helpers.InArray(claims.TokenData.AppData.AppName, base.AllowedAppName); !appExists && len(base.AllowedAppName) > 0 {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{

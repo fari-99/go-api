@@ -14,6 +14,6 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 	{
 		userPrivate.Use(authHandler)
 		userPrivate.POST("/create", control.CreateAction)
-		userPrivate.POST("/profile", control.UserProfileAction)
+		userPrivate.GET("/profile", control.UserProfileAction)
 	}
 }

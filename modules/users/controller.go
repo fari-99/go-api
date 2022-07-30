@@ -35,7 +35,7 @@ func (c controller) CreateAction(ctx *gin.Context) {
 
 func (c controller) UserProfileAction(ctx *gin.Context) {
 	uuidSession, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUserRefresh(uuidSession.(string))
+	currentUser, _ := helpers.GetCurrentUser(uuidSession.(string))
 
 	userProfile, err := c.service.UserProfile(ctx, currentUser.ID)
 	if err != nil {

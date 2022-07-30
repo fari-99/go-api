@@ -3,7 +3,6 @@ package helpers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -30,6 +29,7 @@ type KeyRedisSessionData struct {
 	KeyRefresh      string
 	KeyTotalAccess  string
 	KeyTotalRefresh string
+	KeyFamily       string
 }
 
 type SessionData struct {
@@ -40,14 +40,26 @@ type SessionData struct {
 	Authorization bool        `json:"authorization"`
 }
 
+type FamilyCheck struct {
+	OldUuid  string `json:"old_uuid"`
+	NewUuid  string `json:"new_uuid"`
+	Username string `json:"username"`
+}
+
 func getKeyRedis(username string, uuid string) KeyRedisSessionData {
 	return KeyRedisSessionData{
-		KeyAccess:       fmt.Sprintf("%s:%s", uuid, accessTokenIndex),      // uuid:access_token
-		KeyRefresh:      fmt.Sprintf("%s:%s", uuid, refreshTokenIndex),     // uuid:refresh_token
-		KeyTotalAccess:  fmt.Sprintf("%s:%s", username, accessTokenIndex),  // username:access_token
-		KeyTotalRefresh: fmt.Sprintf("%s:%s", username, refreshTokenIndex), // username:refresh_token
+		KeyAccess:       fmt.Sprintf("%s:%s", uuid, accessTokenIndex),      // uuid:access_token, value: device and user data
+		KeyRefresh:      fmt.Sprintf("%s:%s", uuid, refreshTokenIndex),     // uuid:refresh_token, value: device and user data
+		KeyTotalAccess:  fmt.Sprintf("%s:%s", username, accessTokenIndex),  // username:access_token, value: collection of uuid
+		KeyTotalRefresh: fmt.Sprintf("%s:%s", username, refreshTokenIndex), // username:refresh_token, value: collection of uuid
+		KeyFamily:       fmt.Sprintf("%s:%s", uuid, "family"),              // uuid:family, value: collection of old uuid
 	}
 }
+
+// why using ZADD and not SADD for storing session?
+// ZADD has a feature to add scoring system to sort their member, which SADD not.
+// after that we use that scoring system to expired time
+// then we sort the member by their score if the score less than expected value (time now unix), then they expired
 
 func removeExpiredToken(redisSession *redis.Client, username string) (err error) {
 	keyRedis := getKeyRedis(username, "")
@@ -127,6 +139,41 @@ func getAllUuid(username string) (accessUuids []string, refreshUuids []string, e
 	}
 
 	return accessUuids, refreshUuids, nil
+}
+
+func setRedisSession(username string, data SessionData) error {
+	redisSession := configs.GetRedisSessionConfig()
+	dataMarshal, _ := json.Marshal(data.UserDetails) // TODO : Adding device details
+
+	keyRedis := getKeyRedis(username, data.Token.Uuid)
+
+	err := redisSession.Set(keyRedis.KeyAccess, string(dataMarshal), getTimeDuration(data.Token.AccessExpiredAt)).Err() // automatically expired
+	if err != nil {
+		return fmt.Errorf("error set redis session access token, err := %s", err.Error())
+	}
+
+	err = redisSession.Set(keyRedis.KeyRefresh, string(dataMarshal), getTimeDuration(data.Token.RefreshExpiredAt)).Err() // automatically expired
+	if err != nil {
+		return fmt.Errorf("error set redis session refresh token, err := %s", err.Error())
+	}
+
+	err = redisSession.ZAdd(keyRedis.KeyTotalAccess, redis.Z{
+		Score:  cast.ToFloat64(data.Token.AccessExpiredAt), // as expired time, set on env (default 1 day)
+		Member: data.Token.Uuid,
+	}).Err()
+	if err != nil {
+		return err
+	}
+
+	err = redisSession.ZAdd(keyRedis.KeyTotalRefresh, redis.Z{
+		Score:  cast.ToFloat64(data.Token.RefreshExpiredAt), // as expired time, set on env (default 30 day)
+		Member: data.Token.Uuid,
+	}).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func GetAllSessions(username string) ([]models.Users, error) {
@@ -238,7 +285,7 @@ func RemoveRedisSession(username, uuid string) (totalLogin int64, err error) {
 
 func DeleteAllSession(username string, uuid string) (err error) {
 	// 1. get all members using zmembers (zmembers username:access_token) (zmembers username:refresh_token)
-	// 2. delete redis session by -looping- uuid from smembers using del (del uuid:access_token) (del uuid:refresh_token)
+	// 2. delete redis session by -looping- uuid from zmembers using del (del uuid:access_token) (del uuid:refresh_token)
 	// 3. delete redis member using del (del username:access_token) (del username:refresh_token)
 	// 4. get total login using scard (scard username:access_token) (scard username:refresh_token)
 	accessUuids, refreshUuids, err := getAllUuid(username)
@@ -268,43 +315,71 @@ func DeleteAllSession(username string, uuid string) (err error) {
 	return err
 }
 
-func setRedisSession(username string, data SessionData) error {
+// using family as refresh token rotation check
+// Flow:
+// 1. User-A login and got his AT (Access Token) 1 and RT (Refresh Token) 1
+// 2. User-B got RT 1
+// 3. User-B use RT 1 to get new AT and RT, which System return AT 2 and RT 2
+// 4. User-A try to access something using AT 1, which System return error, because AT 1 already refreshed
+// 5. User-A use RT 1 to get new AT and RT, which System return error, because RT 1 already refreshed
+// 5.1. because RT 1 already used to refresh token, and someone else using it again, System will flag this token
+// 5.2. System delete RT 1 family token, which deleting AT 2 and RT 2 token from System
+// 5.3. System ask User-A to re-authenticate (re-login) to get new token
+// 6. User-A login and got his new AT 3 and RT 3
+// On the System:
+// 1. if refresh token used, check if refresh uuid already in the family
+// 1.a. if it already in the family, then delete new Access Token, Refresh Token, and family member
+// 1.b. if not already in the family, then ok :thumbs:!
+
+// SetFamily set family
+func SetFamily(username, oldUuid, newUuid string, expiration int64) (err error) {
+	// set uuid to family using set (set old_uuid:family new_uuid)
+	dataFamily := FamilyCheck{
+		OldUuid:  oldUuid,
+		NewUuid:  newUuid,
+		Username: username,
+	}
+
+	dataMarshal, _ := json.Marshal(dataFamily)
+
+	keyRedis := getKeyRedis(username, oldUuid)
 	redisSession := configs.GetRedisSessionConfig()
-	dataMarshal, _ := json.Marshal(data.UserDetails) // TODO : Adding device details
-
-	accessExpired := time.Unix(data.Token.AccessExpiredAt, 0)
-	refreshExpired := time.Unix(data.Token.RefreshExpiredAt, 0)
-	now := time.Now()
-
-	keyRedis := getKeyRedis(username, data.Token.Uuid)
-
-	err := redisSession.Set(keyRedis.KeyAccess, string(dataMarshal), accessExpired.Sub(now)).Err() // automatically expired
-	if err != nil {
-		return fmt.Errorf("error set redis session access token, err := %s", err.Error())
-	}
-
-	err = redisSession.Set(keyRedis.KeyRefresh, string(dataMarshal), refreshExpired.Sub(now)).Err() // automatically expired
-	if err != nil {
-		return fmt.Errorf("error set redis session refresh token, err := %s", err.Error())
-	}
-
-	err = redisSession.ZAdd(keyRedis.KeyTotalAccess, redis.Z{
-		Score:  cast.ToFloat64(data.Token.AccessExpiredAt), // as expired time, set on env (default 1 day)
-		Member: data.Token.Uuid,
-	}).Err()
-	if err != nil {
-		return err
-	}
-
-	err = redisSession.ZAdd(keyRedis.KeyTotalRefresh, redis.Z{
-		Score:  cast.ToFloat64(data.Token.RefreshExpiredAt), // as expired time, set on env (default 30 day)
-		Member: data.Token.Uuid,
-	}).Err()
+	_, err = redisSession.Set(keyRedis.KeyFamily, string(dataMarshal), getTimeDuration(expiration)).Result()
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// CheckFamily check family
+func CheckFamily(username, oldUuid string) (isUsed bool, err error) {
+	// check if old_uuid already used, by set (set old_uuid:family old_uuid)
+	keyRedis := getKeyRedis(username, oldUuid)
+	redisSession := configs.GetRedisSessionConfig()
+
+	// check if old_uuid is in the family that already refreshed
+	familyDataMarshal, err := redisSession.Get(keyRedis.KeyFamily).Result()
+	if err != nil && err != redis.Nil {
+		return false, err
+	} else if err == redis.Nil {
+		// if not found, then old_uuid is a new_uuid
+		return false, nil
+	}
+
+	var familyData FamilyCheck
+	_ = json.Unmarshal([]byte(familyDataMarshal), &familyData)
+
+	// because there is old uuid, delete new access token and refresh token
+	_, err = RemoveRedisSession(familyData.Username, familyData.NewUuid)
+	if err != nil {
+		return true, err
+	}
+
+	// delete current family
+	redisSession.Del(keyRedis.KeyFamily)
+
+	return true, nil
 }
 
 // GetCurrentUser get current user session from cookie uuid, uuid already set when jwt claim already set.
@@ -343,20 +418,9 @@ func GetCurrentUserRefresh(uuidIdentifier string) (*models.Users, error) {
 	return &userData, nil
 }
 
-func GetSessionDuration(lifetime int64) time.Duration {
-	lifetimeType := os.Getenv("REDIS_SESSION_LIFETIME_TYPE")
+func getTimeDuration(lifetime int64) time.Duration {
+	timeUnix := time.Unix(lifetime, 0)
+	now := time.Now()
 
-	timeDuration := time.Duration(lifetime)
-	switch lifetimeType {
-	case "second":
-		return timeDuration * time.Second
-	case "minute":
-		return timeDuration * time.Minute
-	case "hour":
-		return timeDuration * time.Hour
-	default:
-		log.Fatal(fmt.Sprintf("session '%s' is not supported", lifetimeType))
-	}
-
-	return 0
+	return timeUnix.Sub(now)
 }
