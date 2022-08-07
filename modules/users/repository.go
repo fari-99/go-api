@@ -12,7 +12,7 @@ import (
 )
 
 type Repository interface {
-	GetDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
+	GetDetails(ctx *gin.Context, userID string) (*models.Users, bool, error)
 	CreateUser(ctx *gin.Context, userModel models.Users) (*models.Users, error)
 	GetRoles(ctx *gin.Context) ([]models.Roles, error)
 }
@@ -27,7 +27,7 @@ func NewRepository(di *configs.DI) Repository {
 
 func (r repository) GetRoles(ctx *gin.Context) ([]models.Roles, error) {
 	var roles []models.Roles
-	err := r.DB.Find(&roles).Error
+	err := r.DB.WithContext(ctx).Find(&roles).Error
 	if err != nil {
 		return nil, err
 	}
@@ -35,11 +35,11 @@ func (r repository) GetRoles(ctx *gin.Context) ([]models.Roles, error) {
 	return roles, nil
 }
 
-func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
-	db := r.DB
+func (r repository) GetDetails(ctx *gin.Context, userID string) (*models.Users, bool, error) {
+	db := r.DB.WithContext(ctx)
 
 	var userModel models.Users
-	err := db.Where(&models.Users{ID: userID}).First(&userModel).Error
+	err := db.Where(&models.Users{Base: models.Base{ID: userID}}).First(&userModel).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, true, nil
 	} else if err != nil {
@@ -50,7 +50,7 @@ func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.Users, 
 }
 
 func (r repository) CreateUser(ctx *gin.Context, userModel models.Users) (*models.Users, error) {
-	db := r.DB
+	db := r.DB.WithContext(ctx)
 
 	var isExist models.Users
 	err := db.Debug().Where("username = ? OR email = ?", userModel.Username, userModel.Email).Find(&isExist).Error

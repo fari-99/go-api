@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -90,13 +91,7 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 }
 
 func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.JwtMapClaims) {
-	userDetails := claims.UserDetails
-
-	// setup uuid for controller
-	ctx.Set("uuid", claims.Uuid)
-	ctx.Set("user_details", userDetails.ID)
-
-	_, err := helpers.GetCurrentUser(claims.Uuid)
+	currentUser, err := helpers.GetCurrentUser(claims.Uuid)
 	if err != nil {
 		if isUsed, err := helpers.CheckFamily("", claims.Uuid); err != nil {
 			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
@@ -118,6 +113,16 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 		ctx.Abort()
 		return
 	}
+
+	userDetails := claims.UserDetails
+
+	// setup uuid for controller
+	ctx.Set("uuid", claims.Uuid)
+	ctx.Set("user_id", userDetails.ID)
+
+	// setup user data from redis
+	currentUserMarshal, _ := json.Marshal(currentUser)
+	ctx.Set("user_details", string(currentUserMarshal))
 
 	// check app origin
 	if appExists, _, _ := helpers.InArray(claims.TokenData.AppData.AppName, base.AllowedAppName); !appExists && len(base.AllowedAppName) > 0 {

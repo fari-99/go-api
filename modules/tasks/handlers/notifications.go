@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+
 	"go-api/constant"
 	"go-api/constant/constant_models"
 	"go-api/helpers/notifications"
 	"go-api/modules/configs/rabbitmq"
 	"go-api/modules/models"
-	"log"
-	"os"
 
 	"gorm.io/gorm"
 )
@@ -37,7 +38,7 @@ func (base *BaseEventHandler) NotificationsHandler(body rabbitmq.ConsumerHandler
 func compileNotificationTemplate(db *gorm.DB, body rabbitmq.ConsumerHandlerData) error {
 	type Input struct {
 		Action   string `json:"action"`
-		ActionBy int64  `json:"action_by"`
+		ActionBy string `json:"action_by"`
 	}
 
 	var input Input
@@ -68,7 +69,7 @@ func compileNotificationTemplate(db *gorm.DB, body rabbitmq.ConsumerHandlerData)
 
 	// get send to
 	usersSendTo := map[int64]models.Users{
-		1: {ID: 1, Email: os.Getenv("EMAIL_FROM_DEFAULT"), UserSocials: []models.UserSocials{{Token: "123456789"}}},
+		1: {Base: models.Base{ID: "1"}, Email: os.Getenv("EMAIL_FROM_DEFAULT"), UserSocials: []models.UserSocials{{Token: "123456789"}}},
 	}
 
 	// get action by
@@ -126,13 +127,13 @@ func compileNotificationTemplate(db *gorm.DB, body rabbitmq.ConsumerHandlerData)
 	return nil
 }
 
-func getUserDetails(db *gorm.DB, userID int64) (*models.Users, bool, error) {
-	if userID == 0 {
+func getUserDetails(db *gorm.DB, userID string) (*models.Users, bool, error) {
+	if userID == "" {
 		return nil, true, nil
 	}
 
 	var actionBy models.Users
-	err := db.Where(&models.Users{ID: userID}).First(&actionBy).Error
+	err := db.Where(&models.Users{Base: models.Base{ID: userID}}).First(&actionBy).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, false, nil
 	} else if err != nil {

@@ -13,7 +13,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error)
-	UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error)
+	UserProfile(ctx *gin.Context, userID string) (models.UserProfile, error)
 }
 
 type service struct {
@@ -24,7 +24,7 @@ func NewService(repo Repository) Service {
 	return service{repo: repo}
 }
 
-func (s service) UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error) {
+func (s service) UserProfile(ctx *gin.Context, userID string) (models.UserProfile, error) {
 	userModel, notFound, err := s.repo.GetDetails(ctx, userID)
 	if err != nil {
 		return models.UserProfile{}, err

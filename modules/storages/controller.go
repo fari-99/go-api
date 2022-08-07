@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nfnt/resize"
-	"github.com/spf13/cast"
 
 	"go-api/helpers"
 	"go-api/helpers/crypts"
@@ -33,7 +32,7 @@ func (c controller) DetailAction(ctx *gin.Context) {
 		return
 	}
 
-	storageModel, notFound, err := c.service.GetDetail(ctx, cast.ToUint64(storageID))
+	storageModel, notFound, err := c.service.GetDetail(ctx, storageID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusOK, gin.H{
 			"error":         err.Error(),
@@ -92,7 +91,7 @@ func (c controller) GetImages(ctx *gin.Context) {
 		return
 	}
 
-	storageModel, notFound, err := c.service.GetDetail(ctx, cast.ToUint64(string(storageIDDecrypted)))
+	storageModel, notFound, err := c.service.GetDetail(ctx, string(storageIDDecrypted))
 	if notFound {
 		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
 			"error_message": "file not found",

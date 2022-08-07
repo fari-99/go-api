@@ -3,12 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+
 	"go-api/constant"
 	"go-api/helpers/notifications"
 	"go-api/modules/configs/rabbitmq"
 	"go-api/modules/models"
-	"log"
-	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/spf13/cast"
@@ -98,10 +99,10 @@ func (base *BaseEventHandler) NotificationWhatsappHandler(body rabbitmq.Consumer
 		params.SetFrom(os.Getenv("TWILIO_NUMBER"))
 		params.SetBody(input.NotificationTemplate.Body)
 
-		_, err := base.TwilioRestClient.ApiV2010.CreateMessage(params)
+		_, err := base.TwilioRestClient.Api.CreateMessage(params)
 
 		if err != nil {
-			fmt.Printf("error send whatsapp [%d] := %s\n", userSendTo.ID, err.Error())
+			fmt.Printf("error send whatsapp [%s] := %s\n", userSendTo.ID, err.Error())
 			continue
 		}
 	}

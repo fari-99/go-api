@@ -35,7 +35,7 @@ type KeyRedisSessionData struct {
 type SessionData struct {
 	Token SessionToken
 
-	UserID        uint64      `json:"user_id"`
+	UserID        string      `json:"user_id"`
 	UserDetails   interface{} `json:"user_details"`
 	Authorization bool        `json:"authorization"`
 }
