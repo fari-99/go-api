@@ -58,9 +58,9 @@ func NewBaseQueue(exchangeName, queueName string) *QueueSetup {
 	}
 
 	queueSetup.setQueueName(queueName)
-	queueSetup.setQueueUtil()
+	newQueueSetup := queueSetup.setQueueUtil()
 
-	return queueSetup
+	return newQueueSetup
 }
 
 type queueUtil struct {
@@ -247,7 +247,7 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 
 func (base *QueueSetup) openConnection() error {
 	for {
-		loggingMessage("Trying to open connection, please wait...", nil)
+		loggingMessage("Trying to open rabbitmq connection, please wait...", nil)
 		time.Sleep(5 * time.Second)
 
 		connUrl := fmt.Sprintf("amqp://%s:%s@%s:%s/",
@@ -301,10 +301,12 @@ func (base *QueueSetup) openChannel() error {
 }
 
 func loggingMessage(message string, data interface{}) {
-	if data == nil {
-		return
+	if data != nil {
+		dataMarshal, _ := json.Marshal(data)
+		message += fmt.Sprintf("%s, Data := %s", message, string(dataMarshal))
 	}
 
-	dataMarshal, _ := json.Marshal(data)
-	log.Printf("%s, Data := %s", message, string(dataMarshal))
+	if os.Getenv("APP_MODE") == gin.DebugMode {
+		log.Printf(message)
+	}
 }

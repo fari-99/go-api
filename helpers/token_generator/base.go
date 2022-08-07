@@ -16,7 +16,7 @@ type TokenData struct {
 }
 
 type UserDetails struct {
-	ID        uint64   `json:"id,omitempty"`
+	ID        string   `json:"id,omitempty"`
 	Email     string   `json:"email,omitempty"`
 	Username  string   `json:"username,omitempty"`
 	UserRoles []string `json:"user_roles"`

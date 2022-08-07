@@ -58,7 +58,7 @@ func otpServe(ctx *gin.Context) {
 	}
 }
 
-func getUserTwoAuthenticationModel(userID uint64) (*models.TwoAuths, error) {
+func getUserTwoAuthenticationModel(userID string) (*models.TwoAuths, error) {
 	db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
 
 	var twoAuthModel models.TwoAuths

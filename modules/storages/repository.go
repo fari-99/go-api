@@ -11,7 +11,7 @@ import (
 )
 
 type Repository interface {
-	GetDetail(ctx *gin.Context, storageID uint64) (storageModel *models.Storages, notFound bool, err error)
+	GetDetail(ctx *gin.Context, storageID string) (storageModel *models.Storages, notFound bool, err error)
 	Create(ctx *gin.Context, storageModel []models.Storages) ([]models.Storages, error)
 }
 
@@ -23,11 +23,11 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) GetDetail(ctx *gin.Context, storageID uint64) (*models.Storages, bool, error) {
+func (r repository) GetDetail(ctx *gin.Context, storageID string) (*models.Storages, bool, error) {
 	db := r.DB
 
 	var storageModel models.Storages
-	err := db.Where(&models.Storages{ID: storageID}).First(&storageModel).Error
+	err := db.Where(&models.Storages{Base: models.Base{ID: storageID}}).First(&storageModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
