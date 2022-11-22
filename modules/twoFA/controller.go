@@ -3,12 +3,15 @@ package twoFA
 import (
 	"bytes"
 	"fmt"
-	"github.com/dgryski/dgoogauth"
-	"github.com/gin-gonic/gin"
-	"go-api/helpers"
 	"io"
 	"net/http"
+
+	"github.com/dgryski/dgoogauth"
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 	"rsc.io/qr"
+
+	"go-api/helpers"
 )
 
 type controller struct {
@@ -16,7 +19,11 @@ type controller struct {
 }
 
 func (c controller) CreateNewAuth(ctx *gin.Context) {
-	_, notFound, err := c.service.GetDetails(ctx)
+	uuid, _ := ctx.Get("uuid")
+	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	userID := currentUser.ID
+
+	_, notFound, err := c.service.GetDetails(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -54,7 +61,11 @@ func (c controller) CreateNewAuth(ctx *gin.Context) {
 }
 
 func (c controller) ValidateAuth(ctx *gin.Context) {
-	twoAuthModel, notFound, err := c.service.GetDetails(ctx)
+	uuid, _ := ctx.Get("uuid")
+	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	userID := currentUser.ID
+
+	twoAuthModel, notFound, err := c.service.GetDetails(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -78,10 +89,25 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 		return
 	}
 
+	recoveryCodeModels, err := c.service.GetAllRecoveryCode(ctx, twoAuthModel.UserID)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to get your backup code",
+		})
+		return
+	}
+
+	var scratchCodes []int
+	for _, recoveryCodeModel := range recoveryCodeModels {
+		scratchCodes = append(scratchCodes, cast.ToInt(recoveryCodeModel.Code))
+	}
+
 	otpConfig := &dgoogauth.OTPConfig{
-		Secret:      string(secret),
-		WindowSize:  3,
-		HotpCounter: 0,
+		Secret:       string(secret),
+		WindowSize:   3,
+		HotpCounter:  0,
+		ScratchCodes: scratchCodes,
 	}
 
 	otpValue := ctx.DefaultQuery("otp_value", "")
@@ -102,7 +128,11 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 }
 
 func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
-	_, notFound, err := c.service.GetDetails(ctx)
+	uuid, _ := ctx.Get("uuid")
+	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	userID := currentUser.ID
+
+	_, notFound, err := c.service.GetDetails(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -117,7 +147,7 @@ func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
 		return
 	}
 
-	code, err := c.service.GenerateRecoveryCode(ctx)
+	code, err := c.service.GenerateRecoveryCode(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),

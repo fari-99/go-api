@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"os"
 
+	gohelper "github.com/fari-99/go-helper"
+	"github.com/fari-99/go-helper/crypts"
 	"github.com/gin-gonic/gin"
 
 	"go-api/constant"
 	"go-api/helpers"
-	"go-api/helpers/crypts"
 	"go-api/modules/models"
 )
 
 type Service interface {
-	GetDetails(ctx *gin.Context) (*models.TwoAuths, bool, error)
+	GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, bool, error)
 	CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error)
-	GenerateRecoveryCode(ctx *gin.Context) ([]string, error)
+	GenerateRecoveryCode(ctx *gin.Context, userID string) ([]string, error)
+	GetAllRecoveryCode(ctx *gin.Context, userID string) ([]models.TwoAuthRecoveries, error)
 
 	EncryptKey() ([]byte, string, error)
 	DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error)
@@ -31,7 +33,7 @@ func NewService(repo Repository) Service {
 }
 
 func (s service) EncryptKey() ([]byte, string, error) {
-	secret := crypts.GenerateRandString(10, "alphanum")
+	secret := gohelper.GenerateRandString(10, "alphanum")
 	encodedSecret := base32.StdEncoding.EncodeToString([]byte(secret))
 
 	cryptBase := crypts.NewEncryptionBase()
@@ -51,11 +53,8 @@ func (s service) DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error) {
 	return secret, nil
 }
 
-func (s service) GetDetails(ctx *gin.Context) (*models.TwoAuths, bool, error) {
-	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
-
-	return s.repo.GetDetails(ctx, currentUser.ID)
+func (s service) GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, bool, error) {
+	return s.repo.GetDetails(ctx, userID)
 }
 
 func (s service) CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error) {
@@ -81,9 +80,10 @@ func (s service) CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error
 	return savedModel, authLink, err
 }
 
-func (s service) GenerateRecoveryCode(ctx *gin.Context) ([]string, error) {
-	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+func (s service) GenerateRecoveryCode(ctx *gin.Context, userID string) ([]string, error) {
+	return s.repo.GenerateRecoveryCode(ctx, userID)
+}
 
-	return s.repo.GenerateRecoveryCode(currentUser.ID)
+func (s service) GetAllRecoveryCode(ctx *gin.Context, userID string) ([]models.TwoAuthRecoveries, error) {
+	return s.repo.GetAllRecoveryCode(ctx, userID)
 }

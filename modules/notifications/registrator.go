@@ -1,8 +1,9 @@
 package notifications
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.HandlerFunc) {
@@ -14,8 +15,8 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 		test.Use(authHandler)
 		test.POST("/", control.CreateAction)
 		test.GET("/", control.GetListAction)
-		test.GET("/{:id}", control.GetDetailAction)
-		test.PUT("/{:id}", control.UpdateAction)
-		test.DELETE("/{:id}", control.DeleteAction)
+		test.GET("/:id", control.GetDetailAction)
+		test.PUT("/:id", control.UpdateAction)
+		test.DELETE("/:id", control.DeleteAction)
 	}
 }

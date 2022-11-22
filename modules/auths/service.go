@@ -1,10 +1,13 @@
 package auths
 
 import (
+	"os"
+	"strings"
+
+	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
 
 	"go-api/helpers"
-	"go-api/helpers/token_generator"
 	"go-api/modules/models"
 )
 
@@ -143,8 +146,21 @@ func (s service) AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (int6
 
 func (s service) generateToken(ctx *gin.Context, userModel models.Users) (signedToken *token_generator.SignedToken, err error) {
 	// generate JWT token
-	tokenHelper := token_generator.NewJwt().SetCtx(ctx)
-	tokenHelper, err = tokenHelper.SetClaim(userModel)
+	secretToken := os.Getenv("JWT_SECRET_TOKEN")
+	refreshToken := os.Getenv("JWT_REFRESH_TOKEN")
+	signMethod := os.Getenv("JWT_HMAC_HASH")
+
+	userRoles := strings.Split(userModel.Roles, ",")
+
+	userData := token_generator.UserDetails{
+		ID:        userModel.ID,
+		Email:     userModel.Email,
+		Username:  userModel.Username,
+		UserRoles: userRoles,
+	}
+
+	tokenHelper := token_generator.NewJwt(secretToken, refreshToken, signMethod).SetCtx(ctx.Request)
+	tokenHelper, err = tokenHelper.SetClaim(userData)
 	if err != nil {
 		return nil, err
 	}

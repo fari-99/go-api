@@ -1,73 +1,103 @@
 package middleware
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
-	"os"
-
-	"go-api/constant"
-	"go-api/helpers"
-	"go-api/helpers/crypts"
-	"go-api/modules/configs"
-	"go-api/modules/models"
 
 	"github.com/dgryski/dgoogauth"
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+	"github.com/spf13/cast"
+
+	"go-api/helpers"
+	"go-api/modules/configs"
+	"go-api/modules/twoFA"
 )
 
-func OTPMiddleware() gin.HandlerFunc {
-	return otpServe
+type OtpConfig struct {
+	DI *configs.DI
 }
 
-func otpServe(ctx *gin.Context) {
+func OTPMiddleware(di *configs.DI) gin.HandlerFunc {
+	otpConfig := OtpConfig{DI: di}
+	return otpConfig.otpServe
+}
+
+func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	userID := currentUser.ID
 
-	twoAuthModel, err := getUserTwoAuthenticationModel(currentUser.ID)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusUnauthorized, err.Error())
+	if !currentUser.TwoFaEnabled {
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
+			"error_message": "Please enabled Two Factor Authorization to access this page",
+		})
+		ctx.Abort()
 		return
 	}
 
-	cryptBase := crypts.NewEncryptionBase()
-	cryptBase.SetPassphrase(os.Getenv("2FA_KEY_ENCRYPT"))
-	secret, err := cryptBase.Decrypt([]byte(twoAuthModel.Secret))
+	twoFAService := twoFA.NewService(twoFA.NewRepository(otpConfig.DI))
+	twoAuthModel, notFound, err := twoFAService.GetDetails(ctx, userID)
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusUnauthorized, err.Error())
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "error get 2FA configuration for your user",
+		})
+		ctx.Abort()
+		return
+	} else if !notFound {
+		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
+			"error":         "user config found",
+			"error_message": "your user already created the configuration, inactive the configuration first, and try create again",
+		})
+		ctx.Abort()
 		return
 	}
 
-	otpConfig := &dgoogauth.OTPConfig{
-		Secret:      string(secret),
-		WindowSize:  3,
-		HotpCounter: 0,
+	secret, err := twoFAService.DecryptKey(*twoAuthModel)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to decrypt key of your configuration",
+		})
+		ctx.Abort()
+		return
 	}
+
+	recoveryCodeModels, err := twoFAService.GetAllRecoveryCode(ctx, twoAuthModel.UserID)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to get your backup code",
+		})
+		ctx.Abort()
+		return
+	}
+
+	var scratchCodes []int
+	for _, recoveryCodeModel := range recoveryCodeModels {
+		scratchCodes = append(scratchCodes, cast.ToInt(recoveryCodeModel.Code))
+	}
+
+	otpConfigs := &dgoogauth.OTPConfig{
+		Secret:       string(secret),
+		WindowSize:   3,
+		HotpCounter:  0,
+		ScratchCodes: scratchCodes,
+	}
+
 	otpValue := ctx.DefaultQuery("otp_value", "")
-
-	isAuth, err := otpConfig.Authenticate(otpValue)
+	isAuth, err := otpConfigs.Authenticate(otpValue)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
+		ctx.Abort()
 		return
 	}
 
 	if !isAuth {
 		helpers.NewResponse(ctx, http.StatusUnauthorized, fmt.Sprintf("failed to authenticate, try again"))
+		ctx.Abort()
 		return
 	}
-}
 
-func getUserTwoAuthenticationModel(userID string) (*models.TwoAuths, error) {
-	db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
-
-	var twoAuthModel models.TwoAuths
-	err := db.Where(&models.TwoAuths{UserID: userID, Status: constant.StatusActive}).First(&twoAuthModel).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, fmt.Errorf("please setup your two auth notification first, or your configuration is not found")
-	} else if err != nil {
-		return nil, err
-	}
-
-	return &twoAuthModel, nil
+	ctx.Next()
 }

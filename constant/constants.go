@@ -4,8 +4,11 @@ const UserTypeCustomer = 1
 const UserTypeSeller = 2
 
 const StatusActive = 99
+const StatusActiveName = "active"
 const StatusNonActive = 98
+const StatusNonActiveName = "not-active"
 const StatusDeleted = 97
+const StatusDeletedName = "deleted"
 
 const SuccessCode = 200
 const ErrorDataCode = 400

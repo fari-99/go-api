@@ -11,12 +11,12 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/fari-99/go-helper/crypts"
+	"github.com/fari-99/go-helper/storages"
 	"github.com/gin-gonic/gin"
 	"github.com/nfnt/resize"
 
 	"go-api/helpers"
-	"go-api/helpers/crypts"
-	"go-api/helpers/storages"
 )
 
 type controller struct {

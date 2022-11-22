@@ -2,11 +2,13 @@ package crypts
 
 import (
 	"encoding/base64"
-	"github.com/gin-gonic/gin"
-	"go-api/helpers"
-	"go-api/helpers/crypts"
-	"go-api/modules/configs"
 	"net/http"
+
+	"github.com/fari-99/go-helper/crypts"
+	"github.com/gin-gonic/gin"
+
+	"go-api/helpers"
+	"go-api/modules/configs"
 )
 
 type CryptsController struct {
@@ -60,7 +62,7 @@ func (controller *CryptsController) EncryptDecryptRsaAction(ctx *gin.Context) {
 	encryptHelper := crypts.NewEncryptionBase()
 	encryptHelper.SetUseRandomness(useRandomness, input.RsaRandomness)
 	encryptHelper.SetPassphrase(input.Passphrase)
-	privateKey, publicKey, err := encryptHelper.GenerateRSAKey()
+	rsaKeys, err := encryptHelper.GenerateRSAKey(2048)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -75,19 +77,17 @@ func (controller *CryptsController) EncryptDecryptRsaAction(ctx *gin.Context) {
 	decryptHelper := crypts.NewEncryptionBase()
 	decryptHelper.SetUseRandomness(useRandomness, input.RsaRandomness)
 	encryptHelper.SetPassphrase(input.Passphrase)
-	decryptHelper.SetRsaKey(privateKey, publicKey)
+	decryptHelper.SetRsaPublicKey(rsaKeys.PublicKey)
+	decryptHelper.SetRsaPrivateKey(rsaKeys.PrivateKey)
 
-	decrypted, err := decryptHelper.DecryptRSA(string(encrypted))
+	decrypted, err := decryptHelper.DecryptRSA(encrypted)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	result := map[string]interface{}{
-		"key": map[string]interface{}{
-			"private": privateKey,
-			"public":  publicKey,
-		},
+		"key":     rsaKeys,
 		"encrypt": string(encrypted),
 		"decrypt": string(decrypted),
 	}
@@ -132,7 +132,7 @@ func (controller *CryptsController) VerifyMessageAction(ctx *gin.Context) {
 	signature, _ := base64.RawURLEncoding.DecodeString(input.Signature)
 
 	signHelper := crypts.NewEncryptionBase()
-	isVerified, err := signHelper.VerifyData(input.Message, string(signature))
+	isVerified, err := signHelper.VerifyData(input.Message, signature)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return

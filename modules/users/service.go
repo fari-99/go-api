@@ -2,13 +2,15 @@ package users
 
 import (
 	"fmt"
+	"os"
+
+	gohelper "github.com/fari-99/go-helper"
+	"github.com/spf13/cast"
 
 	"go-api/constant"
-	"go-api/helpers"
 	"go-api/modules/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nbutton23/zxcvbn-go"
 )
 
 type Service interface {
@@ -48,20 +50,20 @@ func (s service) CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.
 		return nil, err
 	}
 
-	var userInput []string
-	checkPassword := zxcvbn.PasswordStrength(input.Password, userInput)
-	if checkPassword.Score <= 2 {
-		return nil, fmt.Errorf("your password not good enough, please try again")
+	password := gohelper.Passwords{
+		Email:    input.Email,
+		Username: input.Username,
+		Password: input.Password,
 	}
 
-	password, err := helpers.GeneratePassword(input.Password)
+	hashPassword, err := gohelper.GeneratePassword(password, cast.ToInt8(os.Getenv("PASSWORD_COST")))
 	if err != nil {
 		return nil, err
 	}
 
 	userModel := models.Users{
 		Username: input.Username,
-		Password: password,
+		Password: *hashPassword,
 		Email:    input.Email,
 		Status:   constant.StatusActive,
 	}

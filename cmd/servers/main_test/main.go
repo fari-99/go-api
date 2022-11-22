@@ -3,8 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
+
 	"go-api/modules/configs"
 	"go-api/modules/tests/crypts"
+	"go-api/modules/tests/csrf"
 	"go-api/modules/tests/emails"
 	"go-api/modules/tests/finite_states"
 	"go-api/modules/tests/ftps"
@@ -13,8 +17,6 @@ import (
 	"go-api/modules/tests/redis"
 	"go-api/modules/tests/redis_cache"
 	"go-api/modules/tests/twofa"
-	"log"
-	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -33,6 +35,8 @@ func main() {
 		fmt.Printf("Rval: %+v\n", rVal)
 	}
 
+	di := configs.DIInit()
+
 	// Setup routes and run application
 	app := configs.GetGinApplication()
 	crypts.NewRoute(app)
@@ -42,8 +46,9 @@ func main() {
 	rabbitmq.NewRoute(app)
 	redis.NewRoute(app)
 	redis_cache.NewRoute(app)
-	twofa.NewRoute(app)
+	twofa.NewRoute(app, di)
 	kafka.NewRoute(app)
+	csrf.NewCsrfRoutes(app)
 
 	applicationRun := fmt.Sprintf("%s:%s", host, port)
 	log.Printf("Run application on %s", applicationRun)

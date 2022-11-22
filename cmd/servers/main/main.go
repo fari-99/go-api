@@ -9,6 +9,7 @@ import (
 	"go-api/modules/auths"
 	"go-api/modules/configs"
 	"go-api/modules/hasura"
+	"go-api/modules/locations"
 	"go-api/modules/middleware"
 	"go-api/modules/notifications"
 	"go-api/modules/permissions"
@@ -67,6 +68,10 @@ func main() {
 
 	users.NewRegistrator(app.Group(""),
 		users.NewService(users.NewRepository(di)),
+		authentication)
+
+	locations.NewRegistrator(app.Group(""),
+		locations.NewService(locations.NewRepository(di)),
 		authentication)
 
 	permissions.NewRegistrator(app.Group(""),

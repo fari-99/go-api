@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"mime/multipart"
 
+	"github.com/fari-99/go-helper/storages"
 	"github.com/gin-gonic/gin"
 
 	"go-api/constant"
 	"go-api/helpers"
-	"go-api/helpers/storages"
 	"go-api/modules/models"
 )
 

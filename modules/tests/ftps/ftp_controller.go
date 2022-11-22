@@ -2,12 +2,15 @@ package ftps
 
 import (
 	"bytes"
-	"github.com/gin-gonic/gin"
-	"go-api/helpers"
-	"go-api/modules/configs"
 	"io"
 	"net/http"
 	"os"
+
+	gohelper "github.com/fari-99/go-helper"
+	"github.com/gin-gonic/gin"
+
+	"go-api/helpers"
+	"go-api/modules/configs"
 )
 
 type FtpController struct {
@@ -21,7 +24,17 @@ func (controller *FtpController) SendFtpAction(ctx *gin.Context) {
 		return
 	}
 
-	helpersFtp := helpers.BaseHelperFtp(true).SetCredential(helpers.FtpCredential{})
+	ftpCredential := gohelper.FtpCredential{
+		FtpHost:     os.Getenv("FTP_TEST_HOST"),
+		FtpPort:     os.Getenv("FTP_PORT"), // sftp port default 22
+		SshUser:     os.Getenv("FTP_TEST_USERNAME"),
+		SshPassword: os.Getenv("FTP_TEST_PASSWORD"),
+		SshKeyFile:  os.Getenv("FTP_AUTH_FILE_LOCATION") + os.Getenv("FTP_TEST_AUTH_FILE"),
+		FtpUser:     "",
+		FtpPassword: "",
+	}
+
+	helpersFtp := gohelper.BaseHelperFtp(true).SetCredential(ftpCredential)
 
 	form := ctx.Request.MultipartForm
 	files := form.File["files[]"]

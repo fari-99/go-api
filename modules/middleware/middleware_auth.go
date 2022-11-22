@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
-	"go-api/helpers"
-	"go-api/helpers/token_generator"
-
+	gohelper "github.com/fari-99/go-helper"
+	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
+
+	"go-api/helpers"
 )
 
 // AuthMiddleware inits auth middleware config and returns new handler
@@ -36,7 +38,7 @@ func (base *BaseMiddleware) authServe(ctx *gin.Context) {
 		accessToken = fmt.Sprintf("Bearer %s", cookie.Value)
 	}
 
-	claims, next, err := base.checkAuthHeader(accessToken)
+	claims, next, err := base.checkAuthHeader(accessToken, "access_token")
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"message":       "You must login to access",
@@ -69,7 +71,7 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 		accessToken = fmt.Sprintf("Bearer %s", cookie.Value)
 	}
 
-	claims, next, err := base.checkAuthHeader(accessToken)
+	claims, next, err := base.checkAuthHeader(accessToken, "refresh_token")
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"message":       "You must login to access",
@@ -125,7 +127,7 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 	ctx.Set("user_details", string(currentUserMarshal))
 
 	// check app origin
-	if appExists, _, _ := helpers.InArray(claims.TokenData.AppData.AppName, base.AllowedAppName); !appExists && len(base.AllowedAppName) > 0 {
+	if appExists, _, _ := gohelper.InArray(base.AllowedAppName, claims.TokenData.AppData.AppName); !appExists && len(base.AllowedAppName) > 0 {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"message": fmt.Sprintf("This Application is not supported by our system, please contact admin, app name := %s", claims.TokenData.AppData.AppName),
 		})
@@ -137,7 +139,7 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 	if len(claims.TokenData.AppData.IPList) > 0 && len(base.Whitelist) > 0 {
 		var exists int
 		for _, ipList := range claims.TokenData.AppData.IPList {
-			ipListExist, _, _ := helpers.InArray(ipList, base.Whitelist)
+			ipListExist, _, _ := gohelper.InArray(base.Whitelist, ipList)
 			if ipListExist {
 				exists++
 				break
@@ -158,7 +160,7 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 	if len(claims.TokenData.AppData.IPList) > 0 && len(base.Blacklist) > 0 {
 		var exists int
 		for _, ipList := range claims.TokenData.AppData.IPList {
-			ipListExist, _, _ := helpers.InArray(ipList, base.Blacklist)
+			ipListExist, _, _ := gohelper.InArray(base.Blacklist, ipList)
 			if ipListExist {
 				exists++
 				break
@@ -178,14 +180,18 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 	ctx.Next()
 }
 
-func (base *BaseMiddleware) checkAuthHeader(authHeader string) (*token_generator.JwtMapClaims, bool, error) {
+func (base *BaseMiddleware) checkAuthHeader(authHeader string, typeClaims string) (*token_generator.JwtMapClaims, bool, error) {
 	if len(authHeader) == 0 {
 		return &token_generator.JwtMapClaims{}, false, errors.New("header Authorization Bearer Token is empty")
 	}
 
 	token := strings.Split(authHeader, " ")
 
-	claims, err := token_generator.NewJwt().ParseToken(token[1])
+	secretToken := os.Getenv("JWT_SECRET_TOKEN")
+	refreshToken := os.Getenv("JWT_REFRESH_TOKEN")
+	signMethod := os.Getenv("JWT_HMAC_HASH")
+
+	claims, err := token_generator.NewJwt(secretToken, refreshToken, signMethod).ParseToken(typeClaims, token[1])
 	if err != nil {
 		return &token_generator.JwtMapClaims{}, false, err
 	}

@@ -52,14 +52,17 @@ func RBACHandler(ctx *gin.Context) {
 
 		if rolePermission, err := CheckPermission(enforcer, permission); err != nil {
 			helpers.NewResponse(ctx, http.StatusUnauthorized, err.Error())
+			ctx.Abort()
 			return
 		} else if rolePermission {
+			ctx.Next()
 			return
 		}
 	}
 
 	//fmt.Printf("--- DON'T HAVE PERMISSION FOR ANY ROLES ---")
 	helpers.NewResponse(ctx, http.StatusUnauthorized, "user don't have role that have permission for this url")
+	ctx.Abort()
 	return
 }
 

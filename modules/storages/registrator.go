@@ -1,8 +1,9 @@
 package storages
 
 import (
-	"github.com/gin-gonic/gin"
 	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.HandlerFunc) {
@@ -12,8 +13,8 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 	// Storages Endpoint collection
 	publicStorage := app.Group("/storages")
 	{
-		publicStorage.GET("/{:id}", control.DetailAction)
-		publicStorage.GET("/{:id}/{:methodType}/{:imageSize}", control.GetImages)
+		publicStorage.GET("/:storageID", control.DetailAction)
+		publicStorage.GET("/:storageID/:methodType/:imageSize", control.GetImages)
 	}
 
 	privateStorage := app.Group("/storages")
