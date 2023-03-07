@@ -2,15 +2,15 @@ package configs
 
 import (
 	"fmt"
-	"github.com/spf13/cast"
 	"log"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/joho/godotenv/autoload"
+	_ "github.com/lib/pq"
+	"github.com/spf13/cast"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -18,15 +18,8 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-type dbUtil struct {
-	db *gorm.DB
-}
-
 const MySQLType = "MYSQL"
 const PostgresType = "POSTGRES"
-
-var dbInstance *dbUtil
-var dbOnce sync.Once
 
 type DatabaseConfig struct {
 	Type string `json:"type"`
@@ -69,7 +62,7 @@ func checkType(databaseType string) bool {
 	}
 }
 
-func (base *DatabaseConfig) getConnection() string {
+func (base *DatabaseConfig) GetConnection() string {
 	var conn string
 	if base.Type == MySQLType {
 		conn = base.Username + ":" +
@@ -110,7 +103,7 @@ func (base *DatabaseConfig) getLogger() logger.Interface {
 }
 
 func (base *DatabaseConfig) SetConnection() (*gorm.DB, error) {
-	conn := base.getConnection()
+	conn := base.GetConnection()
 	gormConfig := &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true,
@@ -140,34 +133,29 @@ func (base *DatabaseConfig) GetMysqlConnection() *gorm.DB {
 		}
 	}()
 
-	dbOnce.Do(func() {
-		log.Println("Initialize mysql database connection...")
+	log.Println("Initialize mysql database connection...")
 
-		db, err := base.SetConnection()
-		if err != nil {
-			panic(err)
-		}
+	db, err := base.SetConnection()
+	if err != nil {
+		panic(err)
+	}
 
-		maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
-		maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
-		maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
+	maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
+	maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
+	maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
 
-		sqlDB, err := db.DB()
-		if err != nil {
-			panic(err)
-		}
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
 
-		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
-		sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
-		sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
+	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
+	sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
+	sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
 
-		log.Printf("success initialize mysql database connection")
-		dbInstance = &dbUtil{
-			db: db,
-		}
-	})
+	log.Printf("success initialize mysql database connection")
 
-	return dbInstance.db
+	return db
 }
 
 func (base *DatabaseConfig) GetPostgresConnection() *gorm.DB {
@@ -177,32 +165,27 @@ func (base *DatabaseConfig) GetPostgresConnection() *gorm.DB {
 		}
 	}()
 
-	dbOnce.Do(func() {
-		log.Println("Initialize postgres database connection...")
+	log.Println("Initialize postgres database connection...")
 
-		db, err := base.SetConnection()
-		if err != nil {
-			panic(err)
-		}
+	db, err := base.SetConnection()
+	if err != nil {
+		panic(err)
+	}
 
-		maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
-		maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
-		maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
+	maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
+	maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
+	maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
 
-		sqlDB, err := db.DB()
-		if err != nil {
-			panic(err)
-		}
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
 
-		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
-		sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
-		sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
+	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
+	sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
+	sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
 
-		log.Printf("success initialize postgres database connection")
-		dbInstance = &dbUtil{
-			db: db,
-		}
-	})
+	log.Printf("success initialize postgres database connection")
 
-	return dbInstance.db
+	return db
 }

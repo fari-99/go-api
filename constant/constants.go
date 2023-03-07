@@ -25,3 +25,6 @@ const NotificationTypeTelegram = 2
 const NotificationTypeWhatsapp = 3
 const NotificationTypeSMS = 4
 const NotificationTypePushNotification = 5
+
+const UserCodesNew = 0
+const UserCodesUsed = 1

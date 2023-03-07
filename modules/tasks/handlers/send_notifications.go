@@ -1,26 +1,30 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/spf13/cast"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
+	"go.mau.fi/whatsmeow/types"
+	"google.golang.org/protobuf/proto"
 
 	"go-api/constant"
 	"go-api/helpers/notifications"
 	"go-api/modules/configs/rabbitmq"
 	"go-api/modules/models"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/spf13/cast"
-
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
 type NotificationData struct {
-	UsersSendTo          map[int64]models.Users `json:"users_send_to"`
-	NotificationTemplate notifications.CompiledNotification
-	ActionBy             *models.Users `json:"action_by"`
+	UsersSendTo          map[int64]models.Users             `json:"users_send_to"`
+	NotificationTemplate notifications.CompiledNotification `json:"notification_template"`
+	ActionBy             *models.Users                      `json:"action_by"`
 }
 
 func (base *BaseEventHandler) NotificationEmailHandler(body rabbitmq.ConsumerHandlerData) {
@@ -88,7 +92,7 @@ func (base *BaseEventHandler) NotificationTelegramHandler(body rabbitmq.Consumer
 	return
 }
 
-func (base *BaseEventHandler) NotificationWhatsappHandler(body rabbitmq.ConsumerHandlerData) {
+func (base *BaseEventHandler) NotificationTwilioHandler(body rabbitmq.ConsumerHandlerData) {
 	var input NotificationData
 	dataMarshal, _ := json.Marshal(body.Data)
 	_ = json.Unmarshal(dataMarshal, &input)
@@ -107,5 +111,25 @@ func (base *BaseEventHandler) NotificationWhatsappHandler(body rabbitmq.Consumer
 		}
 	}
 
+	return
+}
+
+func (base *BaseEventHandler) NotificationWhatsappHandler(body rabbitmq.ConsumerHandlerData) {
+	var input NotificationData
+	dataMarshal, _ := json.Marshal(body.Data)
+	_ = json.Unmarshal(dataMarshal, &input)
+
+	whatsappClient := base.WhatsappClient
+	targetJid := types.NewJID("6281317699454", types.DefaultUserServer)
+	message := &waProto.Message{
+		Conversation: proto.String(input.NotificationTemplate.Body),
+	}
+
+	_, err := whatsappClient.SendMessage(context.Background(), targetJid, message)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Printf("Successfully send messages to %s", targetJid)
 	return
 }

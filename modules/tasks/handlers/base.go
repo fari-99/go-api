@@ -6,6 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/twilio/twilio-go"
 	"github.com/urfave/cli"
+	"go.mau.fi/whatsmeow"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +16,7 @@ type BaseEventHandler struct {
 	CliContext       *cli.Context
 	Telegram         *tgbotapi.BotAPI
 	TwilioRestClient *twilio.RestClient
+	WhatsappClient   *whatsmeow.Client
 }
 
 type EventHandlerFlags struct {
@@ -30,6 +32,11 @@ func NewBaseEventHandler(transactionDB *gorm.DB, cliContext *cli.Context) *BaseE
 	}
 
 	return &baseEventHandler
+}
+
+func (base *BaseEventHandler) SetClientWhatsapp(client *whatsmeow.Client) *BaseEventHandler {
+	base.WhatsappClient = client
+	return base
 }
 
 func (base *BaseEventHandler) SetTelegram(telegramBotAPI *tgbotapi.BotAPI) *BaseEventHandler {

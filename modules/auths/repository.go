@@ -3,8 +3,7 @@ package auths
 import (
 	"errors"
 
-	"golang.org/x/crypto/bcrypt"
-
+	"go-api/helpers"
 	"go-api/modules/configs"
 	"go-api/modules/models"
 
@@ -32,7 +31,7 @@ func (r repository) AuthenticatePassword(input RequestAuthUser) (*models.Users, 
 		return nil, true, nil
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(customerModel.Password), []byte(input.Password))
+	err = helpers.PasswordAuth(customerModel.Password, input.Password)
 	if err != nil {
 		return nil, false, err
 	}

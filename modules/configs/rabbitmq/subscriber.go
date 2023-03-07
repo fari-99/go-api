@@ -1,7 +1,7 @@
 package rabbitmq
 
 import (
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type ConsumerHandlerData struct {
@@ -16,7 +16,7 @@ type ConsumerHandlerData struct {
 type ConsumerHandler func(ConsumerHandlerData)
 
 type ConsumerConfig struct {
-	Consumer  string
+	Consumer  string // consumer tag
 	AutoAck   bool
 	Exclusive bool
 	NoLocal   bool
