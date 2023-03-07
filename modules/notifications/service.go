@@ -11,6 +11,8 @@ type Service interface {
 	Create(ctx *gin.Context, model interface{}) (interface{}, error)
 	Update(ctx *gin.Context, model interface{}) (interface{}, error)
 	Delete(ctx *gin.Context, id int64) error
+
+	QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bool, err error)
 }
 
 type service struct {
@@ -19,6 +21,10 @@ type service struct {
 
 func NewService(repo Repository) Service {
 	return service{repo: repo}
+}
+
+func (s service) QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bool, err error) {
+	return s.repo.QRCodeWhatsapp(ctx)
 }
 
 func (s service) GetDetail(ctx *gin.Context, id int64) (interface{}, bool, error) {

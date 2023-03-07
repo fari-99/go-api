@@ -1,16 +1,16 @@
 package rabbitmq
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type QueueSetup struct {
@@ -25,6 +25,8 @@ type QueueSetup struct {
 	queueConfig    *QueueConfig
 	queueConsumer  ConsumerHandler
 	exchangeConfig *ExchangeConfig
+
+	ctx context.Context
 }
 
 type QueueConfig struct {
@@ -53,8 +55,11 @@ type QueueBindConfig struct {
 }
 
 func NewBaseQueue(exchangeName, queueName string) *QueueSetup {
+	ctx := context.TODO()
+
 	queueSetup := &QueueSetup{
 		exchangeName: exchangeName,
+		ctx:          ctx, // default ctx
 	}
 
 	queueSetup.setQueueName(queueName)
@@ -63,12 +68,10 @@ func NewBaseQueue(exchangeName, queueName string) *QueueSetup {
 	return newQueueSetup
 }
 
-type queueUtil struct {
-	QueueSetup *QueueSetup
+func (base *QueueSetup) SetContext(ctx context.Context) *QueueSetup {
+	base.ctx = ctx
+	return base
 }
-
-var queueInstance *queueUtil
-var queueOnce sync.Once
 
 func (base *QueueSetup) setQueueUtil() *QueueSetup {
 	defer func() {
@@ -77,19 +80,13 @@ func (base *QueueSetup) setQueueUtil() *QueueSetup {
 		}
 	}()
 
-	queueOnce.Do(func() {
-		err := base.openConnection()
-		if err != nil {
-			loggingMessage("error open connection", err.Error())
-			panic(err.Error())
-		}
+	err := base.openConnection()
+	if err != nil {
+		loggingMessage("error open connection", err.Error())
+		panic(err.Error())
+	}
 
-		queueInstance = &queueUtil{
-			QueueSetup: base,
-		}
-	})
-
-	return queueInstance.QueueSetup
+	return base
 }
 
 func (base *QueueSetup) setQueueName(queueName string) *QueueSetup {

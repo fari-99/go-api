@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type PublisherConfig struct {
@@ -68,7 +68,8 @@ func (base *QueueSetup) Publish(message string) error {
 	publishConfig.Msg.Body = []byte(message)
 
 	loggingMessage("Publishing Message...", nil)
-	err := base.channel.Publish(
+	err := base.channel.PublishWithContext(
+		base.ctx,
 		base.exchangeName,
 		base.queueName,
 		publishConfig.Mandatory,

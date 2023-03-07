@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func ParamsDefault(ctx *gin.Context, key string, defaultValue string) string {
@@ -31,4 +32,9 @@ func Recover(message string) {
 	}
 
 	return
+}
+
+func PasswordAuth(password string, inputPassword string) error {
+	err := bcrypt.CompareHashAndPassword([]byte(password), []byte(inputPassword))
+	return err
 }

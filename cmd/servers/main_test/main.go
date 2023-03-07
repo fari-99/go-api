@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/joho/godotenv/autoload"
+
 	"go-api/modules/configs"
 	"go-api/modules/tests/crypts"
 	"go-api/modules/tests/csrf"
@@ -17,8 +19,6 @@ import (
 	"go-api/modules/tests/redis"
 	"go-api/modules/tests/redis_cache"
 	"go-api/modules/tests/twofa"
-
-	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package rabbitmq
 import (
 	"os"
 
-	"github.com/streadway/amqp"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type ExchangeDeclareConfig struct {

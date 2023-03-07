@@ -8,6 +8,7 @@ tmp/
 .env
 .build
 *.exe
+/command
 /commands
 /main
 test.go

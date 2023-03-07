@@ -2,6 +2,10 @@ package notifications
 
 import (
 	"fmt"
+
+	"github.com/go-redis/redis"
+
+	"go-api/constant"
 	"go-api/modules/configs"
 
 	"github.com/dmitryburov/gorm-paginator"
@@ -15,6 +19,8 @@ type Repository interface {
 	Create(ctx *gin.Context, model interface{}) (interface{}, error)
 	Update(ctx *gin.Context, model interface{}) (interface{}, error)
 	Delete(ctx *gin.Context, id int64) error
+
+	QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bool, err error)
 }
 
 type repository struct {
@@ -23,6 +29,18 @@ type repository struct {
 
 func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
+}
+
+func (r repository) QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bool, err error) {
+	redisClient := r.Redis
+	qrCode, err = redisClient.Get(constant.QRCodeWhatsapp).Result()
+	if err == redis.Nil {
+		return "", false, nil
+	} else if err != nil {
+		return "", false, err
+	}
+
+	return qrCode, true, nil
 }
 
 func (r repository) GetDetail(ctx *gin.Context, id int64) (interface{}, bool, error) {
