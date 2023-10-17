@@ -92,7 +92,7 @@ func (s service) ChangePassword(ctx *gin.Context, input RequestChangePassword) (
 		return false, err
 	}
 
-	userModel, notFound, err := s.repo.GetDetails(ctx, currentUser.ID)
+	userModel, notFound, err := s.repo.GetDetails(ctx, string(currentUser.ID))
 	if err != nil {
 		return false, err
 	} else if notFound {

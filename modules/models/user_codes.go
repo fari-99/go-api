@@ -4,7 +4,7 @@ import "time"
 
 type UserCodes struct {
 	Base
-	UserID    string    `json:"user_id"`
+	UserID    IDType    `json:"user_id"`
 	Via       string    `json:"via"`
 	Code      string    `json:"code"`
 	Params    string    `json:"params"`

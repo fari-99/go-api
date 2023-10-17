@@ -15,6 +15,7 @@ import (
 	"go-api/modules/permissions"
 	"go-api/modules/state_machine"
 	"go-api/modules/storages"
+	"go-api/modules/tests/xendit"
 	"go-api/modules/twoFA"
 	"go-api/modules/users"
 
@@ -40,7 +41,7 @@ func main() {
 	di := configs.DIInit()
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 	refreshAuth := middleware.RefreshAuthMiddleware(middleware.BaseMiddleware{})
-	//otpMiddleware := middleware.OTPMiddleware()
+	//otpMiddleware := middleware.OTPMiddlewareLogin()
 	//rbacMiddleware := middleware.PermissionMiddleware()
 	//versions := middleware.VersionMiddleware(map[string]bool{
 	//	"v0": false,
@@ -80,6 +81,8 @@ func main() {
 
 	hasura.NewRegistrator(app.Group(""),
 		hasura.NewService(hasura.NewRepository(di)))
+
+	xendit.NewXenditRoutes(app)
 
 	applicationRun := fmt.Sprintf("%s:%s", host, port)
 	log.Printf("Run application on %s", applicationRun)

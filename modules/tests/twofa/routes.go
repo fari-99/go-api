@@ -21,7 +21,7 @@ func NewRoute(app *gin.Engine, di *configs.DI) {
 		twoFactorAuth.POST("/new", twoFactorAuthController.NewAuth)
 		twoFactorAuth.POST("/validate", twoFactorAuthController.Validate)
 
-		otpMiddleware := middleware.OTPMiddleware(di)
+		otpMiddleware := middleware.OTPMiddlewareLogin(di)
 		authMiddleware := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 		twoFactorAuth.Use(authMiddleware, otpMiddleware).GET("/test", twoFactorAuthController.TestMiddleware)
 	}

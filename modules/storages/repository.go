@@ -27,7 +27,7 @@ func (r repository) GetDetail(ctx *gin.Context, storageID string) (*models.Stora
 	db := r.DB
 
 	var storageModel models.Storages
-	err := db.Where(&models.Storages{Base: models.Base{ID: storageID}}).First(&storageModel).Error
+	err := db.Where(&models.Storages{Base: models.Base{ID: models.IDType(storageID)}}).First(&storageModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {

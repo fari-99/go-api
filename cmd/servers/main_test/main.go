@@ -13,12 +13,14 @@ import (
 	"go-api/modules/tests/csrf"
 	"go-api/modules/tests/emails"
 	"go-api/modules/tests/finite_states"
+	"go-api/modules/tests/flip"
 	"go-api/modules/tests/ftps"
 	"go-api/modules/tests/kafka"
 	"go-api/modules/tests/rabbitmq"
 	"go-api/modules/tests/redis"
 	"go-api/modules/tests/redis_cache"
 	"go-api/modules/tests/twofa"
+	"go-api/modules/tests/xendit"
 )
 
 func main() {
@@ -49,6 +51,8 @@ func main() {
 	twofa.NewRoute(app, di)
 	kafka.NewRoute(app)
 	csrf.NewCsrfRoutes(app)
+	flip.NewFlipRoutes(app)
+	xendit.NewXenditRoutes(app)
 
 	applicationRun := fmt.Sprintf("%s:%s", host, port)
 	log.Printf("Run application on %s", applicationRun)

@@ -44,7 +44,7 @@ func (r repository) GetDetailLocation(ctx *gin.Context, locationID string) (*mod
 	db := r.DB.WithContext(ctx)
 
 	var locationModel models.Locations
-	err := db.Where(&models.Locations{Base: models.Base{ID: locationID}}).First(&locationModel).Error
+	err := db.Where(&models.Locations{Base: models.Base{ID: models.IDType(locationID)}}).First(&locationModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
@@ -143,7 +143,7 @@ func (r repository) GetDetailLocationLevel(ctx *gin.Context, locationID string) 
 	db := r.DB.WithContext(ctx)
 
 	var locationModel models.LocationLevels
-	err := db.Where(&models.LocationLevels{Base: models.Base{ID: locationID}}).First(&locationModel).Error
+	err := db.Where(&models.LocationLevels{Base: models.Base{ID: models.IDType(locationID)}}).First(&locationModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {

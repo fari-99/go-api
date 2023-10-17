@@ -153,7 +153,7 @@ func (s service) generateToken(ctx *gin.Context, userModel models.Users) (signed
 	userRoles := strings.Split(userModel.Roles, ",")
 
 	userData := token_generator.UserDetails{
-		ID:        userModel.ID,
+		ID:        string(userModel.ID),
 		Email:     userModel.Email,
 		Username:  userModel.Username,
 		UserRoles: userRoles,
@@ -181,7 +181,7 @@ func (s service) setRedisSession(token *token_generator.SignedToken, userModel *
 			RefreshExpiredAt: token.RefreshExpiredAt,
 		},
 
-		UserID:        userModel.ID,
+		UserID:        string(userModel.ID),
 		UserDetails:   userModel,
 		Authorization: true,
 	}

@@ -133,7 +133,7 @@ func getUserDetails(db *gorm.DB, userID string) (*models.Users, bool, error) {
 	}
 
 	var actionBy models.Users
-	err := db.Where(&models.Users{Base: models.Base{ID: userID}}).First(&actionBy).Error
+	err := db.Where(&models.Users{Base: models.Base{ID: models.IDType(userID)}}).First(&actionBy).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, false, nil
 	} else if err != nil {

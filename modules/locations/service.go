@@ -68,7 +68,7 @@ func (s service) GetAllLocation(ctx *gin.Context, filter FilterQueryLocations) (
 	}
 
 	for idx, item := range items {
-		level, notFound, err := s.repo.GetDetailLocationLevel(ctx, item.LevelID)
+		level, notFound, err := s.repo.GetDetailLocationLevel(ctx, string(item.LevelID))
 		if err != nil {
 			return nil, err
 		} else if notFound {
@@ -101,11 +101,11 @@ func (s service) CreateLocation(ctx *gin.Context, input RequestCreateLocations) 
 	}
 
 	locationModel := models.Locations{
-		ParentID:     input.ParentID,
+		ParentID:     models.IDType(input.ParentID),
 		Code:         input.Code,
 		Name:         input.Name,
 		CompleteName: completeName,
-		LevelID:      input.LevelID,
+		LevelID:      models.IDType(input.LevelID),
 		Status:       constant.StatusActive,
 	}
 
@@ -124,11 +124,11 @@ func (s service) UpdateLocation(ctx *gin.Context, locationID string, input Reque
 	}
 
 	locationModel := models.Locations{
-		ParentID:     input.ParentID,
+		ParentID:     models.IDType(input.ParentID),
 		Code:         input.Code,
 		Name:         input.Name,
 		CompleteName: completeName,
-		LevelID:      input.LevelID,
+		LevelID:      models.IDType(input.LevelID),
 		Status:       input.Status,
 	}
 

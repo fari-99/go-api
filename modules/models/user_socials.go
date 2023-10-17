@@ -4,7 +4,7 @@ import "time"
 
 type UserSocials struct {
 	Base
-	UserID            uint64     `json:"user_id"`
+	UserID            IDType     `json:"user_id"`
 	NotificationType  int8       `json:"notification_type"`
 	Token             string     `json:"token"`
 	Identifier        string     `json:"identifier"`

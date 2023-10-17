@@ -14,7 +14,7 @@ type Storages struct {
 	Mime             string `gorm:"column:mime" json:"mime"`
 	OriginalFilename string `gorm:"column:original_filename" json:"original_filename"`
 	Status           int8   `gorm:"column:status" json:"status"`
-	CreatedBy        string `gorm:"column:created_by" json:"created_by"`
+	CreatedBy        IDType `gorm:"column:created_by" json:"created_by"`
 }
 
 func (Storages) TableName() string {

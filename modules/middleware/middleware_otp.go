@@ -17,7 +17,7 @@ type OtpConfig struct {
 	DI *configs.DI
 }
 
-func OTPMiddleware(di *configs.DI) gin.HandlerFunc {
+func OTPMiddlewareLogin(di *configs.DI) gin.HandlerFunc {
 	otpConfig := OtpConfig{DI: di}
 	return otpConfig.otpServe
 }
@@ -36,7 +36,7 @@ func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 	}
 
 	twoFAService := twoFA.NewService(twoFA.NewRepository(otpConfig.DI))
-	twoAuthModel, notFound, err := twoFAService.GetDetails(ctx, userID)
+	twoAuthModel, notFound, err := twoFAService.GetDetails(ctx, string(userID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -63,7 +63,7 @@ func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 		return
 	}
 
-	recoveryCodeModels, err := twoFAService.GetAllRecoveryCode(ctx, twoAuthModel.UserID)
+	recoveryCodeModels, err := twoFAService.GetAllRecoveryCode(ctx, string(twoAuthModel.UserID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),

@@ -50,7 +50,7 @@ func (r repository) ResetPassword(ctx *gin.Context, input ResetPasswordRequest) 
 		return err
 	}
 
-	userModel, notFound, err := r.GetDetails(ctx, userCodeModel.UserID)
+	userModel, notFound, err := r.GetDetails(ctx, string(userCodeModel.UserID))
 	if err != nil {
 		return err
 	} else if notFound {
@@ -148,7 +148,7 @@ func (r repository) GetDetails(ctx *gin.Context, userID string) (*models.Users, 
 	db := r.DB.WithContext(ctx)
 
 	var userModel models.Users
-	err := db.Where(&models.Users{Base: models.Base{ID: userID}}).First(&userModel).Error
+	err := db.Where(&models.Users{Base: models.Base{ID: models.IDType(userID)}}).First(&userModel).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, true, nil
 	} else if err != nil {

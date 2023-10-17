@@ -22,7 +22,7 @@ func (Transactions) TableName() string {
 }
 
 func (model *Transactions) generateTransactionNo(tx *gorm.DB) string {
-	modelID := strings.Split(model.ID, "-") // 8-4-4-4-12
+	modelID := strings.Split(string(model.ID), "-") // 8-4-4-4-12
 	referenceNo := strconv.FormatInt(rand.Int63n(100000), 10)
 	dateFormat := time.Now().Format("060102")
 

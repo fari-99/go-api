@@ -50,6 +50,11 @@ func (c controller) DetailAction(ctx *gin.Context) {
 	return
 }
 
+func (c controller) S3Policy(ctx *gin.Context) {
+	helpers.NewResponse(ctx, http.StatusBadRequest, "nice")
+	return
+}
+
 func (c controller) UploadAction(ctx *gin.Context) {
 	err := ctx.Request.ParseMultipartForm(8 << 20) // 8 MB
 	if err != nil {

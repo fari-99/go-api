@@ -20,5 +20,6 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 	privateStorage := app.Group("/storages")
 	{
 		privateStorage.POST("/upload", authHandler, control.UploadAction)
+		privateStorage.POST("/s3-policy", authHandler, control.S3Policy)
 	}
 }

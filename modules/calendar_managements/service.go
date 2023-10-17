@@ -41,7 +41,7 @@ func (s service) Create(ctx *gin.Context, input CreateCalendarManagementRequest)
 	currentUser, _ := helpers.GetCurrentUser(uuidSession.(string))
 
 	model := models.CalendarManagements{
-		CountryID:    input.CountryID,
+		CountryID:    models.IDType(input.CountryID),
 		Dates:        input.Date,
 		Descriptions: input.Descriptions,
 		CreatedBy:    currentUser.ID,
@@ -59,7 +59,7 @@ func (s service) Update(ctx *gin.Context, id string, input UpdateCalendarManagem
 		return models.CalendarManagements{}, err
 	}
 
-	model.CountryID = input.CountryID
+	model.CountryID = models.IDType(input.CountryID)
 	model.Dates = input.Date
 	model.Descriptions = input.Descriptions
 

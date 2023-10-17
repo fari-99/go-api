@@ -8,11 +8,11 @@ import (
 
 type Locations struct {
 	Base
-	ParentID     string `gorm:"column:parent_id" json:"parent_id"`
+	ParentID     IDType `gorm:"column:parent_id" json:"parent_id"`
 	Code         string `gorm:"column:code" json:"code"`
 	Name         string `gorm:"column:name" json:"name"`
 	CompleteName string `gorm:"column:complete_name" json:"complete_name"`
-	LevelID      string `gorm:"column:level_id" json:"level_id"`
+	LevelID      IDType `gorm:"column:level_id" json:"level_id"`
 	Status       int8   `gorm:"column:status" json:"status"`
 
 	// Relations

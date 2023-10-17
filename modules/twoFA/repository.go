@@ -30,7 +30,7 @@ func NewRepository(di *configs.DI) Repository {
 
 func (r repository) GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, bool, error) {
 	var twoAuthModel models.TwoAuths
-	err := r.DB.Where(&models.TwoAuths{UserID: userID, Status: constant.StatusActive}).First(&twoAuthModel).Error
+	err := r.DB.Where(&models.TwoAuths{UserID: models.IDType(userID), Status: constant.StatusActive}).First(&twoAuthModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
@@ -53,7 +53,7 @@ func (r repository) GetAllRecoveryCode(ctx *gin.Context, userID string) ([]model
 	db := r.DB.WithContext(ctx)
 
 	var recoveryCodes []models.TwoAuthRecoveries
-	err := db.Where(&models.TwoAuthRecoveries{UserID: userID}).Find(&recoveryCodes).Error
+	err := db.Where(&models.TwoAuthRecoveries{UserID: models.IDType(userID)}).Find(&recoveryCodes).Error
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (r repository) GenerateRecoveryCode(ctx *gin.Context, userID string) ([]str
 	db := r.DB.WithContext(ctx)
 	tx := db.Begin()
 	var oldRecoveryCodeModels []models.TwoAuthRecoveries
-	err := tx.Where(&models.TwoAuthRecoveries{UserID: userID, Status: constant.StatusActive}).Find(&oldRecoveryCodeModels).Error
+	err := tx.Where(&models.TwoAuthRecoveries{UserID: models.IDType(userID), Status: constant.StatusActive}).Find(&oldRecoveryCodeModels).Error
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (r repository) GenerateRecoveryCode(ctx *gin.Context, userID string) ([]str
 	var code []string
 	for i := 0; i < 10; i++ {
 		model := models.TwoAuthRecoveries{
-			UserID: userID,
+			UserID: models.IDType(userID),
 			Code:   gohelper.GenerateRandString(8, "number"),
 			Status: constant.StatusActive,
 		}

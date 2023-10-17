@@ -23,7 +23,7 @@ func (c controller) CreateNewAuth(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
 	userID := currentUser.ID
 
-	_, notFound, err := c.service.GetDetails(ctx, userID)
+	_, notFound, err := c.service.GetDetails(ctx, string(userID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -65,7 +65,7 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
 	userID := currentUser.ID
 
-	twoAuthModel, notFound, err := c.service.GetDetails(ctx, userID)
+	twoAuthModel, notFound, err := c.service.GetDetails(ctx, string(userID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -89,7 +89,7 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 		return
 	}
 
-	recoveryCodeModels, err := c.service.GetAllRecoveryCode(ctx, twoAuthModel.UserID)
+	recoveryCodeModels, err := c.service.GetAllRecoveryCode(ctx, string(twoAuthModel.UserID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"error":         err.Error(),
@@ -132,7 +132,7 @@ func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
 	userID := currentUser.ID
 
-	_, notFound, err := c.service.GetDetails(ctx, userID)
+	_, notFound, err := c.service.GetDetails(ctx, string(userID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -147,7 +147,7 @@ func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
 		return
 	}
 
-	code, err := c.service.GenerateRecoveryCode(ctx, userID)
+	code, err := c.service.GenerateRecoveryCode(ctx, string(userID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
