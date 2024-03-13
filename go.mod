@@ -37,7 +37,7 @@ require (
 	github.com/xendit/xendit-go v1.0.15
 	go.mau.fi/whatsmeow v0.0.0-20230226124255-e5c8f3c95d78
 	golang.org/x/crypto v0.17.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/mysql v1.3.3
 	gorm.io/driver/postgres v1.3.6
