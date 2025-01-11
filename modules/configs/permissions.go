@@ -20,26 +20,7 @@ var permissionOnce sync.Once
 
 func GetPermissionInstance() *casbin.Enforcer {
 	permissionOnce.Do(func() {
-		//base := DatabaseBase(MySQLType)
-		//db, err := base.SetConnection()
-		//if err != nil {
-		//	panic(err)
-		//}
-		//
-		//maxLifetime, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"), 10, 64)
-		//maxIdleConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"), 10, 64)
-		//maxOpenConn, _ := strconv.ParseInt(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"), 10, 64)
-		//
-		//sqlDB, _ := db.DB()
-		//sqlDB.SetConnMaxLifetime(time.Second * time.Duration(maxLifetime)) // sets the maximum amount of time a connection may be reused.
-		//sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
-		//sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
-		//
-		//dbInstance = &dbUtil{
-		//	db: db,
-		//}
-
-		db := DatabaseBase(MySQLType).GetMysqlConnection()
+		db := DatabaseBase(MySQLType).GetMysqlConnection(true)
 		sqlDB, _ := db.DB()
 
 		adapterSQL, err := sqladapter.NewAdapter(sqlDB, "mysql", "api_rule_access")
