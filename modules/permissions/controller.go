@@ -128,8 +128,14 @@ func (r controller) EditAction(ctx *gin.Context) {
 
 	enforcer := configs.GetPermissionInstance()
 	if input.NewPolicy.PType == "p" {
-		hasPolicy := enforcer.HasPolicy(input.OldPolicy.Subject, input.NewPolicy.Route, input.NewPolicy.Method)
-		if !hasPolicy {
+		hasPolicy, err := enforcer.HasPolicy(input.OldPolicy.Subject, input.NewPolicy.Route, input.NewPolicy.Method)
+		if err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
+				"error_message": "error check permission",
+				"error":         err.Error(),
+			})
+			return
+		} else if !hasPolicy {
 			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 				"error_message": "error check permission",
 				"error":         "policy not found",
@@ -151,8 +157,14 @@ func (r controller) EditAction(ctx *gin.Context) {
 			return
 		}
 	} else if input.NewPolicy.PType == "g" {
-		hasPolicy := enforcer.HasGroupingPolicy(input.OldPolicy.Subject, input.NewPolicy.Route, input.NewPolicy.Method)
-		if !hasPolicy {
+		hasPolicy, err := enforcer.HasGroupingPolicy(input.OldPolicy.Subject, input.NewPolicy.Route, input.NewPolicy.Method)
+		if err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
+				"error_message": "error check permission",
+				"error":         err.Error(),
+			})
+			return
+		} else if !hasPolicy {
 			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 				"error_message": "error check permission",
 				"error":         "group policy not found",
@@ -202,8 +214,14 @@ func (r controller) DeleteAction(ctx *gin.Context) {
 
 	enforcer := configs.GetPermissionInstance()
 	if input.PType == "p" {
-		hasPolicy := enforcer.HasPolicy(input.Subject, input.Route, input.Method)
-		if !hasPolicy {
+		hasPolicy, err := enforcer.HasPolicy(input.Subject, input.Route, input.Method)
+		if err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
+				"error_message": "error check permission",
+				"error":         err.Error(),
+			})
+			return
+		} else if !hasPolicy {
 			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 				"error_message": "error check permission",
 				"error":         "policy not found",
@@ -225,8 +243,14 @@ func (r controller) DeleteAction(ctx *gin.Context) {
 			return
 		}
 	} else if input.PType == "g" {
-		hasPolicy := enforcer.HasGroupingPolicy(input.Subject, input.Route, input.Method)
-		if !hasPolicy {
+		hasPolicy, err := enforcer.HasGroupingPolicy(input.Subject, input.Route, input.Method)
+		if err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
+				"error_message": "error check permission",
+				"error":         err.Error(),
+			})
+			return
+		} else if !hasPolicy {
 			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 				"error_message": "error check permission",
 				"error":         "group policy not found",
@@ -276,8 +300,14 @@ func (r controller) CreateAction(ctx *gin.Context) {
 
 	enforcer := configs.GetPermissionInstance()
 	if input.PType == "p" {
-		hasPolicy := enforcer.HasPolicy(input.Subject, input.Route, input.Method)
-		if hasPolicy {
+		hasPolicy, err := enforcer.HasPolicy(input.Subject, input.Route, input.Method)
+		if err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
+				"error_message": "error check permission",
+				"error":         err.Error(),
+			})
+			return
+		} else if hasPolicy {
 			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 				"error_message": "error check permission",
 				"error":         "policy already created",
@@ -299,8 +329,14 @@ func (r controller) CreateAction(ctx *gin.Context) {
 			return
 		}
 	} else if input.PType == "g" {
-		hasPolicy := enforcer.HasGroupingPolicy(input.Subject, input.Route, input.Method)
-		if hasPolicy {
+		hasPolicy, err := enforcer.HasGroupingPolicy(input.Subject, input.Route, input.Method)
+		if err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
+				"error_message": "error check permission",
+				"error":         err.Error(),
+			})
+			return
+		} else if hasPolicy {
 			helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 				"error_message": "error check permission",
 				"error":         "group policy already created",
