@@ -3,7 +3,7 @@ package kafka
 import (
 	"sync"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 )
 
 type kafkaProducerUtil struct {

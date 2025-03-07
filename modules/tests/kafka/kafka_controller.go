@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 
 	"github.com/gin-gonic/gin"
 )
