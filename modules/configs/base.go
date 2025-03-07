@@ -23,7 +23,7 @@ type DI struct {
 
 func DIInit() *DI {
 	di := &DI{
-		DB:            DatabaseBase(MySQLType).GetMysqlConnection(),
+		DB:            DatabaseBase(MySQLType).GetMysqlConnection(true),
 		ElasticSearch: GetElasticSearch(),
 		EmailDialler:  GetEmail(),
 		Queue:         rabbitmq.NewBaseQueue("", ""),

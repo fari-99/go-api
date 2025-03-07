@@ -20,7 +20,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Description: "Generate Notification template to send to respected notification type",
 			Action: func(ctx *cli.Context) (err error) {
 				log.Printf("Handling Generate Notification Template")
-				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection(true)
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
 
 				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationTemplate)
@@ -39,7 +39,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Description: "Send generated template using email",
 			Action: func(ctx *cli.Context) (err error) {
 				log.Printf("Handling Email Notification")
-				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection(true)
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
 
 				queueSetup := rabbitmq.NewBaseQueue("", constant.QueueNotificationEmail)
@@ -56,7 +56,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Description: "Send generated template using telegram",
 			Action: func(ctx *cli.Context) (err error) {
 				log.Printf("Handling Telegram Notification")
-				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection(true)
 				botAPI := configs.GetTelegram()
 
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
@@ -76,7 +76,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Description: "Send generated template using whatsapp",
 			Action: func(ctx *cli.Context) (err error) {
 				log.Printf("Handling Twilio Notification")
-				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection(true)
 				twilioInit := configs.GetTwilioRestClient()
 
 				baseEvent := handlers.NewBaseEventHandler(db, ctx)
@@ -96,7 +96,7 @@ func (base *BaseCommand) getNotificationCommands() []cli.Command {
 			Description: "Send generated template using whatsapp",
 			Action: func(ctx *cli.Context) (err error) {
 				log.Printf("Handling Whatsapp Notification")
-				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection()
+				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection(true)
 				redis := configs.GetRedisSessionConfig()
 				client := configs.WhatsappClient(redis)
 
