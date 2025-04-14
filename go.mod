@@ -23,7 +23,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/csrf v1.7.2
+	github.com/gorilla/csrf v1.7.3
 	github.com/gwatts/gin-adapter v1.0.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
