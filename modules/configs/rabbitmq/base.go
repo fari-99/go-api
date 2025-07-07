@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +28,8 @@ type QueueSetup struct {
 	queueConsumer  ConsumerHandler
 	exchangeConfig *ExchangeConfig
 
-	ctx context.Context
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 type QueueConfig struct {
@@ -55,21 +58,22 @@ type QueueBindConfig struct {
 }
 
 func NewBaseQueue(exchangeName, queueName string) *QueueSetup {
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	queueSetup := &QueueSetup{
 		exchangeName: exchangeName,
 		ctx:          ctx, // default ctx
+		cancel:       cancel,
 	}
 
 	queueSetup.setQueueName(queueName)
-	newQueueSetup := queueSetup.setQueueUtil()
-
-	return newQueueSetup
+	return queueSetup.setQueueUtil()
 }
 
 func (base *QueueSetup) SetContext(ctx context.Context) *QueueSetup {
-	base.ctx = ctx
+	newCtx, newCancel := context.WithCancel(ctx)
+	base.ctx = newCtx
+	base.cancel = newCancel
 	return base
 }
 
@@ -128,45 +132,45 @@ func (base *QueueSetup) declareQueue() error {
 func (base *QueueSetup) Close() {
 	loggingMessage("Closing Connection", nil)
 	base.closed = true
-	err := base.channel.Close()
-	if err != nil {
-		loggingMessage("Error closing channel", err.Error())
+	base.cancel()
+
+	if base.channel != nil {
+		err := base.channel.Close()
+		if err != nil {
+			loggingMessage("Error closing channel", err.Error())
+		}
 	}
 
-	err = base.connection.Close()
-	if err != nil {
-		loggingMessage("Error closing connection", err.Error())
+	if base.connection != nil {
+		err := base.connection.Close()
+		if err != nil {
+			loggingMessage("Error closing connection", err.Error())
+		}
 	}
+
 }
 
-func (base *QueueSetup) reconnect(isRecover bool) {
+func (base *QueueSetup) reconnect() {
 	for {
-		loggingMessage("Trying to reconnect, please wait...", nil)
-		time.Sleep(3 * time.Second)
-
-		err := <-base.errorConnection
-		if !base.closed || err != nil {
-			if err != nil {
-				loggingMessage("Reconnecting after connection closed", err.Error())
+		select {
+		case <-base.ctx.Done():
+			loggingMessage("Reconnect cancelled", nil)
+			return
+		case err := <-base.errorConnection:
+			if base.closed {
+				loggingMessage("Reconnect skipped: connection already closed", nil)
+				return
 			}
 
+			loggingMessage("Reconnecting due to error", err)
+			_ = base.openConnection()
 			if base.exchangeName != "" {
 				base.AddConsumerExchange(true)
 			} else {
 				base.AddConsumer(true)
 			}
 
-			go base.reconnect(isRecover)
-
-			if isRecover {
-				errorData := base.recoverQueueConsumers()
-				if errorData != nil {
-					loggingMessage("-Failed- Recover Queue after connection closed", errorData.Error())
-					continue
-				}
-			}
-
-			break
+			_ = base.recoverQueueConsumers()
 		}
 	}
 
@@ -213,8 +217,6 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 			if r := recover(); r != nil {
 				loggingMessage("Recovered from panic on your queue", r)
 				base.Close()
-				_ = base.openConnection()
-				_ = base.recoverQueueConsumers()
 			}
 		}()
 
@@ -222,16 +224,37 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 
 		isAutoAck := base.queueConfig.QueueConsumerConfig.AutoAck
 
-		for delivery := range deliveries {
-			var handlerData ConsumerHandlerData
-			_ = json.Unmarshal(delivery.Body[:], &handlerData)
+		for {
+			select {
+			case <-base.ctx.Done():
+				loggingMessage("Consumer shutdown via context", nil)
+				return
+			case delivery, ok := <-deliveries:
+				if !ok {
+					loggingMessage("Deliveries channel closed", nil)
+					return
+				}
 
-			consumer(handlerData)
-			if !isAutoAck {
-				if err := delivery.Ack(false); err != nil {
-					loggingMessage("Error acknowledging message", err.Error())
-				} else {
-					loggingMessage("Acknowledged message", nil)
+				var handlerData ConsumerHandlerData
+				_ = json.Unmarshal(delivery.Body[:], &handlerData)
+
+				handled := true
+				func() {
+					defer func() {
+						if r := recover(); r != nil {
+							loggingMessage("Recovered from panic during message handling", r)
+							handled = false
+						}
+					}()
+					consumer(handlerData)
+				}()
+
+				if !isAutoAck && handled {
+					if err := delivery.Ack(false); err != nil {
+						loggingMessage("Error acknowledging message", err.Error())
+					} else {
+						loggingMessage("Acknowledged message", nil)
+					}
 				}
 			}
 		}
@@ -254,15 +277,15 @@ func (base *QueueSetup) openConnection() error {
 			os.Getenv("RABBIT_PORT"))
 
 		connection, err := amqp.DialConfig(connUrl, amqp.Config{
-			//SASL:            nil,
-			//Vhost:           "",
-			//ChannelMax:      0,
-			//FrameSize:       0,
+			// SASL:            nil,
+			// Vhost:           "",
+			// ChannelMax:      0,
+			// FrameSize:       0,
 			Heartbeat: 10 * time.Second, // default value
-			//TLSClientConfig: nil,
-			//Properties:      nil,
-			//Locale:          "en_US",
-			//Dial:            nil,
+			// TLSClientConfig: nil,
+			// Properties:      nil,
+			// Locale:          "en_US",
+			// Dial:            nil,
 		})
 
 		if err != nil {
@@ -295,6 +318,14 @@ func (base *QueueSetup) openChannel() error {
 
 	base.channel = channel
 	return nil
+}
+
+func (base *QueueSetup) WaitForSignalAndShutdown() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+	loggingMessage("Received shutdown signal", nil)
+	base.Close()
 }
 
 func loggingMessage(message string, data interface{}) {

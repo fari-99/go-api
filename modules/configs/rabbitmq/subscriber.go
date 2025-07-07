@@ -81,7 +81,7 @@ func (base *QueueSetup) AddConsumer(isReconnect bool) *QueueSetup {
 	}
 
 	if !isReconnect {
-		go base.reconnect(true)
+		go base.reconnect()
 	}
 
 	return base

@@ -29,20 +29,20 @@ func (base *QueueSetup) AddPublisher(queueDeclare *QueueDeclareConfig, publisher
 			Mandatory: false,
 			Immediate: false,
 			Msg: amqp.Publishing{
-				//Headers:         nil,
+				// Headers:         nil,
 				ContentType: "application/json",
-				//ContentEncoding: "",
+				// ContentEncoding: "",
 				DeliveryMode: 1,
-				//Priority:        0,
-				//CorrelationId:   "",
-				//ReplyTo:         "",
-				//Expiration:      "",
-				//MessageId:       "",
+				// Priority:        0,
+				// CorrelationId:   "",
+				// ReplyTo:         "",
+				// Expiration:      "",
+				// MessageId:       "",
 				Timestamp: time.Now(),
-				//Type:            "",
-				//UserId:          "",
+				// Type:            "",
+				// UserId:          "",
 				AppId: os.Getenv("APP_NAME"),
-				//Body:            nil,
+				// Body:            nil,
 			},
 		}
 	}
@@ -58,7 +58,7 @@ func (base *QueueSetup) AddPublisher(queueDeclare *QueueDeclareConfig, publisher
 		panic(err.Error())
 	}
 
-	go base.reconnect(false)
+	go base.reconnect()
 
 	return base
 }
