@@ -28,6 +28,10 @@ type QueueSetup struct {
 	queueConsumer  ConsumerHandler
 	exchangeConfig *ExchangeConfig
 
+	isPublisher         bool
+	maxReconnectAttempt int
+	reconnectAttempt    int
+
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -159,6 +163,12 @@ func (base *QueueSetup) reconnect() {
 		case err := <-base.errorConnection:
 			if base.closed {
 				loggingMessage("Reconnect skipped: connection already closed", nil)
+				return
+			}
+
+			base.reconnectAttempt++
+			if base.isPublisher && base.reconnectAttempt > base.maxReconnectAttempt {
+				loggingMessage("Publisher exceeded max reconnect attempts", nil)
 				return
 			}
 

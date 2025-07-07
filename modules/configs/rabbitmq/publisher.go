@@ -52,6 +52,9 @@ func (base *QueueSetup) AddPublisher(queueDeclare *QueueDeclareConfig, publisher
 		QueuePublisherConfig: publisherConfig,
 	}
 
+	base.isPublisher = true
+	base.maxReconnectAttempt = 3 // default reconnect attempt
+
 	err := base.declareQueue()
 	if err != nil {
 		loggingMessage("error declare queue after open connection", err.Error())
