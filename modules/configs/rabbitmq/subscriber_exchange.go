@@ -15,6 +15,32 @@ type ExchangeDeclareConfig struct {
 	Args       amqp.Table
 }
 
+/*
+SetupExchange this function to help set config exchange binding
+
+	Exchange Default Example
+	exchangeDeclareConfig = &ExchangeDeclareConfig{
+		Kind:       amqp.ExchangeFanout,
+		Durable:    true,
+		AutoDelete: false,
+		Internal:   false,
+		NoWait:     false,
+		Args:       nil,
+	}
+
+	Exchange Headers Example
+	exchangeDeclareConfig = &ExchangeDeclareConfig{
+		Kind:       amqp.ExchangeHeaders,
+		Durable:    true,
+		AutoDelete: false,
+		Internal:   false,
+		NoWait:     false,
+		Args: amqp.Table{
+			"x-match":    "any",
+			"event_type": "true",
+		},
+	}
+*/
 func (base *QueueSetup) SetupExchange(exchangeDeclareConfig *ExchangeDeclareConfig) *QueueSetup {
 	if base.exchangeName == "" {
 		base.setExchangeName()
