@@ -3,14 +3,13 @@ package notifications
 import (
 	"fmt"
 
-	"github.com/go-redis/redis"
+	"github.com/dmitryburov/gorm-paginator"
+	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 
 	"go-api/constant"
 	"go-api/modules/configs"
-
-	"github.com/dmitryburov/gorm-paginator"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type Repository interface {
@@ -33,7 +32,7 @@ func NewRepository(di *configs.DI) Repository {
 
 func (r repository) QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bool, err error) {
 	redisClient := r.Redis
-	qrCode, err = redisClient.Get(constant.QRCodeWhatsapp).Result()
+	qrCode, err = redisClient.Get(ctx, constant.QRCodeWhatsapp).Result()
 	if err == redis.Nil {
 		return "", false, nil
 	} else if err != nil {

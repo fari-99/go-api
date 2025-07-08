@@ -1,12 +1,13 @@
 package helpers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cast"
 
 	"go-api/modules/configs"
@@ -61,12 +62,12 @@ func getKeyRedis(username string, uuid string) KeyRedisSessionData {
 // after that we use that scoring system to expired time
 // then we sort the member by their score if the score less than expected value (time now unix), then they expired
 
-func removeExpiredToken(redisSession *redis.Client, username string) (err error) {
+func removeExpiredToken(ctx context.Context, redisSession *redis.Client, username string) (err error) {
 	keyRedis := getKeyRedis(username, "")
 	timeNow := cast.ToString(time.Now().Unix())
 
 	// get all expired access token
-	accessTokenUuids, err := redisSession.ZRangeByScore(keyRedis.KeyTotalAccess, redis.ZRangeBy{
+	accessTokenUuids, err := redisSession.ZRangeByScore(ctx, keyRedis.KeyTotalAccess, &redis.ZRangeBy{
 		Min: negativeInfinite,
 		Max: timeNow,
 	}).Result()
@@ -75,7 +76,7 @@ func removeExpiredToken(redisSession *redis.Client, username string) (err error)
 	}
 
 	// get all expired
-	refreshTokenUuids, err := redisSession.ZRangeByScore(keyRedis.KeyTotalRefresh, redis.ZRangeBy{
+	refreshTokenUuids, err := redisSession.ZRangeByScore(ctx, keyRedis.KeyTotalRefresh, &redis.ZRangeBy{
 		Min: negativeInfinite,
 		Max: timeNow,
 	}).Result()
@@ -85,33 +86,33 @@ func removeExpiredToken(redisSession *redis.Client, username string) (err error)
 
 	if len(accessTokenUuids) > 0 {
 		for _, accessTokenUuid := range accessTokenUuids {
-			_, _ = RemoveRedisSession(username, accessTokenUuid)
+			_, _ = RemoveRedisSession(ctx, username, accessTokenUuid)
 		}
 	}
 
 	if len(refreshTokenUuids) > 0 {
 		for _, refreshTokenUuid := range refreshTokenUuids {
-			_, _ = RemoveRedisSession(username, refreshTokenUuid)
+			_, _ = RemoveRedisSession(ctx, username, refreshTokenUuid)
 		}
 	}
 
 	return nil
 }
 
-func getTotalLogin(redisSession *redis.Client, username string) (totalLoginAccessToken int64, totalLoginRefreshToken int64, err error) {
+func getTotalLogin(ctx context.Context, redisSession *redis.Client, username string) (totalLoginAccessToken int64, totalLoginRefreshToken int64, err error) {
 	keyRedis := getKeyRedis(username, "")
 
-	err = removeExpiredToken(redisSession, username)
+	err = removeExpiredToken(ctx, redisSession, username)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	totalLoginAccessToken, err = redisSession.ZCard(keyRedis.KeyTotalAccess).Result()
+	totalLoginAccessToken, err = redisSession.ZCard(ctx, keyRedis.KeyTotalAccess).Result()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	totalLoginRefreshToken, err = redisSession.ZCard(keyRedis.KeyTotalRefresh).Result()
+	totalLoginRefreshToken, err = redisSession.ZCard(ctx, keyRedis.KeyTotalRefresh).Result()
 	if err != nil {
 		return 0, 0, err
 	}
@@ -119,21 +120,21 @@ func getTotalLogin(redisSession *redis.Client, username string) (totalLoginAcces
 	return totalLoginAccessToken, totalLoginRefreshToken, nil
 }
 
-func getAllUuid(username string) (accessUuids []string, refreshUuids []string, err error) {
+func getAllUuid(ctx context.Context, username string) (accessUuids []string, refreshUuids []string, err error) {
 	keyRedis := getKeyRedis(username, "")
 	redisSession := configs.GetRedisSessionConfig()
 
-	err = removeExpiredToken(redisSession, username)
+	err = removeExpiredToken(ctx, redisSession, username)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	accessUuids, err = redisSession.ZRange(keyRedis.KeyTotalAccess, 0, -1).Result()
+	accessUuids, err = redisSession.ZRange(ctx, keyRedis.KeyTotalAccess, 0, -1).Result()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	refreshUuids, err = redisSession.ZRange(keyRedis.KeyTotalRefresh, 0, -1).Result()
+	refreshUuids, err = redisSession.ZRange(ctx, keyRedis.KeyTotalRefresh, 0, -1).Result()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -141,23 +142,23 @@ func getAllUuid(username string) (accessUuids []string, refreshUuids []string, e
 	return accessUuids, refreshUuids, nil
 }
 
-func setRedisSession(username string, data SessionData) error {
+func setRedisSession(ctx context.Context, username string, data SessionData) error {
 	redisSession := configs.GetRedisSessionConfig()
 	dataMarshal, _ := json.Marshal(data.UserDetails) // TODO : Adding device details
 
 	keyRedis := getKeyRedis(username, data.Token.Uuid)
 
-	err := redisSession.Set(keyRedis.KeyAccess, string(dataMarshal), getTimeDuration(data.Token.AccessExpiredAt)).Err() // automatically expired
+	err := redisSession.Set(ctx, keyRedis.KeyAccess, string(dataMarshal), getTimeDuration(data.Token.AccessExpiredAt)).Err() // automatically expired
 	if err != nil {
 		return fmt.Errorf("error set redis session access token, err := %s", err.Error())
 	}
 
-	err = redisSession.Set(keyRedis.KeyRefresh, string(dataMarshal), getTimeDuration(data.Token.RefreshExpiredAt)).Err() // automatically expired
+	err = redisSession.Set(ctx, keyRedis.KeyRefresh, string(dataMarshal), getTimeDuration(data.Token.RefreshExpiredAt)).Err() // automatically expired
 	if err != nil {
 		return fmt.Errorf("error set redis session refresh token, err := %s", err.Error())
 	}
 
-	err = redisSession.ZAdd(keyRedis.KeyTotalAccess, redis.Z{
+	err = redisSession.ZAdd(ctx, keyRedis.KeyTotalAccess, redis.Z{
 		Score:  cast.ToFloat64(data.Token.AccessExpiredAt), // as expired time, set on env (default 1 day)
 		Member: data.Token.Uuid,
 	}).Err()
@@ -165,7 +166,7 @@ func setRedisSession(username string, data SessionData) error {
 		return err
 	}
 
-	err = redisSession.ZAdd(keyRedis.KeyTotalRefresh, redis.Z{
+	err = redisSession.ZAdd(ctx, keyRedis.KeyTotalRefresh, redis.Z{
 		Score:  cast.ToFloat64(data.Token.RefreshExpiredAt), // as expired time, set on env (default 30 day)
 		Member: data.Token.Uuid,
 	}).Err()
@@ -176,15 +177,15 @@ func setRedisSession(username string, data SessionData) error {
 	return nil
 }
 
-func GetAllSessions(username string) ([]models.Users, error) {
-	_, refreshUuids, err := getAllUuid(username)
+func GetAllSessions(ctx context.Context, username string) ([]models.Users, error) {
+	_, refreshUuids, err := getAllUuid(ctx, username)
 	if err != nil {
 		return nil, err
 	}
 
 	var users []models.Users
 	for _, refreshUuid := range refreshUuids {
-		user, err := GetCurrentUser(refreshUuid)
+		user, err := GetCurrentUser(ctx, refreshUuid)
 		if err != nil {
 			return nil, err
 		}
@@ -195,16 +196,16 @@ func GetAllSessions(username string) ([]models.Users, error) {
 	return users, nil
 }
 
-func CheckToken(username, uuid string) (isExistAccess, isExistRefresh bool, err error) {
+func CheckToken(ctx context.Context, username, uuid string) (isExistAccess, isExistRefresh bool, err error) {
 	keyRedis := getKeyRedis(username, uuid)
 	redisSession := configs.GetRedisSessionConfig()
 
-	resultAccess, err := redisSession.Exists(keyRedis.KeyAccess).Result()
+	resultAccess, err := redisSession.Exists(ctx, keyRedis.KeyAccess).Result()
 	if err != nil {
 		return false, false, err
 	}
 
-	resultRefresh, err := redisSession.Exists(keyRedis.KeyRefresh).Result()
+	resultRefresh, err := redisSession.Exists(ctx, keyRedis.KeyRefresh).Result()
 	if err != nil {
 		return false, false, err
 	}
@@ -212,7 +213,7 @@ func CheckToken(username, uuid string) (isExistAccess, isExistRefresh bool, err 
 	return resultAccess > 0, resultRefresh > 0, nil
 }
 
-func SetupLoginSession(username string, data SessionData) (totalLogin int64, err error) {
+func SetupLoginSession(ctx context.Context, username string, data SessionData) (totalLogin int64, err error) {
 	// check if login session > total session that allowed to login
 	// if more, then return error that new session can't be created because you have device already connected
 	// if less, then
@@ -222,23 +223,23 @@ func SetupLoginSession(username string, data SessionData) (totalLogin int64, err
 	// 4. return total login
 
 	redisSession := configs.GetRedisSessionConfig()
-	totalLoginAccessToken, _, err := getTotalLogin(redisSession, username)
+	totalLoginAccessToken, _, err := getTotalLogin(ctx, redisSession, username)
 	if err != nil {
 		return 0, err
 	}
 
-	redisSession.Exists()
+	redisSession.Exists(ctx)
 
 	if totalLoginAccessToken >= cast.ToInt64(os.Getenv("TOTAL_LOGIN_SESSION")) {
 		return totalLogin, fmt.Errorf("total login session are more than allowed, logout one of your session from one of your device, or delete all sessions")
 	}
 
-	err = setRedisSession(username, data)
+	err = setRedisSession(ctx, username, data)
 	if err != nil {
 		return 0, err
 	}
 
-	totalLoginAccessToken, _, err = getTotalLogin(redisSession, username)
+	totalLoginAccessToken, _, err = getTotalLogin(ctx, redisSession, username)
 	if err != nil {
 		return 0, err
 	}
@@ -246,7 +247,7 @@ func SetupLoginSession(username string, data SessionData) (totalLogin int64, err
 	return totalLoginAccessToken, err
 }
 
-func RemoveRedisSession(username, uuid string) (totalLogin int64, err error) {
+func RemoveRedisSession(ctx context.Context, username, uuid string) (totalLogin int64, err error) {
 	// 1. delete redis session uuid (del uuid:access_token) (del uuid:refresh_token)
 	// 2. delete redis member using zrem (zrem username:access_token uuid) (zrem username:refresh_token uuid)
 	// 3. get total login using zcard (zcard username:access_token) (zcard username:refresh_token)
@@ -255,27 +256,27 @@ func RemoveRedisSession(username, uuid string) (totalLogin int64, err error) {
 	keyRedis := getKeyRedis(username, uuid)
 
 	redisSession := configs.GetRedisSessionConfig()
-	err = redisSession.Del(keyRedis.KeyAccess).Err() // delete access token redis
+	err = redisSession.Del(ctx, keyRedis.KeyAccess).Err() // delete access token redis
 	if err != nil {
 		return 0, err
 	}
 
-	err = redisSession.Del(keyRedis.KeyRefresh).Err() // delete refresh token redis
+	err = redisSession.Del(ctx, keyRedis.KeyRefresh).Err() // delete refresh token redis
 	if err != nil {
 		return 0, err
 	}
 
-	err = redisSession.ZRem(keyRedis.KeyTotalAccess, uuid).Err() // delete access token member redis
+	err = redisSession.ZRem(ctx, keyRedis.KeyTotalAccess, uuid).Err() // delete access token member redis
 	if err != nil {
 		return 0, err
 	}
 
-	err = redisSession.ZRem(keyRedis.KeyTotalRefresh, uuid).Err() // delete refresh token member redis
+	err = redisSession.ZRem(ctx, keyRedis.KeyTotalRefresh, uuid).Err() // delete refresh token member redis
 	if err != nil {
 		return 0, err
 	}
 
-	totalLoginAccessToken, _, err := getTotalLogin(redisSession, username)
+	totalLoginAccessToken, _, err := getTotalLogin(ctx, redisSession, username)
 	if err != nil {
 		return 0, err
 	}
@@ -283,19 +284,19 @@ func RemoveRedisSession(username, uuid string) (totalLogin int64, err error) {
 	return totalLoginAccessToken, nil
 }
 
-func DeleteAllSession(username string, uuid string) (err error) {
+func DeleteAllSession(ctx context.Context, username string, uuid string) (err error) {
 	// 1. get all members using zmembers (zmembers username:access_token) (zmembers username:refresh_token)
 	// 2. delete redis session by -looping- uuid from zmembers using del (del uuid:access_token) (del uuid:refresh_token)
 	// 3. delete redis member using del (del username:access_token) (del username:refresh_token)
 	// 4. get total login using scard (scard username:access_token) (scard username:refresh_token)
-	accessUuids, refreshUuids, err := getAllUuid(username)
+	accessUuids, refreshUuids, err := getAllUuid(ctx, username)
 
 	for _, accessUuid := range accessUuids {
 		if accessUuid == uuid { // exclude current session
 			continue
 		}
 
-		_, err = RemoveRedisSession(username, accessUuid)
+		_, err = RemoveRedisSession(ctx, username, accessUuid)
 		if err != nil {
 			return err
 		}
@@ -306,7 +307,7 @@ func DeleteAllSession(username string, uuid string) (err error) {
 			continue
 		}
 
-		_, err = RemoveRedisSession(username, refreshUuid)
+		_, err = RemoveRedisSession(ctx, username, refreshUuid)
 		if err != nil {
 			return err
 		}
@@ -332,7 +333,7 @@ func DeleteAllSession(username string, uuid string) (err error) {
 // 1.b. if not already in the family, then ok :thumbs:!
 
 // SetFamily set family
-func SetFamily(username, oldUuid, newUuid string, expiration time.Time) (err error) {
+func SetFamily(ctx context.Context, username, oldUuid, newUuid string, expiration time.Time) (err error) {
 	// set uuid to family using set (set old_uuid:family new_uuid)
 	dataFamily := FamilyCheck{
 		OldUuid:  oldUuid,
@@ -344,7 +345,7 @@ func SetFamily(username, oldUuid, newUuid string, expiration time.Time) (err err
 
 	keyRedis := getKeyRedis(username, oldUuid)
 	redisSession := configs.GetRedisSessionConfig()
-	_, err = redisSession.Set(keyRedis.KeyFamily, string(dataMarshal), getTimeDuration(expiration)).Result()
+	_, err = redisSession.Set(ctx, keyRedis.KeyFamily, string(dataMarshal), getTimeDuration(expiration)).Result()
 	if err != nil {
 		return err
 	}
@@ -353,13 +354,13 @@ func SetFamily(username, oldUuid, newUuid string, expiration time.Time) (err err
 }
 
 // CheckFamily check family
-func CheckFamily(username, oldUuid string) (isUsed bool, err error) {
+func CheckFamily(ctx context.Context, username, oldUuid string) (isUsed bool, err error) {
 	// check if old_uuid already used, by set (set old_uuid:family old_uuid)
 	keyRedis := getKeyRedis(username, oldUuid)
 	redisSession := configs.GetRedisSessionConfig()
 
 	// check if old_uuid is in the family that already refreshed
-	familyDataMarshal, err := redisSession.Get(keyRedis.KeyFamily).Result()
+	familyDataMarshal, err := redisSession.Get(ctx, keyRedis.KeyFamily).Result()
 	if err != nil && err != redis.Nil {
 		return false, err
 	} else if err == redis.Nil {
@@ -371,13 +372,13 @@ func CheckFamily(username, oldUuid string) (isUsed bool, err error) {
 	_ = json.Unmarshal([]byte(familyDataMarshal), &familyData)
 
 	// because there is old uuid, delete new access token and refresh token
-	_, err = RemoveRedisSession(familyData.Username, familyData.NewUuid)
+	_, err = RemoveRedisSession(ctx, familyData.Username, familyData.NewUuid)
 	if err != nil {
 		return true, err
 	}
 
 	// delete current family
-	redisSession.Del(keyRedis.KeyFamily)
+	redisSession.Del(ctx, keyRedis.KeyFamily)
 
 	return true, nil
 }
@@ -385,11 +386,11 @@ func CheckFamily(username, oldUuid string) (isUsed bool, err error) {
 // GetCurrentUser get current user session from cookie uuid, uuid already set when jwt claim already set.
 // you can access it by -> uuid, _ := ctx.Get("uuid")
 // TODO: change return to users and device login details
-func GetCurrentUser(uuidIdentifier string) (*models.Users, error) {
+func GetCurrentUser(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
 	keyRedis := getKeyRedis("", uuidIdentifier)
 
 	redisSession := configs.GetRedisSessionConfig()
-	redisData, err := redisSession.Get(keyRedis.KeyAccess).Result()
+	redisData, err := redisSession.Get(ctx, keyRedis.KeyAccess).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -403,11 +404,11 @@ func GetCurrentUser(uuidIdentifier string) (*models.Users, error) {
 // GetCurrentUserRefresh get current user session from cookie uuid, uuid already set when jwt claim already set.
 // you can access it by -> uuid, _ := ctx.Get("uuid")
 // TODO: change return to users and device login details
-func GetCurrentUserRefresh(uuidIdentifier string) (*models.Users, error) {
+func GetCurrentUserRefresh(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
 	keyRedis := getKeyRedis("", uuidIdentifier)
 
 	redisSession := configs.GetRedisSessionConfig()
-	redisData, err := redisSession.Get(keyRedis.KeyRefresh).Result()
+	redisData, err := redisSession.Get(ctx, keyRedis.KeyRefresh).Result()
 	if err != nil {
 		return nil, err
 	}

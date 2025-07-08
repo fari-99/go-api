@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-redis/cache"
+	"github.com/go-redis/cache/v9"
 )
 
 type RedisCacheController struct {
@@ -30,13 +30,13 @@ func (controller *RedisCacheController) TestRedisCacheAction(ctx *gin.Context) {
 	}
 
 	_ = codec.Set(&cache.Item{
-		Key:        key,
-		Object:     obj,
-		Expiration: time.Hour,
+		Key:   key,
+		Value: obj,
+		TTL:   time.Hour,
 	})
 
 	var wanted CacheObject
-	if err := codec.Get(key, &wanted); err == nil {
+	if err := codec.Get(ctx, key, &wanted); err == nil {
 		fmt.Println(wanted)
 	}
 

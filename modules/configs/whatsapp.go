@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-redis/redis"
 	"github.com/mdp/qrterminal/v3"
+	"github.com/redis/go-redis/v9"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	waLog "go.mau.fi/whatsmeow/util/log"
@@ -63,7 +63,7 @@ func WhatsappClient(ctx context.Context, redisClient *redis.Client) *whatsmeow.C
 
 			// save qr code value on redis cache, so it can be used when accidentally logged out
 			log.Printf("Please Scan QR-Code on API [GET] /notifications/qr-code/whatsapp")
-			_ = redisClient.Set(constant.QRCodeWhatsapp, qrCode, 0)
+			_ = redisClient.Set(ctx, constant.QRCodeWhatsapp, qrCode, 0)
 		} else {
 			log.Printf("Events := %s", event)
 		}

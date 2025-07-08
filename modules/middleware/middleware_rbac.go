@@ -21,26 +21,26 @@ func RBACHandler(ctx *gin.Context) {
 	enforcer := configs.GetPermissionInstance()
 
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
-	//subject := currentUser.GetSubject()
+	// subject := currentUser.GetSubject()
 	roles := strings.Split(currentUser.Roles, ",")
 
 	routes := ctx.Request.URL.Path
 	method := ctx.Request.Method
 
-	//fmt.Printf("------------ subject := %s\n", subject)
-	//fmt.Printf("------------ roles := %v\n", roles)
-	//fmt.Printf("------------ routes := %s\n", routes)
-	//fmt.Printf("------------ method := %s\n", method)
+	// fmt.Printf("------------ subject := %s\n", subject)
+	// fmt.Printf("------------ roles := %v\n", roles)
+	// fmt.Printf("------------ routes := %s\n", routes)
+	// fmt.Printf("------------ method := %s\n", method)
 
 	// check subject permission
-	//if subjectPermission, err := checkPermission(subject, routes, method); err != nil {
+	// if subjectPermission, err := checkPermission(subject, routes, method); err != nil {
 	//	return err
-	//} else if !subjectPermission {
+	// } else if !subjectPermission {
 	//	//fmt.Printf("--- SUBJECT DON'T HAVE PERMISSION ---")
 	//	return routing.NewHTTPError(http.StatusUnauthorized, "user don't have permission for this url")
-	//}
+	// }
 
 	// check role permission
 	for _, role := range roles {
@@ -60,7 +60,7 @@ func RBACHandler(ctx *gin.Context) {
 		}
 	}
 
-	//fmt.Printf("--- DON'T HAVE PERMISSION FOR ANY ROLES ---")
+	// fmt.Printf("--- DON'T HAVE PERMISSION FOR ANY ROLES ---")
 	helpers.NewResponse(ctx, http.StatusUnauthorized, "user don't have role that have permission for this url")
 	ctx.Abort()
 	return

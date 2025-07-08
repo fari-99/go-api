@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -8,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 type redisSessionConfig struct {
@@ -36,11 +37,10 @@ func GetRedisSessionConfig() *redis.Client {
 			ReadTimeout:  time.Duration(timeout) * time.Second,
 			WriteTimeout: time.Duration(timeout) * time.Second,
 			MinIdleConns: minIdleConnection,
-			MaxConnAge:   24 * time.Hour,
 			TLSConfig:    nil,
 		})
 
-		_, err := redisApp.Ping().Result()
+		_, err := redisApp.Ping(context.Background()).Result()
 		if err != nil {
 			panic(err.Error())
 		}

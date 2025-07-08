@@ -4,9 +4,9 @@ import (
 	"go-api/modules/configs/rabbitmq"
 
 	"github.com/elastic/go-elasticsearch/v7"
-	"github.com/go-redis/cache"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/cache/v9"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/redis/go-redis/v9"
 	"gopkg.in/gomail.v2"
 	"gorm.io/gorm"
 )
@@ -14,7 +14,7 @@ import (
 type DI struct {
 	DB            *gorm.DB
 	Redis         *redis.Client
-	RedisCache    *cache.Codec
+	RedisCache    *cache.Cache
 	Queue         *rabbitmq.QueueSetup
 	EmailDialler  *gomail.Dialer
 	ElasticSearch *elasticsearch.Client

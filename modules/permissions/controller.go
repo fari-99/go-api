@@ -28,7 +28,7 @@ func (r controller) CheckAction(ctx *gin.Context) {
 	}
 
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	enforcer := configs.GetPermissionInstance()
 	roles := strings.Split(currentUser.Roles, ",")
 

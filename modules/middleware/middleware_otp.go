@@ -24,7 +24,7 @@ func OTPMiddlewareLogin(di *configs.DI) gin.HandlerFunc {
 
 func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
 
 	if !currentUser.TwoFaEnabled {

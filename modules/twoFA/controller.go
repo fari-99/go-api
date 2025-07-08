@@ -20,7 +20,7 @@ type controller struct {
 
 func (c controller) CreateNewAuth(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
 
 	_, notFound, err := c.service.GetDetails(ctx, string(userID))
@@ -62,7 +62,7 @@ func (c controller) CreateNewAuth(ctx *gin.Context) {
 
 func (c controller) ValidateAuth(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
 
 	twoAuthModel, notFound, err := c.service.GetDetails(ctx, string(userID))
@@ -129,7 +129,7 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 
 func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
 
 	_, notFound, err := c.service.GetDetails(ctx, string(userID))

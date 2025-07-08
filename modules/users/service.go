@@ -86,7 +86,7 @@ func (s service) ForgotUsername(ctx *gin.Context, input ForgotUsernameRequest) (
 
 func (s service) ChangePassword(ctx *gin.Context, input RequestChangePassword) (exists bool, err error) {
 	uuidSession, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuidSession.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuidSession.(string))
 
 	if err = input.Validate(); err != nil {
 		return false, err

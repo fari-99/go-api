@@ -93,9 +93,9 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 }
 
 func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.JwtMapClaims) {
-	currentUser, err := helpers.GetCurrentUser(claims.Uuid)
+	currentUser, err := helpers.GetCurrentUser(ctx, claims.Uuid)
 	if err != nil {
-		if isUsed, err := helpers.CheckFamily("", claims.Uuid); err != nil {
+		if isUsed, err := helpers.CheckFamily(ctx, "", claims.Uuid); err != nil {
 			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
 			})

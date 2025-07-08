@@ -31,7 +31,7 @@ func (s service) GetDetail(ctx *gin.Context, storageID string) (*models.Storages
 
 func (s service) Uploads(ctx *gin.Context, form *multipart.Form) ([]models.Storages, error) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
 	formFile := form.File
 	fileType := form.Value["file_types"]

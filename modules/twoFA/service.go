@@ -59,7 +59,7 @@ func (s service) GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, 
 
 func (s service) CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
 	encryptSecret, encodedSecret, err := s.EncryptKey()
 	if err != nil {

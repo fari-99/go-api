@@ -1,6 +1,7 @@
 package auths
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -37,14 +38,14 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 
 	oldUuidSession, _ := ctx.Get("uuid")
 	oldUuid := oldUuidSession.(string)
-	currentUser, _ := helpers.GetCurrentUserRefresh(oldUuid)
+	currentUser, _ := helpers.GetCurrentUserRefresh(ctx, oldUuid)
 
-	_, isExistRefresh, err := helpers.CheckToken(currentUser.Username, oldUuid)
+	_, isExistRefresh, err := helpers.CheckToken(ctx, currentUser.Username, oldUuid)
 	if err != nil || !isExistRefresh {
 		return nil, isExistRefresh, err
 	}
 
-	_, err = helpers.RemoveRedisSession(currentUser.Username, oldUuid)
+	_, err = helpers.RemoveRedisSession(ctx, currentUser.Username, oldUuid)
 	if err != nil {
 		return nil, false, err
 	}
@@ -54,14 +55,14 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 		return nil, false, err
 	}
 
-	_, err = s.setRedisSession(token, currentUser)
+	_, err = s.setRedisSession(ctx, token, currentUser)
 	if err != nil {
 		return nil, false, err
 	}
 
 	// set new uuid to new uuid so it can be checked
 	newUuid := token.Uuid
-	err = helpers.SetFamily(currentUser.Username, oldUuid, newUuid, token.RefreshExpiredAt)
+	err = helpers.SetFamily(ctx, currentUser.Username, oldUuid, newUuid, token.RefreshExpiredAt)
 	if err != nil {
 		return nil, false, err
 	}
@@ -71,9 +72,9 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 
 func (s service) DeleteSession(ctx *gin.Context, uuid string) (totalLogin int64, isExists bool, err error) {
 	uuidSession, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuidSession.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuidSession.(string))
 
-	totalLogin, err = helpers.RemoveRedisSession(currentUser.Username, uuid)
+	totalLogin, err = helpers.RemoveRedisSession(ctx, currentUser.Username, uuid)
 	if err != nil {
 		return 0, false, err
 	}
@@ -83,9 +84,9 @@ func (s service) DeleteSession(ctx *gin.Context, uuid string) (totalLogin int64,
 
 func (s service) AllSessions(ctx *gin.Context) (allDevices []models.Users, err error) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
-	return helpers.GetAllSessions(currentUser.Username)
+	return helpers.GetAllSessions(ctx, currentUser.Username)
 }
 
 func (s service) SignOutUser(ctx *gin.Context) (int64, bool, error) {
@@ -94,12 +95,12 @@ func (s service) SignOutUser(ctx *gin.Context) (int64, bool, error) {
 		return 0, false, nil
 	}
 
-	currentUser, err := helpers.GetCurrentUser(uuid.(string))
+	currentUser, err := helpers.GetCurrentUser(ctx, uuid.(string))
 	if err != nil {
 		return 0, true, err
 	}
 
-	totalLogin, err := helpers.RemoveRedisSession(currentUser.Username, uuid.(string))
+	totalLogin, err := helpers.RemoveRedisSession(ctx, currentUser.Username, uuid.(string))
 	if err != nil {
 		return 0, true, err
 	}
@@ -109,9 +110,9 @@ func (s service) SignOutUser(ctx *gin.Context) (int64, bool, error) {
 
 func (s service) DeleteAllSession(ctx *gin.Context) (bool, error) {
 	uuid, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuid.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
-	err := helpers.DeleteAllSession(currentUser.Username, uuid.(string))
+	err := helpers.DeleteAllSession(ctx, currentUser.Username, uuid.(string))
 	if err != nil {
 		return false, err
 	}
@@ -136,7 +137,7 @@ func (s service) AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (int6
 		return 0, nil, false, err
 	}
 
-	totalLogin, err := s.setRedisSession(token, userModel)
+	totalLogin, err := s.setRedisSession(ctx, token, userModel)
 	if err != nil {
 		return 0, nil, false, err
 	}
@@ -173,7 +174,7 @@ func (s service) generateToken(ctx *gin.Context, userModel models.Users) (signed
 	return token, nil
 }
 
-func (s service) setRedisSession(token *token_generator.SignedToken, userModel *models.Users) (totalLogin int64, err error) {
+func (s service) setRedisSession(ctx context.Context, token *token_generator.SignedToken, userModel *models.Users) (totalLogin int64, err error) {
 	dataSession := helpers.SessionData{
 		Token: helpers.SessionToken{
 			AccessExpiredAt:  token.AccessExpiredAt,
@@ -186,5 +187,5 @@ func (s service) setRedisSession(token *token_generator.SignedToken, userModel *
 		Authorization: true,
 	}
 
-	return helpers.SetupLoginSession(userModel.Username, dataSession)
+	return helpers.SetupLoginSession(ctx, userModel.Username, dataSession)
 }
