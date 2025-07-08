@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"log"
 	"os"
 	"strconv"
 
@@ -10,11 +11,13 @@ import (
 )
 
 func GetRedisCache() *cache.Codec {
+	log.Println("Initialize Redis Cache connection...")
+
 	redisCacheDB, _ := strconv.ParseInt(os.Getenv("REDIS_CACHE_DB"), 10, 64)
 
 	client := redis.NewClient(&redis.Options{
 		Addr: os.Getenv("REDIS_CACHE_HOST") + ":" + os.Getenv("REDIS_CACHE_PORT"),
-		//Password: os.Getenv("REDIS_CACHE_PASSWORD"),
+		// Password: os.Getenv("REDIS_CACHE_PASSWORD"),
 		DB: int(redisCacheDB),
 	})
 
@@ -28,5 +31,6 @@ func GetRedisCache() *cache.Codec {
 		},
 	}
 
+	log.Println("Success Initialize Redis Cache connection...")
 	return redisCache
 }

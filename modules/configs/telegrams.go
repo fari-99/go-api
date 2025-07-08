@@ -18,6 +18,8 @@ var TelegramOnce sync.Once
 
 func GetTelegram() *tgbotapi.BotAPI {
 	TelegramOnce.Do(func() {
+		log.Println("Initialize Telegram connection...")
+
 		bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_API_KEY"))
 		if err != nil {
 			log.Panic(err)
@@ -31,6 +33,8 @@ func GetTelegram() *tgbotapi.BotAPI {
 		TelegramInstance = &TelegramConfig{
 			BotApi: bot,
 		}
+
+		log.Println("Success Initialize Telegram connection...")
 	})
 
 	return TelegramInstance.BotApi

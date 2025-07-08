@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -19,6 +20,8 @@ var redisSessionOnce sync.Once
 
 func GetRedisSessionConfig() *redis.Client {
 	redisSessionOnce.Do(func() {
+		log.Println("Initialize Redis Session connection...")
+
 		database, _ := strconv.Atoi(os.Getenv("REDIS_SESSION_DB"))
 		timeout, _ := strconv.Atoi(os.Getenv("REDIS_SESSION_TIMEOUT"))
 		minIdleConnection, _ := strconv.Atoi(os.Getenv("REDIS_SESSION_MIN_IDLE"))
@@ -45,6 +48,8 @@ func GetRedisSessionConfig() *redis.Client {
 		redisSessionInstance = &redisSessionConfig{
 			session: redisApp,
 		}
+
+		log.Println("Success Initialize Redis Session connection...")
 	})
 
 	return redisSessionInstance.session

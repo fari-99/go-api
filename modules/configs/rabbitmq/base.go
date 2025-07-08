@@ -62,6 +62,7 @@ type QueueBindConfig struct {
 }
 
 func NewBaseQueue(exchangeName, queueName string) *QueueSetup {
+	log.Println("Initialize RabbitMQ Queue connection...")
 	ctx, cancel := context.WithCancel(context.Background())
 
 	queueSetup := &QueueSetup{
@@ -71,6 +72,7 @@ func NewBaseQueue(exchangeName, queueName string) *QueueSetup {
 	}
 
 	queueSetup.setQueueName(queueName)
+	log.Println("Success Initialize RabbitMQ Queue connection...")
 	return queueSetup.setQueueUtil()
 }
 

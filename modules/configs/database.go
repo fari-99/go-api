@@ -143,7 +143,7 @@ func (base *DatabaseConfig) GetMysqlConnection(isSingleton bool) *gorm.DB {
 	}()
 
 	mysqlConn := func() *gorm.DB {
-		log.Println("Initialize mysql database connection...")
+		log.Println("Initialize MYSQL database connection...")
 
 		db, err := base.SetConnection()
 		if err != nil {
@@ -163,7 +163,7 @@ func (base *DatabaseConfig) GetMysqlConnection(isSingleton bool) *gorm.DB {
 		sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
 		sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
 
-		log.Printf("success initialize mysql database connection")
+		log.Printf("Success Initialize MYSQL database connection")
 		return db
 	}
 
@@ -192,7 +192,7 @@ func (base *DatabaseConfig) GetPostgresConnection(isSingleton bool) *gorm.DB {
 	}()
 
 	postgresConn := func() *gorm.DB {
-		log.Println("Initialize postgres database connection...")
+		log.Println("Initialize Postgres database connection...")
 
 		db, err := base.SetConnection()
 		if err != nil {
@@ -212,7 +212,7 @@ func (base *DatabaseConfig) GetPostgresConnection(isSingleton bool) *gorm.DB {
 		sqlDB.SetMaxIdleConns(int(maxIdleConn))                            // sets the maximum number of connections in the idle
 		sqlDB.SetMaxOpenConns(int(maxOpenConn))                            // sets the maximum number of open connections to the database.
 
-		log.Printf("success initialize postgres database connection")
+		log.Printf("Success Initialize Postgres database connection")
 		return db
 	}
 

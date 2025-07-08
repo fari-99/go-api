@@ -26,10 +26,10 @@ func DIInit() *DI {
 		DB:            DatabaseBase(MySQLType).GetMysqlConnection(true),
 		ElasticSearch: GetElasticSearch(),
 		EmailDialler:  GetEmail(),
-		Queue:         rabbitmq.NewBaseQueue("", ""),
 		Redis:         GetRedisSessionConfig(),
 		RedisCache:    GetRedisCache(),
-		Telegram:      GetTelegram(),
+		Queue:         rabbitmq.NewBaseQueue("", ""),
+		// Telegram:      GetTelegram(), // TODO: create new bot, old one deprecated
 	}
 
 	return di

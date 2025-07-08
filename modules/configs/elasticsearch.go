@@ -3,6 +3,7 @@ package configs
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -27,6 +28,8 @@ func GetElasticSearch() *ES7.Client {
 	}()
 
 	elasticOnce.Do(func() {
+		log.Println("Initialize ElasticSearch connection...")
+
 		esConfig, err := getElasticConfig()
 		if err != nil {
 			panic(err.Error())
@@ -40,6 +43,8 @@ func GetElasticSearch() *ES7.Client {
 		elasticInstance = &ElasticSearchConfig{
 			Client: es7,
 		}
+
+		log.Printf("Success Initialize ElasticSearch database connection")
 	})
 
 	return elasticInstance.Client
@@ -97,10 +102,10 @@ func getElasticConfig() (config ES7.Config, err error) {
 		},
 		Username: configData.Username,
 		Password: configData.Password,
-		//CloudID:   "",
-		//APIKey:    "",
-		//Transport: nil,
-		//Logger:    nil,
+		// CloudID:   "",
+		// APIKey:    "",
+		// Transport: nil,
+		// Logger:    nil,
 	}
 
 	return esConfig, err
