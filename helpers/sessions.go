@@ -19,9 +19,9 @@ const plusInfinite = "+inf"
 const negativeInfinite = "-inf"
 
 type SessionToken struct {
-	Uuid             string `json:"uuid"`
-	AccessExpiredAt  int64  `json:"access_expired_at"`
-	RefreshExpiredAt int64  `json:"refresh_expired_at"`
+	Uuid             string    `json:"uuid"`
+	AccessExpiredAt  time.Time `json:"access_expired_at"`
+	RefreshExpiredAt time.Time `json:"refresh_expired_at"`
 }
 
 type KeyRedisSessionData struct {
@@ -332,7 +332,7 @@ func DeleteAllSession(username string, uuid string) (err error) {
 // 1.b. if not already in the family, then ok :thumbs:!
 
 // SetFamily set family
-func SetFamily(username, oldUuid, newUuid string, expiration int64) (err error) {
+func SetFamily(username, oldUuid, newUuid string, expiration time.Time) (err error) {
 	// set uuid to family using set (set old_uuid:family new_uuid)
 	dataFamily := FamilyCheck{
 		OldUuid:  oldUuid,
@@ -418,9 +418,17 @@ func GetCurrentUserRefresh(uuidIdentifier string) (*models.Users, error) {
 	return &userData, nil
 }
 
-func getTimeDuration(lifetime int64) time.Duration {
-	timeUnix := time.Unix(lifetime, 0)
-	now := time.Now()
+func getTimeDuration(input interface{}) time.Duration {
+	var target time.Time
 
-	return timeUnix.Sub(now)
+	switch v := input.(type) {
+	case int64:
+		target = time.Unix(v, 0)
+	case time.Time:
+		target = v
+	default:
+		panic(fmt.Sprintf("unsupported type: %T", input))
+	}
+
+	return target.Sub(time.Now())
 }

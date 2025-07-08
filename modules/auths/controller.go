@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"go-api/helpers"
 
@@ -43,7 +42,7 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 		Value:    token.AccessToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  time.Unix(token.AccessExpiredAt, 0),
+		Expires:  token.AccessExpiredAt,
 		Secure:   false,
 		HttpOnly: true,
 	})
@@ -53,7 +52,7 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 		Value:    token.RefreshToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  time.Unix(token.RefreshExpiredAt, 0),
+		Expires:  token.RefreshExpiredAt,
 		Secure:   false,
 		HttpOnly: true,
 	})
@@ -82,7 +81,7 @@ func (c controller) RefreshSession(ctx *gin.Context) {
 		Value:    newToken.AccessToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  time.Unix(newToken.AccessExpiredAt, 0),
+		Expires:  newToken.AccessExpiredAt,
 		Secure:   false,
 		HttpOnly: true,
 	})
@@ -92,7 +91,7 @@ func (c controller) RefreshSession(ctx *gin.Context) {
 		Value:    newToken.RefreshToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  time.Unix(newToken.RefreshExpiredAt, 0),
+		Expires:  newToken.RefreshExpiredAt,
 		Secure:   false,
 		HttpOnly: true,
 	})

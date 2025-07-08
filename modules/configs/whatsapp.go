@@ -15,19 +15,19 @@ import (
 	"go-api/constant"
 )
 
-func WhatsappClient(redisClient *redis.Client) *whatsmeow.Client {
+func WhatsappClient(ctx context.Context, redisClient *redis.Client) *whatsmeow.Client {
 	databaseBase := DatabaseBase(PostgresType)
 	connUrl := databaseBase.GetConnection()
 
 	dbLog := waLog.Stdout("Database", "DEBUG", true)
 	// Make sure you add appropriate DB connector imports, e.g. github.com/mattn/go-sqlite3 for SQLite
-	container, err := sqlstore.New(strings.ToLower(PostgresType), connUrl+" sslmode=disable", dbLog)
+	container, err := sqlstore.New(ctx, strings.ToLower(PostgresType), connUrl+" sslmode=disable", dbLog)
 	if err != nil {
 		panic(err)
 	}
 
 	// If you want multiple sessions, remember their JIDs and use .GetDevice(jid) or .GetAllDevices() instead.
-	deviceStore, err := container.GetFirstDevice()
+	deviceStore, err := container.GetFirstDevice(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -56,7 +56,7 @@ func WhatsappClient(redisClient *redis.Client) *whatsmeow.Client {
 		event := evt.Event
 		if event == "code" {
 			qrCode := evt.Code
-			//log.Println("QR code:", qrCode)                               // echo QR Code Value
+			// log.Println("QR code:", qrCode)                               // echo QR Code Value
 			if os.Getenv("SHOW_QR_CODE_TERMINAL") == "true" {
 				qrterminal.GenerateHalfBlock(qrCode, qrterminal.L, os.Stdout) // print QR Code on terminal
 			}

@@ -6,25 +6,25 @@ import (
 	"log"
 	"os"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
+	"github.com/go-redsync/redsync/v4/redis/goredis/v9"
+	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cast"
 )
 
-func getRedisLockConfig() redis.Options {
+func getRedisLockConfig() redis.UniversalOptions {
 	redisLockHost := os.Getenv("REDIS_LOCK_HOST")
 	redisLockPort := os.Getenv("REDIS_LOCK_PORT")
-	redisLockNetwork := os.Getenv("REDIS_LOCK_NETWORK")
 	redisLockDB := os.Getenv("REDIS_LOCK_DB")
 	redisLockUsername := os.Getenv("REDIS_LOCK_USERNAME")
 	redisLockPassword := os.Getenv("REDIS_LOCK_PASSWORD")
 	redisLockMaxRetry := os.Getenv("REDIS_LOCK_MAX_RETRY")
 	redisLockMinIdleConn := os.Getenv("REDIS_LOCK_MIN_IDLE_CONN")
 
-	redisOption := redis.Options{
-		Network:      redisLockNetwork,
-		Addr:         fmt.Sprintf("%s:%s", redisLockHost, redisLockPort),
+	redisOption := redis.UniversalOptions{
+		Addrs: []string{
+			fmt.Sprintf("%s:%s", redisLockHost, redisLockPort),
+		},
 		DB:           cast.ToInt(redisLockDB),
 		MaxRetries:   cast.ToInt(redisLockMaxRetry),
 		PoolFIFO:     true,
@@ -41,7 +41,7 @@ func getRedisLockConfig() redis.Options {
 
 func GetRedisLock() *redsync.Redsync {
 	redisOption := getRedisLockConfig()
-	client := redis.NewClient(&redisOption)
+	client := redis.NewUniversalClient(&redisOption)
 
 	err := client.Ping(context.Background()).Err()
 	if err != nil {
