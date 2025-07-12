@@ -26,6 +26,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/looplab/fsm v1.0.3
 	github.com/mdp/qrterminal/v3 v3.2.1
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.11.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
