@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -34,6 +35,8 @@ type QueueSetup struct {
 
 	ctx    context.Context
 	cancel context.CancelFunc
+
+	waitGroup sync.WaitGroup
 }
 
 type QueueConfig struct {
@@ -48,11 +51,11 @@ type ExchangeConfig struct {
 }
 
 type QueueDeclareConfig struct {
-	Durable    bool
-	AutoDelete bool
-	Exclusive  bool
-	NoWait     bool
-	Args       amqp.Table
+	Durable    bool       // If true, the queue will survive broker restarts
+	AutoDelete bool       // If true, the queue is deleted when last consumer unsubscribes
+	Exclusive  bool       // If true, the queue can only be used by the declaring connection
+	NoWait     bool       // If true, the server won't respond to the method (fire-and-forget)
+	Args       amqp.Table // Optional arguments (e.g., message TTL, DLX)
 }
 
 type QueueBindConfig struct {
@@ -140,6 +143,9 @@ func (base *QueueSetup) Close() {
 	base.closed = true
 	base.cancel()
 
+	loggingMessage("waiting for consumer done with their process", nil)
+	base.waitGroup.Wait()
+
 	if base.channel != nil {
 		err := base.channel.Close()
 		if err != nil {
@@ -222,9 +228,10 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 		base.queueConsumer = consumer
 	}
 
-	forever := make(chan bool)
-
+	base.waitGroup.Add(1)
 	go func() {
+		defer base.waitGroup.Done()
+
 		defer func() {
 			if r := recover(); r != nil {
 				loggingMessage("Recovered from panic on your queue", r)
@@ -273,7 +280,6 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 	}()
 
 	loggingMessage(" [*] Waiting for messages. To exit press CTRL+C", nil)
-	<-forever
 	return
 }
 
@@ -334,7 +340,7 @@ func (base *QueueSetup) openChannel() error {
 
 func (base *QueueSetup) WaitForSignalAndShutdown() {
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	<-sigChan
 	loggingMessage("Received shutdown signal", nil)
 	base.Close()
@@ -346,7 +352,5 @@ func loggingMessage(message string, data interface{}) {
 		message += fmt.Sprintf("%s, Data := %s", message, string(dataMarshal))
 	}
 
-	if os.Getenv("APP_MODE") == gin.DebugMode {
-		log.Printf(message)
-	}
+	log.Printf(message)
 }

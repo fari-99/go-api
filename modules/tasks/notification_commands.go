@@ -30,6 +30,8 @@ func (base *BaseCommand) getNotificationCommands() []*cli.Command {
 				queueSetup.SetupQueueBind(nil)
 				queueSetup.AddConsumerExchange(false)
 				queueSetup.Consume(baseEvent.NotificationsHandler)
+
+				queueSetup.WaitForSignalAndShutdown()
 				return nil
 			},
 		},
@@ -47,6 +49,8 @@ func (base *BaseCommand) getNotificationCommands() []*cli.Command {
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
 				queueSetup.Consume(baseEvent.NotificationEmailHandler)
+
+				queueSetup.WaitForSignalAndShutdown()
 				return nil
 			},
 		},
@@ -67,6 +71,8 @@ func (base *BaseCommand) getNotificationCommands() []*cli.Command {
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
 				queueSetup.Consume(baseEvent.NotificationTelegramHandler)
+
+				queueSetup.WaitForSignalAndShutdown()
 				return nil
 			},
 		},
@@ -87,6 +93,8 @@ func (base *BaseCommand) getNotificationCommands() []*cli.Command {
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
 				queueSetup.Consume(baseEvent.NotificationTwilioHandler)
+
+				queueSetup.WaitForSignalAndShutdown()
 				return nil
 			},
 		},
@@ -107,6 +115,8 @@ func (base *BaseCommand) getNotificationCommands() []*cli.Command {
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
 				queueSetup.Consume(baseEvent.NotificationWhatsappHandler)
+
+				queueSetup.WaitForSignalAndShutdown()
 				return nil
 			},
 		},

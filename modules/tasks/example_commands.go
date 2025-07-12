@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
+	"go-api/helpers"
 	"go-api/modules/configs"
 	"go-api/modules/configs/kafka"
 	"go-api/modules/configs/rabbitmq"
@@ -36,11 +38,12 @@ func (base *BaseCommand) getTestingCommands() []*cli.Command {
 				queueName := base.GetFlags(command, "queue-name")
 				log.Printf("Queue Name := %s", queueName)
 
-				queueSetup := rabbitmq.NewBaseQueue("", "email-queue")
+				queueSetup := rabbitmq.NewBaseQueue("", queueName)
 				queueSetup.SetupQueue(nil, nil)
 				queueSetup.AddConsumer(false)
 				queueSetup.Consume(HandleQueueEvents)
 
+				queueSetup.WaitForSignalAndShutdown()
 				log.Printf("====  Task success ====")
 				return nil
 			},
@@ -59,6 +62,8 @@ func (base *BaseCommand) getTestingCommands() []*cli.Command {
 				queueSetup.SetupQueueBind(nil)
 				queueSetup.AddConsumerExchange(false)
 				queueSetup.Consume(HandleQueueEvents)
+
+				queueSetup.WaitForSignalAndShutdown()
 				return nil
 			},
 		},
@@ -144,4 +149,8 @@ func (base *BaseCommand) getTestingCommands() []*cli.Command {
 func HandleQueueEvents(body rabbitmq.ConsumerHandlerData) {
 	bodyMarshal, _ := json.Marshal(body)
 	log.Printf(string(bodyMarshal))
+
+	helpers.LoggingMessage("me sleep 25s now", nil)
+	time.Sleep(25 * time.Second)
+	helpers.LoggingMessage("done sleep", nil)
 }

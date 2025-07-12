@@ -16,12 +16,12 @@ type ConsumerHandlerData struct {
 type ConsumerHandler func(ConsumerHandlerData)
 
 type ConsumerConfig struct {
-	Consumer  string // consumer tag
-	AutoAck   bool
-	Exclusive bool
-	NoLocal   bool
-	NoWait    bool
-	Args      amqp.Table
+	Consumer  string     // Consumer tag (used to identify the consumer); empty for auto-generated
+	AutoAck   bool       // If true, messages are considered acknowledged once delivered
+	Exclusive bool       // If true, restricts this consumer to this connection only
+	NoLocal   bool       // If true, the server will not deliver messages published on this connection (not supported in RabbitMQ)
+	NoWait    bool       // If true, the server does not respond to the method (fire-and-forget)
+	Args      amqp.Table // Optional arguments (e.g., consumer priority)
 }
 
 func (base *QueueSetup) SetupQueue(queueDeclare *QueueDeclareConfig, consumerConfig *ConsumerConfig) *QueueSetup {
@@ -38,7 +38,7 @@ func (base *QueueSetup) SetupQueue(queueDeclare *QueueDeclareConfig, consumerCon
 	if consumerConfig == nil {
 		consumerConfig = &ConsumerConfig{
 			Consumer:  "", // consumer tag
-			AutoAck:   true,
+			AutoAck:   false,
 			Exclusive: false,
 			NoLocal:   false,
 			NoWait:    false,
@@ -49,6 +49,14 @@ func (base *QueueSetup) SetupQueue(queueDeclare *QueueDeclareConfig, consumerCon
 	base.queueConfig = &QueueConfig{
 		QueueDeclareConfig:  queueDeclare,
 		QueueConsumerConfig: consumerConfig,
+	}
+
+	if !consumerConfig.AutoAck && base.channel != nil {
+		loggingMessage("setting up qos", nil)
+		err := base.channel.Qos(1, 0, false)
+		if err != nil {
+			loggingMessage("error setting up QoS", err.Error())
+		}
 	}
 
 	return base
