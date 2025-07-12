@@ -6,7 +6,7 @@ require (
 	github.com/Blank-Xu/sql-adapter v1.1.2
 	github.com/IBM/sarama v1.45.2
 	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.3
-	github.com/casbin/casbin/v2 v2.108.0
+	github.com/casbin/casbin/v2 v2.109.0
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
 	github.com/dmitryburov/gorm-paginator v0.9.6
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
@@ -30,7 +30,7 @@ require (
 	github.com/redis/go-redis/v9 v9.11.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cast v1.9.2
-	github.com/twilio/twilio-go v1.26.4
+	github.com/twilio/twilio-go v1.26.5
 	github.com/urfave/cli/v3 v3.3.8
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/xendit/xendit-go/v7 v7.0.0
