@@ -32,7 +32,7 @@ require (
 	github.com/spf13/cast v1.9.2
 	github.com/twilio/twilio-go v1.26.4
 	github.com/urfave/cli/v3 v3.3.8
-	github.com/vmihailenco/msgpack v4.0.4+incompatible
+	github.com/vmihailenco/msgpack/v5 v5.4.1
 	github.com/xendit/xendit-go v1.0.25
 	go.mau.fi/whatsmeow v0.0.0-20250708133942-938c7dd5dc51
 	golang.org/x/crypto v0.39.0
@@ -115,7 +115,6 @@ require (
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
@@ -159,7 +158,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
-	github.com/vmihailenco/msgpack/v5 v5.3.4 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/zeebo/errs v1.4.0 // indirect
 	go.mau.fi/libsignal v0.2.0 // indirect
@@ -175,7 +173,6 @@ require (
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
 	google.golang.org/api v0.240.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

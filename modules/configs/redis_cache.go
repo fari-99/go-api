@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-redis/cache/v9"
 	"github.com/redis/go-redis/v9"
-	"github.com/vmihailenco/msgpack"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 func GetRedisCache() *cache.Cache {
