@@ -5,7 +5,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/go-redis/cache/v9"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/redis/go-redis/v9"
 	"gopkg.in/gomail.v2"
 	"gorm.io/gorm"

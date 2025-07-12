@@ -11,7 +11,7 @@ import (
 	"go-api/modules/configs/kafka"
 	"go-api/modules/configs/rabbitmq"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/urfave/cli/v3"
 )
 
@@ -99,14 +99,11 @@ func (base *BaseCommand) getTestingCommands() []*cli.Command {
 
 				timeout, _ := strconv.ParseInt(os.Getenv("TELEGRAM_TIMEOUT"), 10, 64)
 
-				updates, err := bot.GetUpdatesChan(tgbotapi.UpdateConfig{
+				updates := bot.GetUpdatesChan(tgbotapi.UpdateConfig{
 					Offset:  0,
 					Limit:   0,
 					Timeout: int(timeout),
 				})
-				if err != nil {
-					return err
-				}
 
 				for update := range updates {
 					if update.Message == nil {

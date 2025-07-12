@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/disintegration/imaging"
 	"github.com/fari-99/go-helper/crypts"
 	"github.com/fari-99/go-helper/storages"
 	"github.com/gin-gonic/gin"
-	"github.com/nfnt/resize"
 
 	"go-api/helpers"
 )
@@ -146,9 +146,9 @@ func (c controller) GetImages(ctx *gin.Context) {
 	var imageResult image.Image
 	switch methodType {
 	case "resize":
-		imageResult = resize.Resize(uint(width), uint(height), img, resize.NearestNeighbor)
+		imageResult = imaging.Resize(img, int(width), int(height), imaging.NearestNeighbor)
 	case "thumb":
-		imageResult = resize.Thumbnail(uint(width), uint(height), img, resize.NearestNeighbor)
+		imageResult = imaging.Thumbnail(img, int(width), int(height), imaging.NearestNeighbor)
 	default:
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"message": fmt.Sprintf("image method is not found, %s", methodType),

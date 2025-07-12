@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/twilio/twilio-go"
 	"github.com/urfave/cli/v3"
 	"go.mau.fi/whatsmeow"
