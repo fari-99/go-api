@@ -1,14 +1,13 @@
 package xendit
 
 import (
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xendit/xendit-go"
-	"github.com/xendit/xendit-go/balance"
-	"github.com/xendit/xendit-go/client"
-	"github.com/xendit/xendit-go/customer"
+	"github.com/xendit/xendit-go/v7"
+	"github.com/xendit/xendit-go/v7/customer"
 
 	"go-api/helpers"
 	"go-api/modules/configs"
@@ -26,23 +25,23 @@ type ErrorResponse struct {
 
 const prodXendit = "prod"
 
-func GetClient(clientType string) *client.API {
+func GetClient(clientType string) *xendit.APIClient {
 	xenditApiKey := os.Getenv("XENDIT_API_KEY") // get api key
 	if xenditApiKey == "" {
 		panic("xendit key is empty, please add XENDIT_API_KEY to env")
 	}
 
-	return client.New(xenditApiKey)
+	return xendit.NewClient(xenditApiKey)
 }
 
 func (c controller) GetBalance(ctx *gin.Context) {
-	var input balance.GetParams
-	input.AccountType = xendit.BalanceAccountTypeEnum(ctx.DefaultQuery("account_type", ""))
-	input.ForUserID = ctx.DefaultQuery("for_user_id", "")
-
 	xenCli := GetClient(prodXendit)
-	balanceResponse, err := xenCli.Balance.Get(&input)
+	balanceResponse, httpRes, err := xenCli.BalanceApi.GetBalance(ctx).
+		AccountType(ctx.DefaultQuery("account_type", "")).
+		ForUserId(ctx.DefaultQuery("for_user_id", "")).
+		Execute()
 	if err != nil {
+		log.Printf("full http resp %+v", httpRes)
 		helpers.NewResponse(ctx, http.StatusInternalServerError, ErrorResponse{
 			Message:      "failed to get balance",
 			ErrorMessage: err.Error(),
@@ -56,7 +55,7 @@ func (c controller) GetBalance(ctx *gin.Context) {
 }
 
 func (c controller) CustomersCreate(ctx *gin.Context) {
-	var input customer.CreateCustomerParams
+	var input customer.CustomerRequest
 	err := ctx.BindJSON(&input)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
@@ -64,8 +63,11 @@ func (c controller) CustomersCreate(ctx *gin.Context) {
 	}
 
 	xenCli := GetClient(prodXendit)
-	customerModel, err := xenCli.Customer.CreateCustomer(&input)
+	customerModel, httpRes, err := xenCli.CustomerApi.CreateCustomer(ctx).
+		CustomerRequest(input).
+		Execute()
 	if err != nil {
+		log.Printf("full http resp %+v", httpRes)
 		helpers.NewResponse(ctx, http.StatusInternalServerError, ErrorResponse{
 			Message:      "failed to create customers",
 			ErrorMessage: err.Error(),
@@ -79,12 +81,12 @@ func (c controller) CustomersCreate(ctx *gin.Context) {
 }
 
 func (c controller) CustomersGet(ctx *gin.Context) {
-	var input customer.GetCustomerByReferenceIDParams
-	input.ReferenceID = ctx.DefaultQuery("reference_id", "")
-
 	xenCli := GetClient(prodXendit)
-	customerModel, err := xenCli.Customer.GetCustomerByReferenceID(&input)
+	customerModel, httpRes, err := xenCli.CustomerApi.GetCustomerByReferenceID(ctx).
+		ReferenceId(ctx.DefaultQuery("reference_id", "")).
+		Execute()
 	if err != nil {
+		log.Printf("full http resp %+v", httpRes)
 		helpers.NewResponse(ctx, http.StatusInternalServerError, ErrorResponse{
 			Message:      "failed to create customers",
 			ErrorMessage: err.Error(),
