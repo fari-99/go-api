@@ -13,13 +13,13 @@ import (
 )
 
 type redisSessionConfig struct {
-	session *redis.Client
+	session redis.UniversalClient
 }
 
 var redisSessionInstance *redisSessionConfig
 var redisSessionOnce sync.Once
 
-func GetRedisSessionConfig() *redis.Client {
+func GetRedisSessionConfig() redis.UniversalClient {
 	redisSessionOnce.Do(func() {
 		log.Println("Initialize Redis Session connection...")
 
@@ -27,9 +27,10 @@ func GetRedisSessionConfig() *redis.Client {
 		timeout, _ := strconv.Atoi(os.Getenv("REDIS_SESSION_TIMEOUT"))
 		minIdleConnection, _ := strconv.Atoi(os.Getenv("REDIS_SESSION_MIN_IDLE"))
 
-		redisApp := redis.NewClient(&redis.Options{
-			Network:      os.Getenv("REDIS_SESSION_NETWORK"),
-			Addr:         fmt.Sprintf("%s:%s", os.Getenv("REDIS_SESSION_HOST"), os.Getenv("REDIS_SESSION_PORT")),
+		redisApp := redis.NewUniversalClient(&redis.UniversalOptions{
+			Addrs: []string{
+				fmt.Sprintf("%s:%s", os.Getenv("REDIS_SESSION_HOST"), os.Getenv("REDIS_SESSION_PORT")),
+			},
 			Password:     os.Getenv("REDIS_SESSION_PASSWORD"),
 			DB:           database,
 			MaxRetries:   3,

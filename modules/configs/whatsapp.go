@@ -15,7 +15,7 @@ import (
 	"go-api/constant"
 )
 
-func WhatsappClient(ctx context.Context, redisClient *redis.Client) *whatsmeow.Client {
+func WhatsappClient(ctx context.Context, redisClient redis.UniversalClient) *whatsmeow.Client {
 	databaseBase := DatabaseBase(PostgresType)
 	connUrl := databaseBase.GetConnection()
 

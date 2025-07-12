@@ -1,28 +1,24 @@
 package main
 
 import (
-	tasks2 "go-api/modules/tasks"
+	"context"
 	"log"
 	"os"
 	"sort"
 
-	"github.com/urfave/cli"
+	"go-api/modules/tasks"
+
+	"github.com/urfave/cli/v3"
 )
 
 func main() {
-	app := tasks2.NewBaseCommand()
+	app := tasks.NewBaseCommand()
 
 	// populate command queue
 	app.CommandQueueTask()
-
-	// populate command exchange
-
-	// populate command task [task-name]
-
-	sort.Sort(cli.CommandsByName(app.Commands))
 	sort.Sort(cli.FlagsByName(app.Flags))
 
-	err := app.Run(os.Args)
+	err := app.Run(context.Background(), os.Args)
 	if err != nil {
 		log.Printf(err.Error())
 	}

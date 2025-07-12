@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"log"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/twilio/twilio-go"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v3"
 	"go.mau.fi/whatsmeow"
 	"gorm.io/gorm"
 )
@@ -13,10 +14,12 @@ import (
 type BaseEventHandler struct {
 	DB               *gorm.DB
 	Logger           log.Logger
-	CliContext       *cli.Context
 	Telegram         *tgbotapi.BotAPI
 	TwilioRestClient *twilio.RestClient
 	WhatsappClient   *whatsmeow.Client
+
+	CliContext context.Context
+	CliCommand *cli.Command
 }
 
 type EventHandlerFlags struct {
@@ -25,10 +28,11 @@ type EventHandlerFlags struct {
 	StatusType int64
 }
 
-func NewBaseEventHandler(transactionDB *gorm.DB, cliContext *cli.Context) *BaseEventHandler {
+func NewBaseEventHandler(transactionDB *gorm.DB, cliContext context.Context, cliCommand *cli.Command) *BaseEventHandler {
 	baseEventHandler := BaseEventHandler{
 		DB:         transactionDB,
 		CliContext: cliContext,
+		CliCommand: cliCommand,
 	}
 
 	return &baseEventHandler
@@ -55,12 +59,12 @@ func (base *BaseEventHandler) GetFlags() EventHandlerFlags {
 		Worker: 1000,
 	}
 
-	cliContext := base.CliContext
+	cliCommand := base.CliCommand
 
-	if cliContext.NArg() > 0 {
+	if cliCommand.NArg() > 0 {
 		var dataArgs []string
-		for i := 0; i < cliContext.NArg(); i++ {
-			dataArgs = append(dataArgs, cliContext.Args().Get(i))
+		for i := 0; i < cliCommand.NArg(); i++ {
+			dataArgs = append(dataArgs, cliCommand.Args().Get(i))
 		}
 	}
 

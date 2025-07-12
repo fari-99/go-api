@@ -13,7 +13,7 @@ import (
 
 type DI struct {
 	DB            *gorm.DB
-	Redis         *redis.Client
+	Redis         redis.UniversalClient
 	RedisCache    *cache.Cache
 	Queue         *rabbitmq.QueueSetup
 	EmailDialler  *gomail.Dialer

@@ -1,36 +1,39 @@
 package tasks
 
 import (
+	"context"
 	"encoding/json"
-	"go-api/modules/configs"
-	"go-api/modules/configs/kafka"
-	"go-api/modules/configs/rabbitmq"
 	"log"
 	"os"
 	"strconv"
 
+	"go-api/modules/configs"
+	"go-api/modules/configs/kafka"
+	"go-api/modules/configs/rabbitmq"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v3"
 )
 
-func (base *BaseCommand) getTestingCommands() []cli.Command {
-	command := []cli.Command{
+func (base *BaseCommand) getTestingCommands() []*cli.Command {
+	command := []*cli.Command{
 		{
 			Name:        "queue-test-consumer",
 			Aliases:     []string{"qtc"},
 			Usage:       "queue-test-consumer --queue-name test",
 			Description: "Testing queue consumer data",
 			Flags: []cli.Flag{
-				cli.StringFlag{
+				&cli.StringFlag{
 					Name:     "queue-name",
+					Aliases:  []string{"qn"},
 					Usage:    "queue name for this test",
 					Required: true,
-					Value:    "test-queue", // default value is 10
+					Value:    "test-queue", // default value
 				},
 			},
-			Action: func(cliContext *cli.Context) (err error) {
+			Action: func(ctx context.Context, command *cli.Command) error {
 				log.Printf("====  Running task queue test consumer ====")
-				queueName := base.GetFlags(cliContext, "queue-name")
+				queueName := base.GetFlags(command, "queue-name")
 				log.Printf("Queue Name := %s", queueName)
 
 				queueSetup := rabbitmq.NewBaseQueue("", "email-queue")
@@ -47,7 +50,7 @@ func (base *BaseCommand) getTestingCommands() []cli.Command {
 			Aliases:     []string{"ete"},
 			Usage:       "exchange-test-event",
 			Description: "Exchange testing",
-			Action: func(ctx *cli.Context) (err error) {
+			Action: func(ctx context.Context, command *cli.Command) error {
 				log.Printf("====  Running task exchange test consumer ====")
 
 				queueSetup := rabbitmq.NewBaseQueue("", "test-queue")
@@ -56,7 +59,7 @@ func (base *BaseCommand) getTestingCommands() []cli.Command {
 				queueSetup.SetupQueueBind(nil)
 				queueSetup.AddConsumerExchange(false)
 				queueSetup.Consume(HandleQueueEvents)
-				return
+				return nil
 			},
 		},
 		{
@@ -64,7 +67,7 @@ func (base *BaseCommand) getTestingCommands() []cli.Command {
 			Aliases:     []string{"kte"},
 			Usage:       "kafka-test-event",
 			Description: "Kafka Consumer Testing",
-			Action: func(ctx *cli.Context) (err error) {
+			Action: func(ctx context.Context, command *cli.Command) error {
 				log.Printf("====  Running Kafka Consumer Testing ====")
 
 				kafkaConsumer, err := kafka.NewConsumer("consumerGroup", nil)
@@ -83,7 +86,7 @@ func (base *BaseCommand) getTestingCommands() []cli.Command {
 
 				log.Printf(string(dataMarshal))
 
-				return
+				return nil
 			},
 		},
 		{
@@ -91,7 +94,7 @@ func (base *BaseCommand) getTestingCommands() []cli.Command {
 			Aliases:     []string{"tm"},
 			Usage:       "telegram-messages",
 			Description: "Telegram Messages Handling",
-			Action: func(cliContext *cli.Context) (err error) {
+			Action: func(ctx context.Context, command *cli.Command) error {
 				bot := configs.GetTelegram()
 
 				timeout, _ := strconv.ParseInt(os.Getenv("TELEGRAM_TIMEOUT"), 10, 64)
@@ -101,6 +104,9 @@ func (base *BaseCommand) getTestingCommands() []cli.Command {
 					Limit:   0,
 					Timeout: int(timeout),
 				})
+				if err != nil {
+					return err
+				}
 
 				for update := range updates {
 					if update.Message == nil {

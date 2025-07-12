@@ -4,37 +4,40 @@ import (
 	"log"
 	"os"
 
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v3"
 )
 
 type BaseCommand struct {
-	*cli.App
+	*cli.Command
 }
 
 func NewBaseCommand() *BaseCommand {
-
-	baseCommand := &BaseCommand{
-		cli.NewApp(),
+	cmd := cli.Command{
+		Version: "2.0.0",
+		Name:    "Command execution for Go API CLI",
+		Usage:   "Run task by command CLI for Golang",
+		Authors: []any{
+			"Fadhlan Rizal",
+		},
 	}
 
-	baseCommand.Name = "Command execution for Go API CLI"
-	baseCommand.Usage = "Run task by command CLI for Golang"
-	baseCommand.Author = "Fadhlan Rizal"
-	baseCommand.Version = "1.0.0"
+	baseCommand := &BaseCommand{
+		&cmd,
+	}
 
 	return baseCommand
 }
 
-func (base *BaseCommand) GetFlags(cliContext *cli.Context, flagName string) string {
-	if cliContext.NArg() > 0 {
+func (base *BaseCommand) GetFlags(cliCommand *cli.Command, flagName string) string {
+	if cliCommand.NArg() > 0 {
 		var dataArgs []string
-		for i := 0; i < cliContext.NArg(); i++ {
-			dataArgs = append(dataArgs, cliContext.Args().Get(i))
+		for i := 0; i < cliCommand.NArg(); i++ {
+			dataArgs = append(dataArgs, cliCommand.Args().Get(i))
 		}
 		log.Printf("Your args := %+v", dataArgs)
 	}
 
-	return cliContext.String(flagName)
+	return cliCommand.String(flagName)
 }
 
 func (base *BaseCommand) CommandQueueTask() *BaseCommand {

@@ -62,7 +62,7 @@ func getKeyRedis(username string, uuid string) KeyRedisSessionData {
 // after that we use that scoring system to expired time
 // then we sort the member by their score if the score less than expected value (time now unix), then they expired
 
-func removeExpiredToken(ctx context.Context, redisSession *redis.Client, username string) (err error) {
+func removeExpiredToken(ctx context.Context, redisSession redis.UniversalClient, username string) (err error) {
 	keyRedis := getKeyRedis(username, "")
 	timeNow := cast.ToString(time.Now().Unix())
 
@@ -99,7 +99,7 @@ func removeExpiredToken(ctx context.Context, redisSession *redis.Client, usernam
 	return nil
 }
 
-func getTotalLogin(ctx context.Context, redisSession *redis.Client, username string) (totalLoginAccessToken int64, totalLoginRefreshToken int64, err error) {
+func getTotalLogin(ctx context.Context, redisSession redis.UniversalClient, username string) (totalLoginAccessToken int64, totalLoginRefreshToken int64, err error) {
 	keyRedis := getKeyRedis(username, "")
 
 	err = removeExpiredToken(ctx, redisSession, username)
