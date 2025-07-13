@@ -340,7 +340,7 @@ func (base *QueueSetup) openChannel() error {
 
 func (base *QueueSetup) WaitForSignalAndShutdown() {
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 	loggingMessage("Received shutdown signal", nil)
 	base.Close()
