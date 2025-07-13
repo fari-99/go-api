@@ -261,8 +261,15 @@ func (base *QueueSetup) executeMessageConsumer(consumer ConsumerHandler, deliver
 				func() {
 					defer func() {
 						if r := recover(); r != nil {
-							loggingMessage("Recovered from panic during message handling", r)
+							errorData := map[string]interface{}{
+								"panic_message": fmt.Sprintf("%s", r),
+								"handler_data":  handlerData,
+							}
+
+							loggingMessage("Recovered from panic during message handling", errorData)
 							handled = false
+
+							base.handleRetry(delivery)
 						}
 					}()
 					consumer(handlerData)
@@ -346,11 +353,61 @@ func (base *QueueSetup) WaitForSignalAndShutdown() {
 	base.Close()
 }
 
+func (base *QueueSetup) handleRetry(delivery amqp.Delivery) {
+	const maxRetry = 3
+
+	retryCount := 0
+	if val, ok := delivery.Headers["x-retry"]; ok {
+		switch v := val.(type) {
+		case int32:
+			retryCount = int(v)
+		case int64:
+			retryCount = int(v)
+		case int:
+			retryCount = v
+		case float64:
+			retryCount = int(v)
+		}
+	}
+	retryCount++
+
+	if retryCount <= maxRetry {
+		loggingMessage(fmt.Sprintf("Retrying message (attempt %d)", retryCount), nil)
+
+		headers := delivery.Headers
+		if headers == nil {
+			headers = amqp.Table{}
+		}
+		headers["x-retry"] = retryCount
+
+		err := base.channel.Publish(
+			"", // default exchange (same queue)
+			delivery.RoutingKey,
+			false,
+			false,
+			amqp.Publishing{
+				Headers:      headers,
+				ContentType:  delivery.ContentType,
+				Body:         delivery.Body,
+				DeliveryMode: delivery.DeliveryMode,
+				Timestamp:    time.Now(),
+			},
+		)
+		if err != nil {
+			loggingMessage("Failed to republish message", err.Error())
+		}
+		_ = delivery.Reject(false) // drop the original (we requeued manually)
+	} else {
+		loggingMessage(fmt.Sprintf("Exceeded max retries (%d). Sending to DLX", maxRetry), nil)
+		_ = delivery.Reject(false) // routed to DLX via queue args
+	}
+}
+
 func loggingMessage(message string, data interface{}) {
 	if data != nil {
 		dataMarshal, _ := json.Marshal(data)
-		message += fmt.Sprintf("%s, Data := %s", message, string(dataMarshal))
+		message += fmt.Sprintf(", Data := %s", string(dataMarshal))
 	}
 
-	log.Printf(message)
+	log.Println(message)
 }

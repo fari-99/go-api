@@ -153,4 +153,7 @@ func HandleQueueEvents(body rabbitmq.ConsumerHandlerData) {
 	helpers.LoggingMessage("me sleep 25s now", nil)
 	time.Sleep(25 * time.Second)
 	helpers.LoggingMessage("done sleep", nil)
+
+	testPanic := make([]int64, 0)
+	log.Printf("%v", testPanic[100])
 }
