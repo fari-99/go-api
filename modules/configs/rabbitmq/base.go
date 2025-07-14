@@ -37,6 +37,8 @@ type QueueSetup struct {
 	cancel context.CancelFunc
 
 	waitGroup sync.WaitGroup
+
+	customRetry func(delivery amqp.Delivery)
 }
 
 type QueueConfig struct {
@@ -83,6 +85,11 @@ func (base *QueueSetup) SetContext(ctx context.Context) *QueueSetup {
 	newCtx, newCancel := context.WithCancel(ctx)
 	base.ctx = newCtx
 	base.cancel = newCancel
+	return base
+}
+
+func (base *QueueSetup) SetCustomRetry(retry func(delivery amqp.Delivery)) *QueueSetup {
+	base.customRetry = retry
 	return base
 }
 
@@ -192,7 +199,6 @@ func (base *QueueSetup) reconnect() {
 		}
 	}
 
-	loggingMessage("Success reconnect...\n\n", nil)
 }
 
 func (base *QueueSetup) recoverQueueConsumers() error {
@@ -354,6 +360,11 @@ func (base *QueueSetup) WaitForSignalAndShutdown() {
 }
 
 func (base *QueueSetup) handleRetry(delivery amqp.Delivery) {
+	if base.customRetry != nil {
+		base.customRetry(delivery)
+		return
+	}
+
 	const maxRetry = 3
 
 	retryCount := 0
