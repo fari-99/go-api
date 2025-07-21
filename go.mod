@@ -11,7 +11,7 @@ require (
 	github.com/dmitryburov/gorm-paginator v0.9.6
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/fari-99/go-flip v1.0.1
-	github.com/fari-99/go-helper v1.4.0
+	github.com/fari-99/go-helper v1.5.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/go-redis/cache/v9 v9.0.0
@@ -26,7 +26,6 @@ require (
 	github.com/looplab/fsm v1.0.3
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.11.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cast v1.9.2
@@ -150,6 +149,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/sftp v1.13.9 // indirect
+	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect

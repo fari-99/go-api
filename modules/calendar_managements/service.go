@@ -38,7 +38,7 @@ func (s service) GetList(ctx *gin.Context, filter RequestListFilter) ([]models.C
 
 func (s service) Create(ctx *gin.Context, input CreateCalendarManagementRequest) (models.CalendarManagements, error) {
 	uuidSession, _ := ctx.Get("uuid")
-	currentUser, _ := helpers.GetCurrentUser(uuidSession.(string))
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuidSession.(string))
 
 	model := models.CalendarManagements{
 		CountryID:    models.IDType(input.CountryID),

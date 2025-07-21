@@ -6,9 +6,9 @@ import (
 
 	"go-api/constant"
 	"go-api/modules/configs"
-	"go-api/modules/configs/rabbitmq"
 	"go-api/modules/tasks/handlers"
 
+	"github.com/fari-99/go-helper/rabbitmq"
 	"github.com/urfave/cli/v3"
 )
 

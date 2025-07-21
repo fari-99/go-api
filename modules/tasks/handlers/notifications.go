@@ -7,13 +7,13 @@ import (
 	"log"
 	"os"
 
+	"github.com/fari-99/go-helper/rabbitmq"
+	"gorm.io/gorm"
+
 	"go-api/constant"
 	"go-api/constant/constant_models"
 	"go-api/helpers/notifications"
-	"go-api/modules/configs/rabbitmq"
 	"go-api/modules/models"
-
-	"gorm.io/gorm"
 )
 
 func (base *BaseEventHandler) NotificationsHandler(body rabbitmq.ConsumerHandlerData) {

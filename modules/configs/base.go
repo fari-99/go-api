@@ -1,9 +1,8 @@
 package configs
 
 import (
-	"go-api/modules/configs/rabbitmq"
-
 	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/fari-99/go-helper/rabbitmq"
 	"github.com/go-redis/cache/v9"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/redis/go-redis/v9"

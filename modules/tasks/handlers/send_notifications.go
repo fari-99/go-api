@@ -7,18 +7,17 @@ import (
 	"log"
 	"os"
 
+	"github.com/fari-99/go-helper/rabbitmq"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cast"
+	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 	waProto "go.mau.fi/whatsmeow/binary/proto"
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
 
 	"go-api/constant"
 	"go-api/helpers/notifications"
-	"go-api/modules/configs/rabbitmq"
 	"go-api/modules/models"
-
-	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
 type NotificationData struct {

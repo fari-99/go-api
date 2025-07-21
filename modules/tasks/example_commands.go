@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fari-99/go-helper/rabbitmq"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/urfave/cli/v3"
+
 	"go-api/helpers"
 	"go-api/modules/configs"
 	"go-api/modules/configs/kafka"
-	"go-api/modules/configs/rabbitmq"
-
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/urfave/cli/v3"
 )
 
 func (base *BaseCommand) getTestingCommands() []*cli.Command {
