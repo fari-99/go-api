@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/fari-99/go-helper/rabbitmq"
 	"github.com/google/uuid"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
-
-	"go-api/modules/configs/rabbitmq"
 )
 
 type IDType string // for uuid

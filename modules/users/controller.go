@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/fari-99/go-helper/rabbitmq"
 	"github.com/gin-gonic/gin"
 
 	"go-api/constant"
 	"go-api/helpers"
 	"go-api/helpers/notifications"
-	"go-api/modules/configs/rabbitmq"
 )
 
 type controller struct {
