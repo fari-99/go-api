@@ -33,3 +33,22 @@ func DIInit() *DI {
 
 	return di
 }
+
+func (di *DI) CloseDI() {
+	if di.DB != nil {
+		sqlDB, _ := di.DB.DB()
+		sqlDB.Close()
+	}
+
+	if di.Redis != nil {
+		di.Redis.Close()
+	}
+
+	if di.RedisCache != nil {
+		di.Redis.Close()
+	}
+
+	if di.Queue != nil {
+		di.Queue.Close()
+	}
+}

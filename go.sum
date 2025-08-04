@@ -141,8 +141,8 @@ github.com/fari-99/aws-presignpost-s3-go v1.1.0 h1:zACjugVrILMAh3wLdXQVZpEWc7SSO
 github.com/fari-99/aws-presignpost-s3-go v1.1.0/go.mod h1:llHyyeQWJqalFcJV4isGssj6R9fNFCY0oOMr8mg74ok=
 github.com/fari-99/go-flip v1.0.1 h1:gbaOSk53LqEphiU6xzDfbq+VQcw+B+7/VxAhopri1JM=
 github.com/fari-99/go-flip v1.0.1/go.mod h1:NeDCjgNMfo7zHK01GLIbn5wPlJm2RL/qxlRdCY2PPmc=
-github.com/fari-99/go-helper v1.5.0 h1:MWYowhYBDNruMfdrqLIYN6ipxghjtFE23p2HT0S4nzA=
-github.com/fari-99/go-helper v1.5.0/go.mod h1:H7Bz43+Iq4YRdissvFc8hWiIZeMcQBCCNXgsB2lgau0=
+github.com/fari-99/go-helper v1.5.2-0.20250803014021-e0a61622ec29 h1:utophizQV84ww8BPZJxfTxepWGM/pqoL4Byp4AnxPBM=
+github.com/fari-99/go-helper v1.5.2-0.20250803014021-e0a61622ec29/go.mod h1:H7Bz43+Iq4YRdissvFc8hWiIZeMcQBCCNXgsB2lgau0=
 github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2Wg=
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
@@ -480,8 +480,8 @@ golang.org/x/crypto v0.23.0/go.mod h1:CKFgDieR+mRhux2Lsu27y0fO304Db0wZe70UKqHu0v
 golang.org/x/crypto v0.31.0/go.mod h1:kDsLvtWBEx7MV9tJOj9bnXsPbxwJQ6csT/x4KIN4Ssk=
 golang.org/x/crypto v0.40.0 h1:r4x+VvoG5Fm+eJcxMaY8CQM7Lb0l1lsmjGBQ6s8BfKM=
 golang.org/x/crypto v0.40.0/go.mod h1:Qr1vMER5WyS2dfPHAlsOj01wgLbsyWtFn/aY+5+ZdxY=
-golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b h1:M2rDM6z3Fhozi9O7NWsxAkg/yqS/lQJ6PmkyIV3YP+o=
-golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b/go.mod h1:3//PLf8L/X+8b4vuAfHzxeRUl04Adcb341+IGKfnqS8=
+golang.org/x/exp v0.0.0-20250718183923-645b1fa84792 h1:R9PFI6EUdfVKgwKjZef7QIwGcBKu86OEFpJ9nUEP2l4=
+golang.org/x/exp v0.0.0-20250718183923-645b1fa84792/go.mod h1:A+z0yzpGtvnG90cToK5n2tu8UJVP2XUATh+r+sfOOOc=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.4.2/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3/go.mod h1:3p9vT2HGsQu2K1YbXdKPJLVgG5VJdoTa1poYQBtP1AY=

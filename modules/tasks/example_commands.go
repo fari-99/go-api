@@ -150,8 +150,8 @@ func HandleQueueEvents(body rabbitmq.ConsumerHandlerData) {
 	bodyMarshal, _ := json.Marshal(body)
 	log.Printf(string(bodyMarshal))
 
-	helpers.LoggingMessage("me sleep 25s now", nil)
-	time.Sleep(25 * time.Second)
+	helpers.LoggingMessage("me sleep 10s now", nil)
+	time.Sleep(10 * time.Second)
 	helpers.LoggingMessage("done sleep", nil)
 
 	testPanic := make([]int64, 0)
