@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -34,7 +35,7 @@ func (base *BaseCommand) getTestingCommands() []*cli.Command {
 				},
 			},
 			Action: func(ctx context.Context, command *cli.Command) error {
-				log.Printf("====  Running task queue test consumer ====")
+				log.Printf("==== Running task queue test consumer ====")
 				queueName := base.GetFlags(command, "queue-name")
 				log.Printf("Queue Name := %s", queueName)
 
@@ -44,7 +45,48 @@ func (base *BaseCommand) getTestingCommands() []*cli.Command {
 				queueSetup.Consume(HandleQueueEvents)
 
 				queueSetup.WaitForSignalAndShutdown()
-				log.Printf("====  Task success ====")
+				log.Printf("==== Task success ====")
+				return nil
+			},
+		},
+		{
+			Name:        "publish-test",
+			Aliases:     []string{"pt"},
+			Usage:       "pt --queue-name test",
+			Description: "Testing queue consumer data",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "queue-name",
+					Aliases:  []string{"qn"},
+					Usage:    "queue name for this test",
+					Required: true,
+					Value:    "test-queue", // default value
+				},
+			},
+			Action: func(ctx context.Context, command *cli.Command) error {
+				log.Printf("==== send test publish queue ====")
+				queueName := base.GetFlags(command, "queue-name")
+				log.Printf("Queue Name := %s", queueName)
+
+				queueSetup := rabbitmq.NewBaseQueue("", queueName)
+				queueSetup.SetupQueue(nil, nil)
+				queueSetup.AddPublisher(nil, nil)
+
+				for i := 0; i < 5; i++ {
+					time.Sleep(1 * time.Second)
+					data := rabbitmq.ConsumerHandlerData{
+						EventType: "test-publish",
+						Date:      time.Now().String(),
+						Data:      fmt.Sprintf("index %d", i),
+					}
+
+					dataMarshal, _ := json.Marshal(data)
+
+					_ = queueSetup.Publish(string(dataMarshal))
+					log.Printf("====  send test publish queue index %d ====", i)
+				}
+
+				log.Printf("==== Task success ====")
 				return nil
 			},
 		},
