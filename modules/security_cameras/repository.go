@@ -13,11 +13,11 @@ import (
 )
 
 type Repository interface {
-	GetDetail(ctx *gin.Context, id int64) (*models.SecurityCameras, bool, error)
+	GetDetail(ctx *gin.Context, id string) (*models.SecurityCameras, bool, error)
 	GetList(ctx *gin.Context, filter RequestListFilter) ([]models.SecurityCameras, *paginator.Pagination, error)
 	Create(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error)
 	Update(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error)
-	Delete(ctx *gin.Context, id int64) error
+	Delete(ctx *gin.Context, id string) error
 }
 
 type repository struct {
@@ -28,11 +28,11 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) GetDetail(ctx *gin.Context, id int64) (*models.SecurityCameras, bool, error) {
+func (r repository) GetDetail(ctx *gin.Context, id string) (*models.SecurityCameras, bool, error) {
 	db := r.DB
 
 	var model models.SecurityCameras
-	err := db.First(&model, id).Error
+	err := db.Where("id = ?", id).First(&model).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
@@ -78,15 +78,15 @@ func (r repository) Update(ctx *gin.Context, model models.SecurityCameras) (*mod
 	return &model, err
 }
 
-func (r repository) Delete(ctx *gin.Context, id int64) error {
+func (r repository) Delete(ctx *gin.Context, id string) error {
 	model, notFound, err := r.GetDetail(ctx, id)
-	if notFound {
-		return fmt.Errorf("model not found")
-	} else if err != nil {
+	if err != nil {
 		return err
+	} else if notFound {
+		return fmt.Errorf("security camera %s not found", id)
 	}
 
 	db := r.DB
-	err = db.Delete(&model, id).Error
+	err = db.Where("id = ?", id).Delete(&model).Error
 	return err
 }

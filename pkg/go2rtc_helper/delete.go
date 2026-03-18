@@ -8,7 +8,7 @@ import (
 // go2rtc uses DELETE /api/streams?name=<name>
 func (c *Client) DeleteStream(name string) error {
 	resp, err := c.resty.R().
-		SetQueryParam("name", name).
+		SetQueryParam("src", name).
 		Delete("/api/streams")
 
 	if err != nil {

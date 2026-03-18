@@ -13,10 +13,10 @@ import (
 type IDType string // for uuid
 
 type Base struct {
-	ID        IDType     `gorm:"column:id" json:"id" sql:"type:uuid;primary_key;default:uuid_generate_v4()" `
-	CreatedAt time.Time  `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt time.Time  `gorm:"column:updated_at" json:"updated_at"`
-	DeletedAt *time.Time `gorm:"column:deleted_at" json:"deleted_at" sql:"DEFAULT:NULL"`
+	ID        IDType          `gorm:"column:id" json:"id" sql:"type:uuid;primary_key;default:uuid_generate_v4()" `
+	CreatedAt time.Time       `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt time.Time       `gorm:"column:updated_at" json:"updated_at"`
+	DeletedAt *gorm.DeletedAt `gorm:"column:deleted_at" json:"deleted_at" sql:"DEFAULT:NULL"`
 }
 
 func (base *Base) BeforeCreate(tx *gorm.DB) error {

@@ -15,9 +15,7 @@ type controller struct {
 }
 
 func (c controller) GetDetailAction(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, _ := strconv.ParseInt(idParam, 10, 64)
-
+	id := ctx.Param("id")
 	detail, isExists, err := c.service.GetDetail(ctx, id)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, err.Error())
@@ -78,6 +76,7 @@ func (c controller) CreateAction(ctx *gin.Context) {
 }
 
 func (c controller) UpdateAction(ctx *gin.Context) {
+	id := ctx.Param("id")
 	var input models.SecurityCameras
 	err := ctx.BindJSON(&input)
 	if err != nil {
@@ -85,7 +84,7 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 		return
 	}
 
-	result, err := c.service.Update(ctx, input)
+	result, err := c.service.Update(ctx, id, input)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -96,9 +95,7 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 }
 
 func (c controller) DeleteAction(ctx *gin.Context) {
-	idParam := ctx.Param("id")
-	id, _ := strconv.ParseInt(idParam, 10, 64)
-
+	id := ctx.Param("id")
 	err := c.service.Delete(ctx, id)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, err.Error())

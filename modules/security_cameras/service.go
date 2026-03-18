@@ -7,16 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"go-api/helpers"
 	"go-api/modules/models"
 	"go-api/pkg/go2rtc_helper"
 )
 
 type Service interface {
-	GetDetail(ctx *gin.Context, id int64) (*models.SecurityCameras, bool, error)
+	GetDetail(ctx *gin.Context, id string) (*models.SecurityCameras, bool, error)
 	GetList(ctx *gin.Context, filter RequestListFilter) ([]models.SecurityCameras, *paginator.Pagination, error)
 	Create(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error)
-	Update(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error)
-	Delete(ctx *gin.Context, id int64) error
+	Update(ctx *gin.Context, id string, model models.SecurityCameras) (*models.SecurityCameras, error)
+	Delete(ctx *gin.Context, id string) error
 }
 
 type service struct {
@@ -27,11 +28,11 @@ func NewService(repo Repository) Service {
 	return service{repo: repo}
 }
 
-func (s service) GetDetail(ctx *gin.Context, id int64) (*models.SecurityCameras, bool, error) {
-	model, isExists, err := s.repo.GetDetail(ctx, id)
+func (s service) GetDetail(ctx *gin.Context, id string) (*models.SecurityCameras, bool, error) {
+	model, isNotExists, err := s.repo.GetDetail(ctx, id)
 	if err != nil {
 		return nil, false, err
-	} else if !isExists {
+	} else if isNotExists {
 		return nil, false, nil
 	}
 
@@ -42,7 +43,7 @@ func (s service) GetDetail(ctx *gin.Context, id int64) (*models.SecurityCameras,
 		return nil, false, err
 	}
 
-	if isExists, err = helper.StreamExists(stream.Name); err != nil {
+	if isExists, err := helper.StreamExists(stream.Name); err != nil {
 		return nil, false, err
 	} else if !isExists {
 		err = helper.AddStream(stream.Name, stream.Source)
@@ -84,7 +85,12 @@ func (s service) GetList(ctx *gin.Context, filter RequestListFilter) ([]models.S
 }
 
 func (s service) Create(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error) {
+	uuidSession, _ := ctx.Get("uuid")
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuidSession.(string))
+
 	model.Uuid = uuid.New().String()
+	model.UserID = string(currentUser.ID)
+
 	stream := s.GetSource(model)
 
 	// add to go2rtc
@@ -102,8 +108,17 @@ func (s service) Create(ctx *gin.Context, model models.SecurityCameras) (*models
 	return s.repo.Create(ctx, model)
 }
 
-func (s service) Update(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error) {
-	stream := s.GetSource(model)
+func (s service) Update(ctx *gin.Context, id string, input models.SecurityCameras) (*models.SecurityCameras, error) {
+	model, isExists, err := s.GetDetail(ctx, id)
+	if err != nil {
+		return nil, err
+	} else if !isExists {
+		return nil, fmt.Errorf("security cameras %s does not exist", id)
+	} else if model == nil {
+		return nil, fmt.Errorf("security cameras %s does not exist", id)
+	}
+
+	currentStream := s.GetSource(*model)
 
 	// update to go2rtc
 	helper, err := go2rtc_helper.New()
@@ -111,21 +126,32 @@ func (s service) Update(ctx *gin.Context, model models.SecurityCameras) (*models
 		return nil, err
 	}
 
-	err = helper.UpdateStream(stream.Name, stream.Source)
+	if ok, err := helper.StreamExists(currentStream.Name); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, fmt.Errorf("security cameras %s does not exist", id)
+	}
+
+	model.Url = input.Url
+	model.Username = input.Username
+	model.Password = input.Password
+	model.Descriptions = input.Descriptions
+
+	updateStream := s.GetSource(*model)
+	err = helper.UpdateStream(updateStream.Name, updateStream.Source)
 	if err != nil {
 		return nil, err
 	}
 
-	// update to database
-	return s.repo.Update(ctx, model)
+	return s.repo.Update(ctx, *model)
 }
 
-func (s service) Delete(ctx *gin.Context, id int64) error {
+func (s service) Delete(ctx *gin.Context, id string) error {
 	model, isExists, err := s.GetDetail(ctx, id)
 	if err != nil {
 		return err
 	} else if !isExists {
-		return fmt.Errorf("security camera id [%d] is not exists", id)
+		return fmt.Errorf("security camera id [%s] is not exists", id)
 	}
 
 	// delete to go2rtc
