@@ -1,4 +1,4 @@
-package copy_modules
+package security_cameras
 
 import (
 	"net/http"

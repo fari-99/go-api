@@ -159,7 +159,7 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 	}
 
 	err = redisSession.ZAdd(ctx, keyRedis.KeyTotalAccess, redis.Z{
-		Score:  cast.ToFloat64(data.Token.AccessExpiredAt), // as expired time, set on env (default 1 day)
+		Score:  float64(data.Token.AccessExpiredAt.Unix()), // as expired time, set on env (default 1 day)
 		Member: data.Token.Uuid,
 	}).Err()
 	if err != nil {
@@ -167,7 +167,7 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 	}
 
 	err = redisSession.ZAdd(ctx, keyRedis.KeyTotalRefresh, redis.Z{
-		Score:  cast.ToFloat64(data.Token.RefreshExpiredAt), // as expired time, set on env (default 30 day)
+		Score:  float64(data.Token.RefreshExpiredAt.Unix()), // as expired time, set on env (default 30 day)
 		Member: data.Token.Uuid,
 	}).Err()
 	if err != nil {
@@ -227,8 +227,6 @@ func SetupLoginSession(ctx context.Context, username string, data SessionData) (
 	if err != nil {
 		return 0, err
 	}
-
-	redisSession.Exists(ctx)
 
 	if totalLoginAccessToken >= cast.ToInt64(os.Getenv("TOTAL_LOGIN_SESSION")) {
 		return totalLogin, fmt.Errorf("total login session are more than allowed, logout one of your session from one of your device, or delete all sessions")

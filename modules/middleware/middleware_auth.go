@@ -110,7 +110,8 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 		}
 
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
-			"message": fmt.Sprintf("authentication error, please re-login"),
+			"message":       fmt.Sprintf("authentication error, please re-login"),
+			"error_message": err.Error(),
 		})
 		ctx.Abort()
 		return

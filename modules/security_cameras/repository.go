@@ -1,10 +1,11 @@
-package copy_modules
+package security_cameras
 
 import (
 	"errors"
 	"fmt"
 
 	"go-api/modules/configs"
+	"go-api/modules/models"
 
 	paginator "github.com/dmitryburov/gorm-paginator"
 	"github.com/gin-gonic/gin"
@@ -12,10 +13,10 @@ import (
 )
 
 type Repository interface {
-	GetDetail(ctx *gin.Context, id int64) (interface{}, bool, error)
-	GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *paginator.Pagination, error)
-	Create(ctx *gin.Context, model interface{}) (interface{}, error)
-	Update(ctx *gin.Context, model interface{}) (interface{}, error)
+	GetDetail(ctx *gin.Context, id int64) (*models.SecurityCameras, bool, error)
+	GetList(ctx *gin.Context, filter RequestListFilter) ([]models.SecurityCameras, *paginator.Pagination, error)
+	Create(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error)
+	Update(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error)
 	Delete(ctx *gin.Context, id int64) error
 }
 
@@ -27,10 +28,10 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) GetDetail(ctx *gin.Context, id int64) (interface{}, bool, error) {
+func (r repository) GetDetail(ctx *gin.Context, id int64) (*models.SecurityCameras, bool, error) {
 	db := r.DB
 
-	var model interface{}
+	var model models.SecurityCameras
 	err := db.First(&model, id).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
@@ -38,13 +39,13 @@ func (r repository) GetDetail(ctx *gin.Context, id int64) (interface{}, bool, er
 		return nil, false, err
 	}
 
-	return model, false, nil
+	return &model, false, nil
 }
 
-func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *paginator.Pagination, error) {
+func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]models.SecurityCameras, *paginator.Pagination, error) {
 	db := r.DB
 
-	var models []interface{}
+	var secCameraModels []models.SecurityCameras
 	page, err := paginator.Pages(&paginator.Param{
 		DB: db,
 		Paging: &paginator.Paging{
@@ -53,28 +54,28 @@ func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]inter
 			Limit:   filter.Limit,
 			ShowSQL: false,
 		},
-	}, &models)
+	}, &secCameraModels)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return models, page, nil
+	return secCameraModels, page, nil
 }
 
-func (r repository) Create(ctx *gin.Context, model interface{}) (interface{}, error) {
+func (r repository) Create(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error) {
 	db := r.DB
 	err := db.Create(&model).Error
 	if err != nil {
 		return nil, err
 	}
 
-	return model, nil
+	return &model, nil
 }
 
-func (r repository) Update(ctx *gin.Context, model interface{}) (interface{}, error) {
+func (r repository) Update(ctx *gin.Context, model models.SecurityCameras) (*models.SecurityCameras, error) {
 	db := r.DB
 	err := db.Save(&model).Error
-	return model, err
+	return &model, err
 }
 
 func (r repository) Delete(ctx *gin.Context, id int64) error {

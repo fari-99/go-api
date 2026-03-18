@@ -5,7 +5,7 @@ import "time"
 type Users struct {
 	Base
 	Username     string `gorm:"column:username" json:"username"`
-	Password     string `gorm:"column:password" json:"password"`
+	Password     string `gorm:"column:password" json:"-"`
 	Email        string `gorm:"column:email" json:"email"`
 	Status       int8   `gorm:"column:status" json:"status"`
 	MobilePhone  string `gorm:"column:mobile_phone" json:"mobile_phone"`

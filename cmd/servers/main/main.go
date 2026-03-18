@@ -13,6 +13,7 @@ import (
 	"go-api/modules/middleware"
 	"go-api/modules/notifications"
 	"go-api/modules/permissions"
+	"go-api/modules/security_cameras"
 	"go-api/modules/state_machine"
 	"go-api/modules/storages"
 	"go-api/modules/tests/xendit"
@@ -23,13 +24,13 @@ import (
 )
 
 func main() {
-	//get parameter from cli
+	// get parameter from cli
 	var host, port string
 	flag.StringVar(&host, "host", os.Getenv("APP_HOST"), "host of the service")
 	flag.StringVar(&port, "port", os.Getenv("GO_API_PORT"), "port of the service")
 	flag.Parse()
 
-	//info version service
+	// info version service
 	fmt.Printf("Service: %s\nVersion: %s\nParams:\n-host: host of the service\n-port: port of the service\nFramework:\n", os.Getenv("APP_NAME"), os.Getenv("APP_VER"))
 
 	if rVal := recover(); rVal != nil {
@@ -41,12 +42,12 @@ func main() {
 	di := configs.DIInit()
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 	refreshAuth := middleware.RefreshAuthMiddleware(middleware.BaseMiddleware{})
-	//otpMiddleware := middleware.OTPMiddlewareLogin()
-	//rbacMiddleware := middleware.PermissionMiddleware()
-	//versions := middleware.VersionMiddleware(map[string]bool{
+	// otpMiddleware := middleware.OTPMiddlewareLogin()
+	// rbacMiddleware := middleware.PermissionMiddleware()
+	// versions := middleware.VersionMiddleware(map[string]bool{
 	//	"v0": false,
 	//	"v1": true,
-	//})
+	// })
 
 	auths.NewRegistrator(app.Group(""),
 		auths.NewService(auths.NewRepository(di)), authentication, refreshAuth)
@@ -81,6 +82,10 @@ func main() {
 
 	hasura.NewRegistrator(app.Group(""),
 		hasura.NewService(hasura.NewRepository(di)))
+
+	security_cameras.NewRegistrator(app.Group(""),
+		security_cameras.NewService(security_cameras.NewRepository(di)),
+		authentication)
 
 	xendit.NewXenditRoutes(app)
 

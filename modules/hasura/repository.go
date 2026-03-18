@@ -1,6 +1,8 @@
 package hasura
 
 import (
+	"errors"
+
 	"go-api/modules/configs"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +26,7 @@ func (r repository) GetDetail(ctx *gin.Context, id int64) (interface{}, bool, er
 
 	var model interface{}
 	err := db.First(&model, id).Error
-	if err != nil && err == gorm.ErrRecordNotFound {
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
 		return nil, false, err

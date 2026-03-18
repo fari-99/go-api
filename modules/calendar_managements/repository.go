@@ -1,6 +1,7 @@
 package calendar_managements
 
 import (
+	"errors"
 	"fmt"
 
 	"go-api/modules/configs"
@@ -32,7 +33,7 @@ func (r repository) GetDetail(ctx *gin.Context, id string) (models.CalendarManag
 
 	var calendarManagement models.CalendarManagements
 	err := db.First(&calendarManagement, id).Error
-	if err != nil && err == gorm.ErrRecordNotFound {
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		return models.CalendarManagements{}, true, nil
 	} else if err != nil {
 		return models.CalendarManagements{}, false, err
