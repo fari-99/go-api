@@ -49,6 +49,9 @@ func main() {
 	//	"v1": true,
 	// })
 
+	// CORS middleware
+	app.Use(middleware.CORSMiddleware())
+
 	auths.NewRegistrator(app.Group(""),
 		auths.NewService(auths.NewRepository(di)), authentication, refreshAuth)
 
