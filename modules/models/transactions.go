@@ -13,7 +13,7 @@ type Transactions struct {
 	Base
 	TransactionNo string `gorm:"column:transaction_no" json:"transaction_no"`
 	Status        uint8  `gorm:"column:status" json:"status"`
-	CreatedBy     uint64 `gorm:"column:created_by" json:"created_by"`
+	CreatedBy     IDType `gorm:"column:created_by" json:"created_by"`
 }
 
 func (Transactions) TableName() string {

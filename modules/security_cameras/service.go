@@ -89,7 +89,7 @@ func (s service) Create(ctx *gin.Context, model models.SecurityCameras) (*models
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuidSession.(string))
 
 	model.Uuid = uuid.New().String()
-	model.UserID = currentUser.ID.Uint64()
+	model.UserID = currentUser.ID
 
 	stream := s.GetSource(model)
 
