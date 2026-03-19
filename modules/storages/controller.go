@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/fari-99/go-helper/crypts"
 	"github.com/fari-99/go-helper/storages"
@@ -24,7 +25,7 @@ type controller struct {
 }
 
 func (c controller) DetailAction(ctx *gin.Context) {
-	storageID, isExist := ctx.Params.Get("storageID")
+	storageIDParam, isExist := ctx.Params.Get("storageID")
 	if !isExist {
 		helpers.NewResponse(ctx, http.StatusOK, gin.H{
 			"message": "storage id not found",
@@ -32,7 +33,8 @@ func (c controller) DetailAction(ctx *gin.Context) {
 		return
 	}
 
-	storageModel, notFound, err := c.service.GetDetail(ctx, storageID)
+	storageID, _ := strconv.ParseInt(storageIDParam, 10, 64)
+	storageModel, notFound, err := c.service.GetDetail(ctx, uint64(storageID))
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusOK, gin.H{
 			"error":         err.Error(),
@@ -96,7 +98,8 @@ func (c controller) GetImages(ctx *gin.Context) {
 		return
 	}
 
-	storageModel, notFound, err := c.service.GetDetail(ctx, string(storageIDDecrypted))
+	storageID, _ := strconv.ParseInt(string(storageIDDecrypted), 10, 64)
+	storageModel, notFound, err := c.service.GetDetail(ctx, uint64(storageID))
 	if notFound {
 		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
 			"error_message": "file not found",

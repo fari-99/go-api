@@ -38,7 +38,7 @@ func (base *BaseEventHandler) NotificationsHandler(body rabbitmq.ConsumerHandler
 func compileNotificationTemplate(db *gorm.DB, body rabbitmq.ConsumerHandlerData) error {
 	type Input struct {
 		Action   string `json:"action"`
-		ActionBy string `json:"action_by"`
+		ActionBy uint64 `json:"action_by"`
 	}
 
 	var input Input
@@ -69,7 +69,7 @@ func compileNotificationTemplate(db *gorm.DB, body rabbitmq.ConsumerHandlerData)
 
 	// get send to
 	usersSendTo := map[int64]models.Users{
-		1: {Base: models.Base{ID: "1"}, Email: os.Getenv("EMAIL_FROM_DEFAULT"), UserSocials: []models.UserSocials{{Token: "123456789"}}},
+		1: {Base: models.Base{ID: 1}, Email: os.Getenv("EMAIL_FROM_DEFAULT"), UserSocials: []models.UserSocials{{Token: "123456789"}}},
 	}
 
 	// get action by
@@ -127,8 +127,8 @@ func compileNotificationTemplate(db *gorm.DB, body rabbitmq.ConsumerHandlerData)
 	return nil
 }
 
-func getUserDetails(db *gorm.DB, userID string) (*models.Users, bool, error) {
-	if userID == "" {
+func getUserDetails(db *gorm.DB, userID uint64) (*models.Users, bool, error) {
+	if userID <= 0 {
 		return nil, true, nil
 	}
 

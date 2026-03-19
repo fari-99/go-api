@@ -14,22 +14,22 @@ import (
 
 type Repository interface {
 	// - Locations
-	GetDetailLocation(ctx *gin.Context, locationID string) (locationModel *models.Locations, notFound bool, err error)
+	GetDetailLocation(ctx *gin.Context, locationID uint64) (locationModel *models.Locations, notFound bool, err error)
 	CountLocation(ctx *gin.Context, filter FilterQueryLocations) (int64, error)
 	GetAllLocation(ctx *gin.Context, filter FilterQueryLocations, limit, offset int) (locationModels []models.Locations, err error)
 	CreateLocation(ctx *gin.Context, input models.Locations) (locationModel *models.Locations, err error)
-	UpdateLocation(ctx *gin.Context, locationID string, input models.Locations) (locationModel *models.Locations, err error)
-	UpdateStatusLocation(ctx *gin.Context, locationID string, status int8) (locationModel *models.Locations, err error)
-	DeleteLocation(ctx *gin.Context, locationID string) error
+	UpdateLocation(ctx *gin.Context, locationID uint64, input models.Locations) (locationModel *models.Locations, err error)
+	UpdateStatusLocation(ctx *gin.Context, locationID uint64, status int8) (locationModel *models.Locations, err error)
+	DeleteLocation(ctx *gin.Context, locationID uint64) error
 
 	// - Location Levels
-	GetDetailLocationLevel(ctx *gin.Context, locationID string) (locationModel *models.LocationLevels, notFound bool, err error)
+	GetDetailLocationLevel(ctx *gin.Context, locationID uint64) (locationModel *models.LocationLevels, notFound bool, err error)
 	CountLocationLevel(ctx *gin.Context, filter FilterQueryLocationLevel) (int64, error)
 	GetAllLocationLevel(ctx *gin.Context, filter FilterQueryLocationLevel, limit, offset int) (locationModels []models.LocationLevels, err error)
 	CreateLocationLevel(ctx *gin.Context, input models.LocationLevels) (locationModel *models.LocationLevels, err error)
-	UpdateLocationLevel(ctx *gin.Context, locationLevelID string, input models.LocationLevels) (locationModel *models.LocationLevels, err error)
-	UpdateStatusLocationLevel(ctx *gin.Context, locationLevelID string, status int8) (locationModel *models.LocationLevels, err error)
-	DeleteLocationLevel(ctx *gin.Context, locationID string) error
+	UpdateLocationLevel(ctx *gin.Context, locationLevelID uint64, input models.LocationLevels) (locationModel *models.LocationLevels, err error)
+	UpdateStatusLocationLevel(ctx *gin.Context, locationLevelID uint64, status int8) (locationModel *models.LocationLevels, err error)
+	DeleteLocationLevel(ctx *gin.Context, locationID uint64) error
 }
 
 type repository struct {
@@ -40,7 +40,7 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) GetDetailLocation(ctx *gin.Context, locationID string) (*models.Locations, bool, error) {
+func (r repository) GetDetailLocation(ctx *gin.Context, locationID uint64) (*models.Locations, bool, error) {
 	db := r.DB.WithContext(ctx)
 
 	var locationModel models.Locations
@@ -91,7 +91,7 @@ func (r repository) CreateLocation(ctx *gin.Context, locationModel models.Locati
 	return &locationModel, nil
 }
 
-func (r repository) UpdateLocation(ctx *gin.Context, locationID string, input models.Locations) (*models.Locations, error) {
+func (r repository) UpdateLocation(ctx *gin.Context, locationID uint64, input models.Locations) (*models.Locations, error) {
 	db := r.DB.WithContext(ctx)
 
 	locationModel, notFound, err := r.GetDetailLocation(ctx, locationID)
@@ -109,7 +109,7 @@ func (r repository) UpdateLocation(ctx *gin.Context, locationID string, input mo
 	return locationModel, nil
 }
 
-func (r repository) UpdateStatusLocation(ctx *gin.Context, locationID string, status int8) (*models.Locations, error) {
+func (r repository) UpdateStatusLocation(ctx *gin.Context, locationID uint64, status int8) (*models.Locations, error) {
 	db := r.DB.WithContext(ctx)
 
 	locationModel, notFound, err := r.GetDetailLocation(ctx, locationID)
@@ -127,7 +127,7 @@ func (r repository) UpdateStatusLocation(ctx *gin.Context, locationID string, st
 	return locationModel, nil
 }
 
-func (r repository) DeleteLocation(ctx *gin.Context, locationID string) error {
+func (r repository) DeleteLocation(ctx *gin.Context, locationID uint64) error {
 	db := r.DB.WithContext(ctx)
 
 	locationModel, _, _ := r.GetDetailLocation(ctx, locationID)
@@ -139,7 +139,7 @@ func (r repository) DeleteLocation(ctx *gin.Context, locationID string) error {
 	return nil
 }
 
-func (r repository) GetDetailLocationLevel(ctx *gin.Context, locationID string) (*models.LocationLevels, bool, error) {
+func (r repository) GetDetailLocationLevel(ctx *gin.Context, locationID uint64) (*models.LocationLevels, bool, error) {
 	db := r.DB.WithContext(ctx)
 
 	var locationModel models.LocationLevels
@@ -190,7 +190,7 @@ func (r repository) CreateLocationLevel(ctx *gin.Context, locationModel models.L
 	return &locationModel, nil
 }
 
-func (r repository) UpdateLocationLevel(ctx *gin.Context, locationLevelID string, input models.LocationLevels) (*models.LocationLevels, error) {
+func (r repository) UpdateLocationLevel(ctx *gin.Context, locationLevelID uint64, input models.LocationLevels) (*models.LocationLevels, error) {
 	db := r.DB.WithContext(ctx)
 
 	locationLevelModel, notFound, err := r.GetDetailLocationLevel(ctx, locationLevelID)
@@ -208,7 +208,7 @@ func (r repository) UpdateLocationLevel(ctx *gin.Context, locationLevelID string
 	return locationLevelModel, nil
 }
 
-func (r repository) UpdateStatusLocationLevel(ctx *gin.Context, locationLevelID string, status int8) (*models.LocationLevels, error) {
+func (r repository) UpdateStatusLocationLevel(ctx *gin.Context, locationLevelID uint64, status int8) (*models.LocationLevels, error) {
 	db := r.DB.WithContext(ctx)
 
 	locationLevelModel, notFound, err := r.GetDetailLocationLevel(ctx, locationLevelID)
@@ -226,7 +226,7 @@ func (r repository) UpdateStatusLocationLevel(ctx *gin.Context, locationLevelID 
 	return locationLevelModel, nil
 }
 
-func (r repository) DeleteLocationLevel(ctx *gin.Context, locationLevelID string) error {
+func (r repository) DeleteLocationLevel(ctx *gin.Context, locationLevelID uint64) error {
 	db := r.DB.WithContext(ctx)
 
 	locationLevelModel, notFound, err := r.GetDetailLocationLevel(ctx, locationLevelID)

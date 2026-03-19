@@ -13,7 +13,7 @@ type RequestListFilter struct {
 }
 
 type CreateCalendarManagementRequest struct {
-	CountryID    string    `json:"country_id"`
+	CountryID    uint64    `json:"country_id"`
 	Date         time.Time `json:"date"`
 	Descriptions string    `json:"descriptions"`
 }

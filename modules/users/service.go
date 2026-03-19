@@ -17,7 +17,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error)
-	UserProfile(ctx *gin.Context, userID string) (models.UserProfile, error)
+	UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error)
 	ChangePassword(ctx *gin.Context, input RequestChangePassword) (exists bool, err error)
 	ForgotPassword(ctx *gin.Context, input ForgotPasswordRequest) (userCodes *models.UserCodes, notFound bool, err error)
 	ForgotUsername(ctx *gin.Context, input ForgotUsernameRequest) (exists bool, err error)
@@ -92,7 +92,7 @@ func (s service) ChangePassword(ctx *gin.Context, input RequestChangePassword) (
 		return false, err
 	}
 
-	userModel, notFound, err := s.repo.GetDetails(ctx, string(currentUser.ID))
+	userModel, notFound, err := s.repo.GetDetails(ctx, currentUser.ID.Uint64())
 	if err != nil {
 		return false, err
 	} else if notFound {
@@ -120,7 +120,7 @@ func (s service) ChangePassword(ctx *gin.Context, input RequestChangePassword) (
 	return true, err
 }
 
-func (s service) UserProfile(ctx *gin.Context, userID string) (models.UserProfile, error) {
+func (s service) UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error) {
 	userModel, notFound, err := s.repo.GetDetails(ctx, userID)
 	if err != nil {
 		return models.UserProfile{}, err

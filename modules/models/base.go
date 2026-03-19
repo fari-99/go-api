@@ -5,12 +5,19 @@ import (
 	"time"
 
 	"github.com/fari-99/go-helper/rabbitmq"
-	"github.com/google/uuid"
 	"github.com/spf13/cast"
 	"gorm.io/gorm"
 )
 
-type IDType string // for uuid
+type IDType uint64 // for uuid
+
+func (id IDType) String() string {
+	return cast.ToString(uint64(id))
+}
+
+func (id IDType) Uint64() uint64 {
+	return uint64(id)
+}
 
 type Base struct {
 	ID        IDType          `gorm:"column:id" json:"id" sql:"type:uuid;primary_key;default:uuid_generate_v4()" `
@@ -20,8 +27,8 @@ type Base struct {
 }
 
 func (base *Base) BeforeCreate(tx *gorm.DB) error {
-	idUuid := uuid.New()
-	base.ID = IDType(idUuid.String())
+	// idUuid := uuid.New()
+	// base.ID = IDType(idUuid.String())
 	return nil
 }
 

@@ -11,19 +11,19 @@ import (
 )
 
 type Service interface {
-	GetDetailLocation(ctx *gin.Context, locationID string) (*models.Locations, bool, error)
+	GetDetailLocation(ctx *gin.Context, locationID uint64) (*models.Locations, bool, error)
 	GetAllLocation(ctx *gin.Context, filter FilterQueryLocations) (*helpers.Pages, error)
 	CreateLocation(ctx *gin.Context, input RequestCreateLocations) (*models.Locations, error)
-	UpdateLocation(ctx *gin.Context, locationID string, input RequestUpdateLocations) (*models.Locations, error)
-	UpdateStatusLocation(ctx *gin.Context, locationID string, status int8) (*models.Locations, error)
-	DeleteLocation(ctx *gin.Context, locationID string) error
+	UpdateLocation(ctx *gin.Context, locationID uint64, input RequestUpdateLocations) (*models.Locations, error)
+	UpdateStatusLocation(ctx *gin.Context, locationID uint64, status int8) (*models.Locations, error)
+	DeleteLocation(ctx *gin.Context, locationID uint64) error
 
-	GetDetailLocationLevel(ctx *gin.Context, locationLevelID string) (*models.LocationLevels, bool, error)
+	GetDetailLocationLevel(ctx *gin.Context, locationLevelID uint64) (*models.LocationLevels, bool, error)
 	GetAllLocationLevel(ctx *gin.Context, filter FilterQueryLocationLevel) (*helpers.Pages, error)
 	CreateLocationLevel(ctx *gin.Context, input RequestCreateLocationLevel) (*models.LocationLevels, error)
-	UpdateLocationLevel(ctx *gin.Context, locationLevelID string, input RequestUpdateLocationLevel) (*models.LocationLevels, error)
-	UpdateStatusLocationLevel(ctx *gin.Context, locationLevelID string, status int8) (*models.LocationLevels, error)
-	DeleteLocationLevel(ctx *gin.Context, locationLevelID string) error
+	UpdateLocationLevel(ctx *gin.Context, locationLevelID uint64, input RequestUpdateLocationLevel) (*models.LocationLevels, error)
+	UpdateStatusLocationLevel(ctx *gin.Context, locationLevelID uint64, status int8) (*models.LocationLevels, error)
+	DeleteLocationLevel(ctx *gin.Context, locationLevelID uint64) error
 }
 
 type service struct {
@@ -34,10 +34,10 @@ func NewService(repo Repository) Service {
 	return service{repo: repo}
 }
 
-func (s service) getCompleteName(ctx *gin.Context, inputName, parentID string) (string, error) {
+func (s service) getCompleteName(ctx *gin.Context, inputName string, parentID uint64) (string, error) {
 	// get parent data
 	completeName := inputName
-	if parentID != "" {
+	if parentID <= 0 {
 		parentLocationModel, notFound, err := s.repo.GetDetailLocation(ctx, parentID)
 		if err != nil {
 			return "", err
@@ -51,7 +51,7 @@ func (s service) getCompleteName(ctx *gin.Context, inputName, parentID string) (
 	return completeName, nil
 }
 
-func (s service) GetDetailLocation(ctx *gin.Context, locationID string) (*models.Locations, bool, error) {
+func (s service) GetDetailLocation(ctx *gin.Context, locationID uint64) (*models.Locations, bool, error) {
 	return s.repo.GetDetailLocation(ctx, locationID)
 }
 
@@ -68,7 +68,7 @@ func (s service) GetAllLocation(ctx *gin.Context, filter FilterQueryLocations) (
 	}
 
 	for idx, item := range items {
-		level, notFound, err := s.repo.GetDetailLocationLevel(ctx, string(item.LevelID))
+		level, notFound, err := s.repo.GetDetailLocationLevel(ctx, item.LevelID.Uint64())
 		if err != nil {
 			return nil, err
 		} else if notFound {
@@ -113,7 +113,7 @@ func (s service) CreateLocation(ctx *gin.Context, input RequestCreateLocations) 
 	return savedModel, err
 }
 
-func (s service) UpdateLocation(ctx *gin.Context, locationID string, input RequestUpdateLocations) (*models.Locations, error) {
+func (s service) UpdateLocation(ctx *gin.Context, locationID uint64, input RequestUpdateLocations) (*models.Locations, error) {
 	if err := input.Validate(); err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func (s service) UpdateLocation(ctx *gin.Context, locationID string, input Reque
 	return newLocationModel, nil
 }
 
-func (s service) UpdateStatusLocation(ctx *gin.Context, locationID string, status int8) (*models.Locations, error) {
+func (s service) UpdateStatusLocation(ctx *gin.Context, locationID uint64, status int8) (*models.Locations, error) {
 	_, notFound, err := s.repo.GetDetailLocation(ctx, locationID)
 	if err != nil {
 		return nil, err
@@ -157,11 +157,11 @@ func (s service) UpdateStatusLocation(ctx *gin.Context, locationID string, statu
 	return locationModel, nil
 }
 
-func (s service) DeleteLocation(ctx *gin.Context, locationID string) error {
+func (s service) DeleteLocation(ctx *gin.Context, locationID uint64) error {
 	return s.repo.DeleteLocation(ctx, locationID)
 }
 
-func (s service) GetDetailLocationLevel(ctx *gin.Context, locationID string) (*models.LocationLevels, bool, error) {
+func (s service) GetDetailLocationLevel(ctx *gin.Context, locationID uint64) (*models.LocationLevels, bool, error) {
 	return s.repo.GetDetailLocationLevel(ctx, locationID)
 }
 
@@ -196,7 +196,7 @@ func (s service) CreateLocationLevel(ctx *gin.Context, input RequestCreateLocati
 	return savedModel, err
 }
 
-func (s service) UpdateLocationLevel(ctx *gin.Context, locationID string, input RequestUpdateLocationLevel) (*models.LocationLevels, error) {
+func (s service) UpdateLocationLevel(ctx *gin.Context, locationID uint64, input RequestUpdateLocationLevel) (*models.LocationLevels, error) {
 	if err := input.Validate(); err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (s service) UpdateLocationLevel(ctx *gin.Context, locationID string, input 
 	return newLocationModel, nil
 }
 
-func (s service) UpdateStatusLocationLevel(ctx *gin.Context, locationID string, status int8) (*models.LocationLevels, error) {
+func (s service) UpdateStatusLocationLevel(ctx *gin.Context, locationID uint64, status int8) (*models.LocationLevels, error) {
 	_, notFound, err := s.repo.GetDetailLocationLevel(ctx, locationID)
 	if err != nil {
 		return nil, err
@@ -232,6 +232,6 @@ func (s service) UpdateStatusLocationLevel(ctx *gin.Context, locationID string, 
 	return locationModel, nil
 }
 
-func (s service) DeleteLocationLevel(ctx *gin.Context, locationID string) error {
+func (s service) DeleteLocationLevel(ctx *gin.Context, locationID uint64) error {
 	return s.repo.DeleteLocationLevel(ctx, locationID)
 }

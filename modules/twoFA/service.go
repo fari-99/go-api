@@ -15,10 +15,10 @@ import (
 )
 
 type Service interface {
-	GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, bool, error)
+	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
 	CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error)
-	GenerateRecoveryCode(ctx *gin.Context, userID string) ([]string, error)
-	GetAllRecoveryCode(ctx *gin.Context, userID string) ([]models.TwoAuthRecoveries, error)
+	GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
+	GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error)
 
 	EncryptKey() ([]byte, string, error)
 	DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error)
@@ -53,7 +53,7 @@ func (s service) DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error) {
 	return secret, nil
 }
 
-func (s service) GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, bool, error) {
+func (s service) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error) {
 	return s.repo.GetDetails(ctx, userID)
 }
 
@@ -80,10 +80,10 @@ func (s service) CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error
 	return savedModel, authLink, err
 }
 
-func (s service) GenerateRecoveryCode(ctx *gin.Context, userID string) ([]string, error) {
+func (s service) GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error) {
 	return s.repo.GenerateRecoveryCode(ctx, userID)
 }
 
-func (s service) GetAllRecoveryCode(ctx *gin.Context, userID string) ([]models.TwoAuthRecoveries, error) {
+func (s service) GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error) {
 	return s.repo.GetAllRecoveryCode(ctx, userID)
 }

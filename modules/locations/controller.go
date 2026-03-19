@@ -36,7 +36,7 @@ func (c controller) GetAllAction(ctx *gin.Context) {
 
 func (c controller) GetDetailAction(ctx *gin.Context) {
 	type UrlParams struct {
-		LocationID string `uri:"locationID" binding:"required,uuid"`
+		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
 	}
 
 	var urlParams UrlParams
@@ -96,7 +96,7 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 	}
 
 	type UrlParams struct {
-		LocationID string `uri:"locationID" binding:"required,uuid"`
+		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
 	}
 
 	var urlParams UrlParams
@@ -123,7 +123,7 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 
 func (c controller) UpdateStatusAction(ctx *gin.Context) {
 	type UrlParams struct {
-		LocationID string `uri:"locationID" binding:"required,uuid"`
+		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
 		Status     string `uri:"status" binding:"required"`
 	}
 
@@ -160,7 +160,7 @@ func (c controller) UpdateStatusAction(ctx *gin.Context) {
 
 func (c controller) DeleteAction(ctx *gin.Context) {
 	type UrlParams struct {
-		LocationID string `uri:"locationID" binding:"required,uuid"`
+		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
 	}
 
 	var urlParams UrlParams
@@ -209,7 +209,7 @@ func (c controller) GetAllActionLevel(ctx *gin.Context) {
 
 func (c controller) GetDetailActionLevel(ctx *gin.Context) {
 	type UrlParams struct {
-		LevelID string `uri:"levelID" binding:"required,uuid"`
+		LevelID uint64 `uri:"levelID" binding:"required,uuid"`
 	}
 
 	var urlParams UrlParams
@@ -269,7 +269,7 @@ func (c controller) UpdateActionLevel(ctx *gin.Context) {
 	}
 
 	type UrlParams struct {
-		LevelID string `uri:"levelID" binding:"required,uuid"`
+		LevelID uint64 `uri:"levelID" binding:"required,uuid"`
 	}
 
 	var urlParams UrlParams
@@ -296,7 +296,7 @@ func (c controller) UpdateActionLevel(ctx *gin.Context) {
 
 func (c controller) UpdateStatusActionLevel(ctx *gin.Context) {
 	type UrlParams struct {
-		LocationID string `uri:"locationID" binding:"required,uuid"`
+		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
 		Status     string `uri:"status" binding:"required"`
 	}
 
@@ -333,7 +333,7 @@ func (c controller) UpdateStatusActionLevel(ctx *gin.Context) {
 
 func (c controller) DeleteActionLevel(ctx *gin.Context) {
 	type UrlParams struct {
-		LocationID string `uri:"locationID" binding:"required,uuid"`
+		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
 	}
 
 	var urlParams UrlParams

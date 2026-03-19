@@ -14,10 +14,10 @@ import (
 )
 
 type Repository interface {
-	GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, bool, error)
+	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
 	CreateConfigs(ctx *gin.Context, twoAuthModel models.TwoAuths) (models.TwoAuths, error)
-	GenerateRecoveryCode(ctx *gin.Context, userID string) ([]string, error)
-	GetAllRecoveryCode(ctx *gin.Context, userID string) (recoveryCodeModels []models.TwoAuthRecoveries, err error)
+	GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
+	GetAllRecoveryCode(ctx *gin.Context, userID uint64) (recoveryCodeModels []models.TwoAuthRecoveries, err error)
 }
 
 type repository struct {
@@ -28,7 +28,7 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) GetDetails(ctx *gin.Context, userID string) (*models.TwoAuths, bool, error) {
+func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error) {
 	var twoAuthModel models.TwoAuths
 	err := r.DB.Where(&models.TwoAuths{UserID: models.IDType(userID), Status: constant.StatusActive}).First(&twoAuthModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -49,7 +49,7 @@ func (r repository) CreateConfigs(ctx *gin.Context, twoAuthModel models.TwoAuths
 	return twoAuthModel, nil
 }
 
-func (r repository) GetAllRecoveryCode(ctx *gin.Context, userID string) ([]models.TwoAuthRecoveries, error) {
+func (r repository) GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error) {
 	db := r.DB.WithContext(ctx)
 
 	var recoveryCodes []models.TwoAuthRecoveries
@@ -61,7 +61,7 @@ func (r repository) GetAllRecoveryCode(ctx *gin.Context, userID string) ([]model
 	return recoveryCodes, nil
 }
 
-func (r repository) GenerateRecoveryCode(ctx *gin.Context, userID string) ([]string, error) {
+func (r repository) GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error) {
 	db := r.DB.WithContext(ctx)
 	tx := db.Begin()
 	var oldRecoveryCodeModels []models.TwoAuthRecoveries

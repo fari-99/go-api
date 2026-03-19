@@ -23,7 +23,7 @@ func (c controller) CreateNewAuth(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
 
-	_, notFound, err := c.service.GetDetails(ctx, string(userID))
+	_, notFound, err := c.service.GetDetails(ctx, userID.Uint64())
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -63,9 +63,9 @@ func (c controller) CreateNewAuth(ctx *gin.Context) {
 func (c controller) ValidateAuth(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
-	userID := currentUser.ID
+	userID := currentUser.ID.Uint64()
 
-	twoAuthModel, notFound, err := c.service.GetDetails(ctx, string(userID))
+	twoAuthModel, notFound, err := c.service.GetDetails(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -89,7 +89,7 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 		return
 	}
 
-	recoveryCodeModels, err := c.service.GetAllRecoveryCode(ctx, string(twoAuthModel.UserID))
+	recoveryCodeModels, err := c.service.GetAllRecoveryCode(ctx, twoAuthModel.UserID.Uint64())
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"error":         err.Error(),
@@ -130,9 +130,9 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
-	userID := currentUser.ID
+	userID := currentUser.ID.Uint64()
 
-	_, notFound, err := c.service.GetDetails(ctx, string(userID))
+	_, notFound, err := c.service.GetDetails(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -147,7 +147,7 @@ func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
 		return
 	}
 
-	code, err := c.service.GenerateRecoveryCode(ctx, string(userID))
+	code, err := c.service.GenerateRecoveryCode(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),

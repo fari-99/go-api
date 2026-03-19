@@ -36,7 +36,7 @@ func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 	}
 
 	twoFAService := twoFA.NewService(twoFA.NewRepository(otpConfig.DI))
-	twoAuthModel, notFound, err := twoFAService.GetDetails(ctx, string(userID))
+	twoAuthModel, notFound, err := twoFAService.GetDetails(ctx, userID.Uint64())
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -63,7 +63,7 @@ func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 		return
 	}
 
-	recoveryCodeModels, err := twoFAService.GetAllRecoveryCode(ctx, string(twoAuthModel.UserID))
+	recoveryCodeModels, err := twoFAService.GetAllRecoveryCode(ctx, twoAuthModel.UserID.Uint64())
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),

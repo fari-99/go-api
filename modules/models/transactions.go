@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -22,11 +21,11 @@ func (Transactions) TableName() string {
 }
 
 func (model *Transactions) generateTransactionNo(tx *gorm.DB) string {
-	modelID := strings.Split(string(model.ID), "-") // 8-4-4-4-12
+	modelID := model.ID.String()
 	referenceNo := strconv.FormatInt(rand.Int63n(100000), 10)
 	dateFormat := time.Now().Format("060102")
 
-	transactionNo := fmt.Sprintf("ORDER:%s-%s-%s", dateFormat, modelID[3], referenceNo)
+	transactionNo := fmt.Sprintf("ORDER:%s-%s-%s", dateFormat, modelID, referenceNo)
 	return transactionNo
 }
 

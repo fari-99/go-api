@@ -42,7 +42,7 @@ func (c controller) UserProfileAction(ctx *gin.Context) {
 	uuidSession, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuidSession.(string))
 
-	userProfile, err := c.service.UserProfile(ctx, string(currentUser.ID))
+	userProfile, err := c.service.UserProfile(ctx, currentUser.ID.Uint64())
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusOK, gin.H{
 			"error":         err.Error(),

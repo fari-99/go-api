@@ -19,7 +19,7 @@ import (
 )
 
 type Repository interface {
-	GetDetails(ctx *gin.Context, userID string) (*models.Users, bool, error)
+	GetDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
 	GetUserByEmail(ctx *gin.Context, email string) (userModel *models.Users, notFound bool, err error)
 	CreateUser(ctx *gin.Context, userModel models.Users) (*models.Users, error)
 	GetRoles(ctx *gin.Context) ([]models.Roles, error)
@@ -50,7 +50,7 @@ func (r repository) ResetPassword(ctx *gin.Context, input ResetPasswordRequest) 
 		return err
 	}
 
-	userModel, notFound, err := r.GetDetails(ctx, string(userCodeModel.UserID))
+	userModel, notFound, err := r.GetDetails(ctx, userCodeModel.UserID.Uint64())
 	if err != nil {
 		return err
 	} else if notFound {
@@ -144,7 +144,7 @@ func (r repository) GetRoles(ctx *gin.Context) ([]models.Roles, error) {
 	return roles, nil
 }
 
-func (r repository) GetDetails(ctx *gin.Context, userID string) (*models.Users, bool, error) {
+func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
 	db := r.DB.WithContext(ctx)
 
 	var userModel models.Users

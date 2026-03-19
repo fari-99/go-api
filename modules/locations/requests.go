@@ -5,10 +5,10 @@ import (
 )
 
 type RequestCreateLocations struct {
-	ParentID string `json:"parent_id,omitempty"`
+	ParentID uint64 `json:"parent_id,omitempty"`
 	Code     string `json:"code,omitempty"`
 	Name     string `json:"name"`
-	LevelID  string `json:"level_id"`
+	LevelID  uint64 `json:"level_id"`
 	Status   int8   `json:"status"`
 }
 
@@ -21,10 +21,10 @@ func (request RequestCreateLocations) Validate() error {
 }
 
 type RequestUpdateLocations struct {
-	ParentID string `json:"parent_id,omitempty"`
+	ParentID uint64 `json:"parent_id,omitempty"`
 	Code     string `json:"code,omitempty"`
 	Name     string `json:"name"`
-	LevelID  string `json:"level_id"`
+	LevelID  uint64 `json:"level_id"`
 	Status   int8   `json:"status"`
 }
 
