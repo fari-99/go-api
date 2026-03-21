@@ -10,23 +10,23 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 	log.Println("Setup Customer 2FA router")
 	control := controller{service: service}
 
-	user2FA := app.Group("/users/2fa")
+	totp2FA := app.Group("/users/totp")
 	{
-		user2FA.Use(authHandler)
+		totp2FA.Use(authHandler)
 
 		// 2FA
-		user2FA.POST("/create", control.CreateNewAuth)
-		user2FA.POST("/validate", control.ValidateAuth)
-		user2FA.PUT("/disabled", control.DisabledAuth)
+		totp2FA.POST("/create", control.CreateTotp)
+		totp2FA.POST("/validate", control.ValidateTotp)
+		totp2FA.PUT("/disabled", control.DisabledTotp)
 	}
 
-	userRecoveryCode := app.Group("/users/recovery-code")
+	recoveryCode2FA := app.Group("/users/recovery-code")
 	{
-		userRecoveryCode.Use(authHandler)
+		recoveryCode2FA.Use(authHandler)
 
 		// Recovery Code
-		userRecoveryCode.GET("/create", control.GenerateRecoveryCode)
-		userRecoveryCode.POST("/validate", control.ValidateRecoveryCodeAuth)
-		userRecoveryCode.PUT("/disabled", control.DisabledAuth) // TODO: add disable recovery code
+		recoveryCode2FA.GET("/create", control.CreateRecoveryCode)
+		recoveryCode2FA.POST("/validate", control.ValidateRecoveryCode)
+		recoveryCode2FA.PUT("/disabled", control.DisabledTotp) // TODO: add disable recovery code
 	}
 }

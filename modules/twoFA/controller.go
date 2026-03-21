@@ -17,7 +17,7 @@ type controller struct {
 	service Service
 }
 
-func (c controller) CreateNewAuth(ctx *gin.Context) {
+func (c controller) CreateTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
@@ -37,7 +37,7 @@ func (c controller) CreateNewAuth(ctx *gin.Context) {
 		return
 	}
 
-	_, authLink, err := c.service.CreateConfigs(ctx)
+	_, authLink, err := c.service.CreateTotp(ctx)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -61,7 +61,7 @@ func (c controller) CreateNewAuth(ctx *gin.Context) {
 	return
 }
 
-func (c controller) ValidateAuth(ctx *gin.Context) {
+func (c controller) ValidateTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
@@ -116,7 +116,7 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 	}
 
 	// TODO: CHECK Redis to "TEMP_ENABLED_2FA:UserID", if true, then update user model to 2FA enabled
-	err = c.service.TwoFAUserUpdate(ctx, userID, true)
+	err = c.service.UserEnabledTotp(ctx, userID, true)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, map[string]interface{}{
 			"error":         err.Error(),
@@ -128,7 +128,7 @@ func (c controller) ValidateAuth(ctx *gin.Context) {
 	return
 }
 
-func (c controller) DisabledAuth(ctx *gin.Context) {
+func (c controller) DisabledTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
@@ -168,7 +168,7 @@ func (c controller) DisabledAuth(ctx *gin.Context) {
 		return
 	}
 
-	err = c.service.TwoFAUserUpdate(ctx, userID, false)
+	err = c.service.UserEnabledTotp(ctx, userID, false)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, map[string]interface{}{
 			"error":         err.Error(),
@@ -180,7 +180,7 @@ func (c controller) DisabledAuth(ctx *gin.Context) {
 	return
 }
 
-func (c controller) ValidateRecoveryCodeAuth(ctx *gin.Context) {
+func (c controller) ValidateRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
@@ -222,7 +222,7 @@ func (c controller) ValidateRecoveryCodeAuth(ctx *gin.Context) {
 	return
 }
 
-func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
+func (c controller) CreateRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
@@ -242,7 +242,7 @@ func (c controller) GenerateRecoveryCode(ctx *gin.Context) {
 		return
 	}
 
-	code, err := c.service.GenerateRecoveryCode(ctx, userID)
+	code, err := c.service.CreateRecoveryCode(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),

@@ -18,13 +18,14 @@ type Service interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
 
 	// 2FA
-	CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error)
-	TwoFAUserUpdate(ctx *gin.Context, userID uint64, isEnabled bool) error
+	CreateTotp(ctx *gin.Context) (models.TwoAuths, string, error)
+	UserEnabledTotp(ctx *gin.Context, userID uint64, isEnabled bool) error
 
-	// add recovery code
-	GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
+	// Recovery Code
+	CreateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
 	GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error)
 	ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error)
+	// DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error // TODO: create function
 
 	EncryptKey() ([]byte, string, error)
 	DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error)
@@ -63,7 +64,7 @@ func (s service) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, 
 	return s.repo.GetDetails(ctx, userID)
 }
 
-func (s service) CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error) {
+func (s service) CreateTotp(ctx *gin.Context) (models.TwoAuths, string, error) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
@@ -80,18 +81,18 @@ func (s service) CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error
 		Status:  constant.StatusActive,
 	}
 
-	savedModel, err := s.repo.CreateConfigs(ctx, twoAuthModel)
+	savedModel, err := s.repo.CreateTotp(ctx, twoAuthModel)
 	authLink := fmt.Sprintf("otpauth://totp/%s:%s?secret=%s&issuer=%s", twoAuthModel.Issuer, twoAuthModel.Account, encodedSecret, twoAuthModel.Issuer)
 
 	return savedModel, authLink, err
 }
 
-func (s service) TwoFAUserUpdate(ctx *gin.Context, userID uint64, isEnabled bool) error {
-	return s.repo.TwoFAUserUpdate(ctx, userID, isEnabled)
+func (s service) UserEnabledTotp(ctx *gin.Context, userID uint64, isEnabled bool) error {
+	return s.repo.UserEnabledTotp(ctx, userID, isEnabled)
 }
 
-func (s service) GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error) {
-	return s.repo.GenerateRecoveryCode(ctx, userID)
+func (s service) CreateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error) {
+	return s.repo.CreateRecoveryCode(ctx, userID)
 }
 
 func (s service) GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error) {
