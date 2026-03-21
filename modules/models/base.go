@@ -33,17 +33,17 @@ func (base *Base) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (base *Base) AfterCreate(tx *gorm.DB) error {
-	publishEventDatabase(tx, "create")
+	// publishEventDatabase(tx, "create")
 	return nil
 }
 
 func (base *Base) AfterUpdate(tx *gorm.DB) error {
-	publishEventDatabase(tx, "update")
+	// publishEventDatabase(tx, "update")
 	return nil
 }
 
 func (base *Base) AfterDelete(tx *gorm.DB) error {
-	publishEventDatabase(tx, "delete")
+	// publishEventDatabase(tx, "delete")
 	return nil
 }
 

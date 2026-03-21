@@ -13,7 +13,7 @@ import (
 )
 
 type Service interface {
-	AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (totalLogin int64, token *token_generator.SignedToken, isExists bool, err error)
+	AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (authData *AuthData, isExists bool, err error)
 	RefreshAuth(ctx *gin.Context) (token *token_generator.SignedToken, isExists bool, err error)
 	SignOutUser(ctx *gin.Context) (totalLogin int64, isExists bool, err error)
 	DeleteAllSession(ctx *gin.Context) (isExists bool, err error)
@@ -45,24 +45,29 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 		return nil, isExistRefresh, err
 	}
 
-	_, err = helpers.RemoveRedisSession(ctx, currentUser.Username, oldUuid)
+	userDetails, err := s.repo.GetUserDetails(ctx, currentUser.ID.Uint64())
+	if err != nil {
+		return nil, isExistRefresh, err
+	}
+
+	_, err = helpers.RemoveRedisSession(ctx, userDetails.Username, oldUuid)
 	if err != nil {
 		return nil, false, err
 	}
 
-	token, err := s.generateToken(ctx, *currentUser)
+	token, err := s.generateToken(ctx, userDetails)
 	if err != nil {
 		return nil, false, err
 	}
 
-	_, err = s.setRedisSession(ctx, token, currentUser)
+	_, err = s.setRedisSession(ctx, token, &userDetails)
 	if err != nil {
 		return nil, false, err
 	}
 
 	// set new uuid to new uuid so it can be checked
 	newUuid := token.Uuid
-	err = helpers.SetFamily(ctx, currentUser.Username, oldUuid, newUuid, token.RefreshExpiredAt)
+	err = helpers.SetFamily(ctx, userDetails.Username, oldUuid, newUuid, token.RefreshExpiredAt)
 	if err != nil {
 		return nil, false, err
 	}
@@ -120,29 +125,41 @@ func (s service) DeleteAllSession(ctx *gin.Context) (bool, error) {
 	return true, nil
 }
 
-func (s service) AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (int64, *token_generator.SignedToken, bool, error) {
+type AuthData struct {
+	UserModel  *models.Users
+	TotalLogin int64
+	Token      *token_generator.SignedToken
+}
+
+func (s service) AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (*AuthData, bool, error) {
 	if err := input.Validate(); err != nil {
-		return 0, nil, false, err
+		return nil, false, err
 	}
 
 	userModel, notFound, err := s.repo.AuthenticatePassword(input)
 	if err != nil {
-		return 0, nil, false, err
+		return nil, false, err
 	} else if notFound {
-		return 0, nil, notFound, nil
+		return nil, notFound, nil
 	}
 
 	token, err := s.generateToken(ctx, *userModel)
 	if err != nil {
-		return 0, nil, false, err
+		return nil, false, err
 	}
 
 	totalLogin, err := s.setRedisSession(ctx, token, userModel)
 	if err != nil {
-		return 0, nil, false, err
+		return nil, false, err
 	}
 
-	return totalLogin, token, false, nil
+	authData := &AuthData{
+		TotalLogin: totalLogin,
+		Token:      token,
+		UserModel:  userModel,
+	}
+
+	return authData, false, nil
 }
 
 func (s service) generateToken(ctx *gin.Context, userModel models.Users) (signedToken *token_generator.SignedToken, err error) {
@@ -154,10 +171,11 @@ func (s service) generateToken(ctx *gin.Context, userModel models.Users) (signed
 	userRoles := strings.Split(userModel.Roles, ",")
 
 	userData := token_generator.UserDetails{
-		ID:        userModel.ID.String(),
-		Email:     userModel.Email,
-		Username:  userModel.Username,
-		UserRoles: userRoles,
+		ID:           userModel.ID.String(),
+		Email:        userModel.Email,
+		Username:     userModel.Username,
+		UserRoles:    userRoles,
+		TwoFAEnabled: userModel.TwoFaEnabled,
 	}
 
 	tokenHelper := token_generator.NewJwt(secretToken, refreshToken, signMethod).SetCtx(ctx.Request)

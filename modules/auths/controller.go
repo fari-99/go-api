@@ -22,7 +22,7 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 		return
 	}
 
-	totalLogin, token, notFound, err := c.service.AuthenticateUser(ctx, input)
+	authData, notFound, err := c.service.AuthenticateUser(ctx, input)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -32,27 +32,31 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 	}
 
 	tokenCompiled := map[string]interface{}{
-		"total_login":   totalLogin,
-		"access_token":  token.AccessToken,
-		"refresh_token": token.RefreshToken,
+		"total_login":   authData.TotalLogin,
+		"access_token":  authData.Token.AccessToken,
+		"refresh_token": authData.Token.RefreshToken,
+	}
+
+	if authData.UserModel.TwoFaEnabled {
+		tokenCompiled["two_fa_models"] = authData.UserModel.TwoFaModels
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:     "access_token",
-		Value:    token.AccessToken,
+		Value:    authData.Token.AccessToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  token.AccessExpiredAt,
+		Expires:  authData.Token.AccessExpiredAt,
 		Secure:   false,
 		HttpOnly: true,
 	})
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:     "refresh_token",
-		Value:    token.RefreshToken,
+		Value:    authData.Token.RefreshToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  token.RefreshExpiredAt,
+		Expires:  authData.Token.RefreshExpiredAt,
 		Secure:   false,
 		HttpOnly: true,
 	})

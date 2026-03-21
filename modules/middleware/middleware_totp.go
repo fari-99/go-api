@@ -6,7 +6,6 @@ import (
 
 	"github.com/dgryski/dgoogauth"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/cast"
 
 	"go-api/helpers"
 	"go-api/modules/configs"
@@ -17,19 +16,19 @@ type OtpConfig struct {
 	DI *configs.DI
 }
 
-func OTPMiddlewareLogin(di *configs.DI) gin.HandlerFunc {
+func TOTPMiddlewareLogin(di *configs.DI) gin.HandlerFunc {
 	otpConfig := OtpConfig{DI: di}
-	return otpConfig.otpServe
+	return otpConfig.totpServe
 }
 
-func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
+func (otpConfig OtpConfig) totpServe(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
 
 	if !currentUser.TwoFaEnabled {
 		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
-			"error_message": "Please enabled Two Factor Authorization to access this page",
+			"error_message": "Please enabled Two Factor Authorization [TOTP] to access this page",
 		})
 		ctx.Abort()
 		return
@@ -40,14 +39,14 @@ func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
-			"error_message": "error get 2FA configuration for your user",
+			"error_message": "error get 2FA [TOTP] configuration for your user",
 		})
 		ctx.Abort()
 		return
-	} else if !notFound {
+	} else if notFound {
 		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
-			"error":         "user config found",
-			"error_message": "your user already created the configuration, inactive the configuration first, and try create again",
+			"error":         "user config not found",
+			"error_message": "2FA [TOTP] configuration for your user not found",
 		})
 		ctx.Abort()
 		return
@@ -57,32 +56,16 @@ func (otpConfig OtpConfig) otpServe(ctx *gin.Context) {
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"error":         err.Error(),
-			"error_message": "failed to decrypt key of your configuration",
+			"error_message": "failed to decrypt key of your [TOTP] configuration",
 		})
 		ctx.Abort()
 		return
-	}
-
-	recoveryCodeModels, err := twoFAService.GetAllRecoveryCode(ctx, twoAuthModel.UserID.Uint64())
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-			"error":         err.Error(),
-			"error_message": "failed to get your backup code",
-		})
-		ctx.Abort()
-		return
-	}
-
-	var scratchCodes []int
-	for _, recoveryCodeModel := range recoveryCodeModels {
-		scratchCodes = append(scratchCodes, cast.ToInt(recoveryCodeModel.Code))
 	}
 
 	otpConfigs := &dgoogauth.OTPConfig{
-		Secret:       string(secret),
-		WindowSize:   3,
-		HotpCounter:  0,
-		ScratchCodes: scratchCodes,
+		Secret:      string(secret),
+		WindowSize:  3,
+		HotpCounter: 0,
 	}
 
 	otpValue := ctx.DefaultQuery("otp_value", "")

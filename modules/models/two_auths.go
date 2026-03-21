@@ -9,6 +9,6 @@ type TwoAuths struct {
 	Status  int8   `gorm:"column:status" json:"status"`
 }
 
-func (Transactions) TwoAuths() string {
+func (TwoAuths) TableName() string {
 	return "two_fa"
 }

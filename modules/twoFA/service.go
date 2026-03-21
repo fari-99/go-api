@@ -16,9 +16,15 @@ import (
 
 type Service interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
+
+	// 2FA
 	CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error)
+	TwoFAUserUpdate(ctx *gin.Context, userID uint64, isEnabled bool) error
+
+	// add recovery code
 	GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
 	GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error)
+	ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error)
 
 	EncryptKey() ([]byte, string, error)
 	DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error)
@@ -80,10 +86,18 @@ func (s service) CreateConfigs(ctx *gin.Context) (models.TwoAuths, string, error
 	return savedModel, authLink, err
 }
 
+func (s service) TwoFAUserUpdate(ctx *gin.Context, userID uint64, isEnabled bool) error {
+	return s.repo.TwoFAUserUpdate(ctx, userID, isEnabled)
+}
+
 func (s service) GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error) {
 	return s.repo.GenerateRecoveryCode(ctx, userID)
 }
 
 func (s service) GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error) {
 	return s.repo.GetAllRecoveryCode(ctx, userID)
+}
+
+func (s service) ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error) {
+	return s.repo.ValidateRecoveryCode(ctx, recoveryCode, userID)
 }

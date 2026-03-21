@@ -13,16 +13,26 @@ type Users struct {
 
 	Roles       string        `json:"roles" gorm:"-"`
 	UserSocials []UserSocials `json:"user_socials" gorm:"foreignkey:UserID"`
+
+	TwoFaModels *TwoAuthsModels `gorm:"-" json:"two_fa_models"`
 }
 
 func (Users) TableName() string {
 	return "users"
 }
 
+type TwoAuthsModels struct {
+	TOTP         bool `gorm:"column:-" json:"totp"`
+	RecoveryCode bool `gorm:"column:-" json:"recovery_code"`
+	Email        bool `gorm:"column:-" json:"email"`
+}
+
 type UserProfile struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Status   int8   `json:"status"`
+	Username     string `json:"username"`
+	Email        string `json:"email"`
+	Status       int8   `json:"status"`
+	MobilePhone  string `json:"mobile_phone"`
+	TwoFaEnabled bool   `json:"two_fa_enabled"`
 
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`

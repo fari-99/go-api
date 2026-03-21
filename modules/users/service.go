@@ -129,9 +129,12 @@ func (s service) UserProfile(ctx *gin.Context, userID uint64) (models.UserProfil
 	}
 
 	userProfile := models.UserProfile{
-		Username:  userModel.Username,
-		Email:     userModel.Email,
-		Status:    userModel.Status,
+		Username:     userModel.Username,
+		Email:        userModel.Email,
+		Status:       userModel.Status,
+		MobilePhone:  userModel.MobilePhone,
+		TwoFaEnabled: userModel.TwoFaEnabled,
+
 		CreatedAt: userModel.CreatedAt,
 		UpdatedAt: userModel.UpdatedAt,
 	}

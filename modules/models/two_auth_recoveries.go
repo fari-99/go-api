@@ -7,6 +7,6 @@ type TwoAuthRecoveries struct {
 	Status int8   `gorm:"column:status" json:"status"`
 }
 
-func (TwoAuthRecoveries) TwoAuths() string {
+func (TwoAuthRecoveries) TableName() string {
 	return "two_fa_recoveries"
 }

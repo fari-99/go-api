@@ -15,9 +15,15 @@ import (
 
 type Repository interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
+
+	// 2FA
 	CreateConfigs(ctx *gin.Context, twoAuthModel models.TwoAuths) (models.TwoAuths, error)
+	TwoFAUserUpdate(ctx *gin.Context, userID uint64, isEnabled bool) error
+
+	// Recovery Code
 	GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
 	GetAllRecoveryCode(ctx *gin.Context, userID uint64) (recoveryCodeModels []models.TwoAuthRecoveries, err error)
+	ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error)
 }
 
 type repository struct {
@@ -47,6 +53,47 @@ func (r repository) CreateConfigs(ctx *gin.Context, twoAuthModel models.TwoAuths
 	}
 
 	return twoAuthModel, nil
+}
+
+func (r repository) TwoFAUserUpdate(ctx *gin.Context, userID uint64, isEnabled bool) error {
+	db := r.DB.WithContext(ctx)
+
+	dbTx := db.Begin()
+	var errDB error
+	defer func() {
+		if r := recover(); r != nil {
+			dbTx.Rollback()
+			return
+		}
+
+		if errDB != nil {
+			dbTx.Rollback()
+			return
+		}
+	}()
+
+	errDB = dbTx.Table("users").
+		Where("id = ?", userID).
+		Update("two_fa_enabled", isEnabled).Error
+	if errDB != nil {
+		return errDB
+	}
+
+	if !isEnabled {
+		var twoFaModel models.TwoAuths
+		errDB = dbTx.Where("user_id = ?", userID).First(&twoFaModel).Error
+		if errDB != nil {
+			return errDB
+		}
+
+		errDB = dbTx.Delete(&twoFaModel).Error
+		if errDB != nil {
+			return errDB
+		}
+	}
+
+	dbTx.Commit()
+	return nil
 }
 
 func (r repository) GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error) {
@@ -97,4 +144,24 @@ func (r repository) GenerateRecoveryCode(ctx *gin.Context, userID uint64) ([]str
 
 	tx.Commit()
 	return code, nil
+}
+
+func (r repository) ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error) {
+	db := r.DB.WithContext(ctx)
+
+	var recoveryCodeModel models.TwoAuthRecoveries
+	err := db.Where(&models.TwoAuthRecoveries{
+		UserID: models.IDType(userID),
+		Code:   recoveryCode,
+	}).First(&recoveryCodeModel).Error
+	if err != nil {
+		return false, err
+	}
+
+	err = db.Delete(&recoveryCodeModel).Error
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

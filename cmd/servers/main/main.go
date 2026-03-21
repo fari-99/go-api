@@ -42,7 +42,7 @@ func main() {
 	di := configs.DIInit()
 	authentication := middleware.AuthMiddleware(middleware.BaseMiddleware{})
 	refreshAuth := middleware.RefreshAuthMiddleware(middleware.BaseMiddleware{})
-	// otpMiddleware := middleware.OTPMiddlewareLogin()
+	// otpMiddleware := middleware.TOTPMiddlewareLogin()
 	// rbacMiddleware := middleware.PermissionMiddleware()
 	// versions := middleware.VersionMiddleware(map[string]bool{
 	//	"v0": false,
