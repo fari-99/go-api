@@ -12,7 +12,7 @@ import (
 
 type DI struct {
 	DB            *gorm.DB
-	Redis         redis.UniversalClient
+	RedisSession  redis.UniversalClient
 	RedisCache    *cache.Cache
 	Queue         *rabbitmq.QueueSetup
 	EmailDialler  *gomail.Dialer
@@ -25,7 +25,7 @@ func DIInit() *DI {
 		DB:            DatabaseBase(MySQLType).GetMysqlConnection(true),
 		ElasticSearch: GetElasticSearch(),
 		EmailDialler:  GetEmail(),
-		Redis:         GetRedisSessionConfig(),
+		RedisSession:  GetRedis(REDIS_SESSION_PREFIX),
 		RedisCache:    GetRedisCache(),
 		Queue:         rabbitmq.NewBaseQueue("", ""),
 		// Telegram:      GetTelegram(), // TODO: create new bot, old one deprecated
@@ -40,12 +40,12 @@ func (di *DI) CloseDI() {
 		sqlDB.Close()
 	}
 
-	if di.Redis != nil {
-		di.Redis.Close()
+	if di.RedisSession != nil {
+		di.RedisSession.Close()
 	}
 
 	if di.RedisCache != nil {
-		di.Redis.Close()
+		di.RedisSession.Close()
 	}
 
 	if di.Queue != nil {

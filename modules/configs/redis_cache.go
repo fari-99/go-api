@@ -11,7 +11,7 @@ import (
 )
 
 func GetRedisCache() *cache.Cache {
-	log.Println("Initialize Redis Cache connection...")
+	log.Println("Initialize RedisSession Cache connection...")
 
 	redisCacheDB, _ := strconv.ParseInt(os.Getenv("REDIS_CACHE_DB"), 10, 64)
 
@@ -31,6 +31,6 @@ func GetRedisCache() *cache.Cache {
 		},
 	})
 
-	log.Println("Success Initialize Redis Cache connection...")
+	log.Println("Success Initialize RedisSession Cache connection...")
 	return redisCache
 }

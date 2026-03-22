@@ -8,9 +8,12 @@ import (
 
 	"github.com/dgryski/dgoogauth"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redsync/redsync/v4"
 	"rsc.io/qr"
 
 	"go-api/helpers"
+	"go-api/modules/configs"
+	"go-api/pkg/redis_helpers"
 )
 
 type controller struct {
@@ -49,7 +52,7 @@ func (c controller) CreateTotp(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: Set Redis to "TEMP_ENABLED_2FA:UserID"
+	// TODO: Set RedisSession to "TEMP_ENABLED_2FA:UserID"
 
 	img := code.PNG()
 	buf := bytes.NewReader(img)
@@ -65,6 +68,47 @@ func (c controller) ValidateTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
+
+	keyRedLock := "VALIDATE_TOTP:" + currentUser.ID.String()
+	redLock := configs.GetRedisLock()
+	mutex := redLock.NewMutex(keyRedLock)
+	if err := mutex.Lock(); err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to acquire redis lock",
+		})
+		return
+	}
+
+	defer func(mutex *redsync.Mutex) {
+		if ok, err := mutex.Unlock(); !ok || err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+				"error_message": "failed to unlock redis lock",
+			})
+			return
+		}
+	}(mutex)
+
+	action, _ := ctx.Params.Get("action")
+	countRed := redis_helpers.CounterConfig{
+		Ctx:    ctx.Request.Context(),
+		UserID: userID,
+		Type:   redis_helpers.CounterTypeTotp,
+		Action: action,
+	}
+
+	err := countRed.Count()
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "counter is not valid, please try again later",
+		})
+		return
+	}
+
+	defer func() {
+		_ = countRed.Reset()
+	}()
 
 	twoAuthModel, notFound, err := c.service.GetDetails(ctx, userID)
 	if err != nil {
@@ -115,14 +159,14 @@ func (c controller) ValidateTotp(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: CHECK Redis to "TEMP_ENABLED_2FA:UserID", if true, then update user model to 2FA enabled
-	err = c.service.UserEnabledTotp(ctx, userID, true)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, map[string]interface{}{
-			"error":         err.Error(),
-			"error_message": "failed to update 2FA configuration",
-		})
-	}
+	// TODO: CHECK RedisSession to "TEMP_ENABLED_2FA:UserID", if true, then update user model to 2FA enabled
+	// err = c.service.UserEnabledTotp(ctx, userID, true)
+	// if err != nil {
+	// 	helpers.NewResponse(ctx, http.StatusInternalServerError, map[string]interface{}{
+	// 		"error":         err.Error(),
+	// 		"error_message": "failed to update 2FA configuration",
+	// 	})
+	// }
 
 	helpers.NewResponse(ctx, http.StatusOK, fmt.Sprintf("success to authenticate"))
 	return
@@ -184,6 +228,47 @@ func (c controller) ValidateRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
+
+	keyRedLock := "VALIDATE_RECOVERY_CODE:" + currentUser.ID.String()
+	redLock := configs.GetRedisLock()
+	mutex := redLock.NewMutex(keyRedLock)
+	if err := mutex.Lock(); err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to acquire redis lock for recovery code",
+		})
+		return
+	}
+
+	defer func(mutex *redsync.Mutex) {
+		if ok, err := mutex.Unlock(); !ok || err != nil {
+			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+				"error_message": "failed to unlock redis lock",
+			})
+			return
+		}
+	}(mutex)
+
+	action, _ := ctx.Params.Get("action")
+	countRed := redis_helpers.CounterConfig{
+		Ctx:    ctx.Request.Context(),
+		UserID: userID,
+		Type:   redis_helpers.CounterTypeRecoveryCode,
+		Action: action,
+	}
+
+	err := countRed.Count()
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "counter is not valid, please try again later",
+		})
+		return
+	}
+
+	defer func() {
+		_ = countRed.Reset()
+	}()
 
 	_, notFound, err := c.service.GetDetails(ctx, userID)
 	if err != nil {

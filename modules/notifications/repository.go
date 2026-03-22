@@ -32,7 +32,7 @@ func NewRepository(di *configs.DI) Repository {
 }
 
 func (r repository) QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bool, err error) {
-	redisClient := r.Redis
+	redisClient := r.RedisSession
 	qrCode, err = redisClient.Get(ctx, constant.QRCodeWhatsapp).Result()
 	if err == redis.Nil {
 		return "", false, nil

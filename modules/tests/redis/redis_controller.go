@@ -16,7 +16,7 @@ type TestRedisController struct {
 }
 
 func (controller *TestRedisController) TestRedisAction(ctx *gin.Context) {
-	redisConfig := controller.Redis
+	redisConfig := controller.RedisSession
 	expired := time.Unix(time.Now().Add(time.Minute*15).Unix(), 0)
 
 	redisConfig.Set(ctx, "key", "value", expired.Sub(time.Now()))

@@ -1,7 +1,7 @@
 package constant
 
-// Redis Session
+// RedisSession Session
 
 const QRCodeWhatsapp = "QR-CODE-WHATSAPP"
 
-// Redis Cache
+// RedisSession Cache

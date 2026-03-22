@@ -7,7 +7,7 @@ import (
 )
 
 func NewRoute(app *gin.Engine) {
-	log.Println("Setup Test Redis router")
+	log.Println("Setup Test RedisSession router")
 
 	testRedis := app.Group("/test-redis")
 	{

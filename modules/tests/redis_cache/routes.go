@@ -7,7 +7,7 @@ import (
 )
 
 func NewRoute(app *gin.Engine) {
-	log.Println("Setup Test Redis Cache router")
+	log.Println("Setup Test RedisSession Cache router")
 
 	redisCache := app.Group("/test-redis-cache")
 	{

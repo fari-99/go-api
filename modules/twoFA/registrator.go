@@ -16,7 +16,7 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 
 		// 2FA
 		totp2FA.POST("/create", control.CreateTotp)
-		totp2FA.POST("/validate", control.ValidateTotp)
+		totp2FA.POST("/validate/:action", control.ValidateTotp)
 		totp2FA.PUT("/disabled", control.DisabledTotp)
 	}
 
@@ -26,7 +26,7 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 
 		// Recovery Code
 		recoveryCode2FA.GET("/create", control.CreateRecoveryCode)
-		recoveryCode2FA.POST("/validate", control.ValidateRecoveryCode)
+		recoveryCode2FA.POST("/validate/:action", control.ValidateRecoveryCode)
 		recoveryCode2FA.PUT("/disabled", control.DisabledTotp) // TODO: add disable recovery code
 	}
 }

@@ -122,7 +122,7 @@ func getTotalLogin(ctx context.Context, redisSession redis.UniversalClient, user
 
 func getAllUuid(ctx context.Context, username string) (accessUuids []string, refreshUuids []string, err error) {
 	keyRedis := getKeyRedis(username, "")
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 
 	err = removeExpiredToken(ctx, redisSession, username)
 	if err != nil {
@@ -143,7 +143,7 @@ func getAllUuid(ctx context.Context, username string) (accessUuids []string, ref
 }
 
 func setRedisSession(ctx context.Context, username string, data SessionData) error {
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 	dataMarshal, _ := json.Marshal(data.UserDetails) // TODO : Adding device details
 
 	keyRedis := getKeyRedis(username, data.Token.Uuid)
@@ -198,7 +198,7 @@ func GetAllSessions(ctx context.Context, username string) ([]models.Users, error
 
 func CheckToken(ctx context.Context, username, uuid string) (isExistAccess, isExistRefresh bool, err error) {
 	keyRedis := getKeyRedis(username, uuid)
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 
 	resultAccess, err := redisSession.Exists(ctx, keyRedis.KeyAccess).Result()
 	if err != nil {
@@ -222,7 +222,7 @@ func SetupLoginSession(ctx context.Context, username string, data SessionData) (
 	// 3. get total login using zcard (zcard username:access_token) (zcard username:refresh_token)
 	// 4. return total login
 
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 	totalLoginAccessToken, _, err := getTotalLogin(ctx, redisSession, username)
 	if err != nil {
 		return 0, err
@@ -253,7 +253,7 @@ func RemoveRedisSession(ctx context.Context, username, uuid string) (totalLogin 
 
 	keyRedis := getKeyRedis(username, uuid)
 
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 	err = redisSession.Del(ctx, keyRedis.KeyAccess).Err() // delete access token redis
 	if err != nil {
 		return 0, err
@@ -342,7 +342,7 @@ func SetFamily(ctx context.Context, username, oldUuid, newUuid string, expiratio
 	dataMarshal, _ := json.Marshal(dataFamily)
 
 	keyRedis := getKeyRedis(username, oldUuid)
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 	_, err = redisSession.Set(ctx, keyRedis.KeyFamily, string(dataMarshal), getTimeDuration(expiration)).Result()
 	if err != nil {
 		return err
@@ -355,7 +355,7 @@ func SetFamily(ctx context.Context, username, oldUuid, newUuid string, expiratio
 func CheckFamily(ctx context.Context, username, oldUuid string) (isUsed bool, err error) {
 	// check if old_uuid already used, by set (set old_uuid:family old_uuid)
 	keyRedis := getKeyRedis(username, oldUuid)
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 
 	// check if old_uuid is in the family that already refreshed
 	familyDataMarshal, err := redisSession.Get(ctx, keyRedis.KeyFamily).Result()
@@ -387,7 +387,7 @@ func CheckFamily(ctx context.Context, username, oldUuid string) (isUsed bool, er
 func GetCurrentUser(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
 	keyRedis := getKeyRedis("", uuidIdentifier)
 
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 	redisData, err := redisSession.Get(ctx, keyRedis.KeyAccess).Result()
 	if err != nil {
 		return nil, err
@@ -405,7 +405,7 @@ func GetCurrentUser(ctx context.Context, uuidIdentifier string) (*models.Users, 
 func GetCurrentUserRefresh(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
 	keyRedis := getKeyRedis("", uuidIdentifier)
 
-	redisSession := configs.GetRedisSessionConfig()
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 	redisData, err := redisSession.Get(ctx, keyRedis.KeyRefresh).Result()
 	if err != nil {
 		return nil, err
