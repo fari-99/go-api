@@ -127,6 +127,10 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 	currentUserMarshal, _ := json.Marshal(currentUser)
 	ctx.Set("user_details", string(currentUserMarshal))
 
+	// 2fa configs to ctx
+	twoFAModels, _ := json.Marshal(claims.TwoFAModels)
+	ctx.Set("two_fa_models", string(twoFAModels))
+
 	// check app origin
 	if appExists, _, _ := gohelper.InArray(base.AllowedAppName, claims.TokenData.AppData.AppName); !appExists && len(base.AllowedAppName) > 0 {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{

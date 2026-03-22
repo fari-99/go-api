@@ -10,7 +10,7 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 	log.Println("Setup Customer 2FA router")
 	control := controller{service: service}
 
-	totp2FA := app.Group("/users/totp")
+	totp2FA := app.Group("/users/2fa/totp")
 	{
 		totp2FA.Use(authHandler)
 
@@ -20,7 +20,7 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 		totp2FA.PUT("/disabled", control.DisabledTotp)
 	}
 
-	recoveryCode2FA := app.Group("/users/recovery-code")
+	recoveryCode2FA := app.Group("/users/2fa/recovery-code")
 	{
 		recoveryCode2FA.Use(authHandler)
 
