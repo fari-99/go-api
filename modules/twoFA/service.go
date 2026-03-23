@@ -16,6 +16,7 @@ import (
 
 type Service interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
+	GetUserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
 
 	// 2FA
 	CreateTotp(ctx *gin.Context) (string, string, error)
@@ -62,6 +63,10 @@ func (s service) DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error) {
 
 func (s service) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error) {
 	return s.repo.GetDetails(ctx, userID)
+}
+
+func (s service) GetUserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
+	return s.repo.GetUserDetails(ctx, userID)
 }
 
 func (s service) CreateTotp(ctx *gin.Context) (string, string, error) {

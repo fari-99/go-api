@@ -8,6 +8,7 @@ import (
 	"go-api/constant"
 	"go-api/modules/configs"
 	"go-api/modules/models"
+	"go-api/modules/users"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -15,6 +16,7 @@ import (
 
 type Repository interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
+	GetUserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
 
 	// 2FA
 	CreateTotp(ctx *gin.Context, twoAuthModel models.TwoAuths) (models.TwoAuths, error)
@@ -46,6 +48,12 @@ func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuth
 	return &twoAuthModel, false, nil
 }
 
+func (r repository) GetUserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
+	userService := users.NewService(users.NewRepository(r.DI))
+	userModel, notExists, err := userService.UserDetails(ctx, userID)
+	return userModel, notExists, err
+}
+
 func (r repository) CreateTotp(ctx *gin.Context, twoAuthModel models.TwoAuths) (models.TwoAuths, error) {
 	err := r.DB.Create(&twoAuthModel).Error
 	if err != nil {
@@ -58,7 +66,7 @@ func (r repository) CreateTotp(ctx *gin.Context, twoAuthModel models.TwoAuths) (
 func (r repository) UserEnabledTotp(ctx *gin.Context, userID uint64, isEnabled bool) error {
 	db := r.DB.WithContext(ctx)
 
-	dbTx := db.Begin()
+	dbTx := db.Begin().Debug()
 	var errDB error
 	defer func() {
 		if r := recover(); r != nil {

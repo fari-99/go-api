@@ -18,6 +18,7 @@ import (
 type Service interface {
 	CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error)
 	UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error)
+	UserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
 	ChangePassword(ctx *gin.Context, input RequestChangePassword) (exists bool, err error)
 	ForgotPassword(ctx *gin.Context, input ForgotPasswordRequest) (userCodes *models.UserCodes, notFound bool, err error)
 	ForgotUsername(ctx *gin.Context, input ForgotUsernameRequest) (exists bool, err error)
@@ -142,6 +143,11 @@ func (s service) UserProfile(ctx *gin.Context, userID uint64) (models.UserProfil
 	}
 
 	return userProfile, nil
+}
+
+func (s service) UserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
+	userModel, notFound, err := s.repo.GetDetails(ctx, userID)
+	return userModel, notFound, err
 }
 
 func (s service) CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error) {

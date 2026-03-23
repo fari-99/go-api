@@ -51,7 +51,12 @@ func (r repository) AuthenticatePassword(ctx *gin.Context, input RequestAuthUser
 
 func (r repository) GetUserDetails(ctx *gin.Context, id uint64) (models.Users, error) {
 	userService := users.NewService(users.NewRepository(r.DI))
-	userProfile, err := userService.UserProfile(ctx, id)
+	userProfile, notFound, err := userService.UserDetails(ctx, id)
+	if err != nil {
+		return models.Users{}, err
+	} else if notFound {
+		return models.Users{}, errors.New("user not found")
+	}
 
 	var userModel models.Users
 	userProfileMarshal, _ := json.Marshal(userProfile)

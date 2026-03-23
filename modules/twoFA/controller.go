@@ -209,8 +209,22 @@ func (c controller) DisabledTotp(ctx *gin.Context) {
 		return
 	}
 
-	// TODO: check password to disabled
-	err = helpers.PasswordAuth("", input.Password)
+	userModel, notFound, err := c.service.GetUserDetails(ctx, userID)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "error getting user details",
+		})
+		return
+	} else if notFound {
+		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
+			"error":         "user not found",
+			"error_message": "user not found",
+		})
+		return
+	}
+
+	err = helpers.PasswordAuth(userModel.Password, input.Password)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -225,9 +239,10 @@ func (c controller) DisabledTotp(ctx *gin.Context) {
 			"error":         err.Error(),
 			"error_message": "failed to update 2FA configuration",
 		})
+		return
 	}
 
-	helpers.NewResponse(ctx, http.StatusOK, fmt.Sprintf("success to authenticate"))
+	helpers.NewResponse(ctx, http.StatusOK, fmt.Sprintf("success disable 2FA [TOTP]"))
 	return
 }
 
