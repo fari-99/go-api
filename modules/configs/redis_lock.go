@@ -31,7 +31,7 @@ func getRedisLockConfig() redis.UniversalOptions {
 		MinIdleConns: cast.ToInt(redisLockMinIdleConn),
 	}
 
-	if redisLockUsername != "" && redisLockPassword != "" {
+	if redisLockPassword != "" {
 		redisOption.Username = redisLockUsername
 		redisOption.Password = redisLockPassword
 	}

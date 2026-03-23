@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -359,9 +360,9 @@ func CheckFamily(ctx context.Context, username, oldUuid string) (isUsed bool, er
 
 	// check if old_uuid is in the family that already refreshed
 	familyDataMarshal, err := redisSession.Get(ctx, keyRedis.KeyFamily).Result()
-	if err != nil && err != redis.Nil {
+	if err != nil && !errors.Is(err, redis.Nil) {
 		return false, err
-	} else if err == redis.Nil {
+	} else if errors.Is(err, redis.Nil) {
 		// if not found, then old_uuid is a new_uuid
 		return false, nil
 	}

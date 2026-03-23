@@ -32,24 +32,16 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 	}
 
 	tokenCompiled := map[string]interface{}{
-		"total_login":   authData.TotalLogin,
-		"access_token":  authData.Token.AccessToken,
-		"refresh_token": authData.Token.RefreshToken,
+		"total_login":  authData.TotalLogin,
+		"access_token": authData.Token.AccessToken,
+		// "refresh_token":  authData.Token.RefreshToken,
+		"two_fa_enabled": false,
 	}
 
 	if authData.UserModel.TwoFaEnabled {
+		tokenCompiled["two_fa_enabled"] = true
 		tokenCompiled["two_fa_models"] = authData.UserModel.TwoFaModels
 	}
-
-	http.SetCookie(ctx.Writer, &http.Cookie{
-		Name:     "access_token",
-		Value:    authData.Token.AccessToken,
-		Path:     "/",
-		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  authData.Token.AccessExpiredAt,
-		Secure:   false,
-		HttpOnly: true,
-	})
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:     "refresh_token",
@@ -66,7 +58,7 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 }
 
 func (c controller) RefreshSession(ctx *gin.Context) {
-	newToken, isExists, err := c.service.RefreshAuth(ctx)
+	authData, isExists, err := c.service.RefreshAuth(ctx)
 	if !isExists {
 		helpers.NewResponse(ctx, http.StatusUnauthorized, "you need to re-login")
 		return
@@ -76,26 +68,23 @@ func (c controller) RefreshSession(ctx *gin.Context) {
 	}
 
 	tokenCompiled := map[string]interface{}{
-		"access_token":  newToken.AccessToken,
-		"refresh_token": newToken.RefreshToken,
+		"total_login":  authData.TotalLogin,
+		"access_token": authData.Token.AccessToken,
+		// "refresh_token":  authData.Token.RefreshToken,
+		"two_fa_enabled": false,
+	}
+
+	if authData.UserModel.TwoFaEnabled {
+		tokenCompiled["two_fa_enabled"] = true
+		tokenCompiled["two_fa_models"] = authData.UserModel.TwoFaModels
 	}
 
 	http.SetCookie(ctx.Writer, &http.Cookie{
-		Name:     "access_token",
-		Value:    newToken.AccessToken,
-		Path:     "/",
-		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  newToken.AccessExpiredAt,
-		Secure:   false,
-		HttpOnly: true,
-	})
-
-	http.SetCookie(ctx.Writer, &http.Cookie{
 		Name:     "refresh_token",
-		Value:    newToken.RefreshToken,
+		Value:    authData.Token.RefreshToken,
 		Path:     "/",
 		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  newToken.RefreshExpiredAt,
+		Expires:  authData.Token.RefreshExpiredAt,
 		Secure:   false,
 		HttpOnly: true,
 	})

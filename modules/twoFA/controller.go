@@ -1,17 +1,14 @@
 package twoFA
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/dgryski/dgoogauth"
 	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redsync/redsync/v4"
-	"rsc.io/qr"
 
 	"go-api/helpers"
 	"go-api/modules/configs"
@@ -42,7 +39,7 @@ func (c controller) CreateTotp(ctx *gin.Context) {
 		return
 	}
 
-	_, authLink, err := c.service.CreateTotp(ctx)
+	secret, authLink, err := c.service.CreateTotp(ctx)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -51,19 +48,10 @@ func (c controller) CreateTotp(ctx *gin.Context) {
 		return
 	}
 
-	code, err := qr.Encode(authLink, qr.H)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	img := code.PNG()
-	buf := bytes.NewReader(img)
-
-	responseWriter := ctx.Writer
-	responseWriter.Header().Set("Content-Type", "image/png")
-	responseWriter.WriteHeader(http.StatusOK)
-	_, _ = io.Copy(responseWriter, buf)
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"secret": secret,
+		"link":   authLink,
+	})
 	return
 }
 

@@ -15,7 +15,7 @@ import (
 )
 
 type Repository interface {
-	AuthenticatePassword(input RequestAuthUser) (*models.Users, bool, error)
+	AuthenticatePassword(ctx *gin.Context, input RequestAuthUser) (*models.Users, bool, error)
 	GetUserDetails(ctx *gin.Context, id uint64) (models.Users, error)
 }
 
@@ -27,7 +27,7 @@ func NewRepository(di *configs.DI) Repository {
 	return repository{DI: di}
 }
 
-func (r repository) AuthenticatePassword(input RequestAuthUser) (*models.Users, bool, error) {
+func (r repository) AuthenticatePassword(ctx *gin.Context, input RequestAuthUser) (*models.Users, bool, error) {
 	db := r.DB
 
 	var customerModel models.Users
@@ -45,21 +45,8 @@ func (r repository) AuthenticatePassword(input RequestAuthUser) (*models.Users, 
 		return &customerModel, false, nil
 	}
 
-	var twoFaModel models.TwoAuths
-	err = db.Where(&models.TwoAuths{UserID: customerModel.ID}).First(&twoFaModel).Error
-	if err == nil {
-		customerModel.TwoFaModels.TOTP = true
-	}
-
-	var recoveryCodeModel models.TwoAuthRecoveries
-	err = db.Where(&models.TwoAuthRecoveries{UserID: customerModel.ID}).First(&recoveryCodeModel).Error
-	if err == nil {
-		customerModel.TwoFaModels.RecoveryCode = true
-	}
-
-	// TODO: models 2FA emails
-
-	return &customerModel, false, nil
+	userModel, err := r.GetUserDetails(ctx, customerModel.ID.Uint64())
+	return &userModel, false, err
 }
 
 func (r repository) GetUserDetails(ctx *gin.Context, id uint64) (models.Users, error) {

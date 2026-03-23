@@ -25,7 +25,7 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 		recoveryCode2FA.Use(authHandler)
 
 		// Recovery Code
-		recoveryCode2FA.GET("/create", control.CreateRecoveryCode)
+		recoveryCode2FA.POST("/create", control.CreateRecoveryCode)
 		recoveryCode2FA.POST("/validate/:action", control.ValidateRecoveryCode)
 		recoveryCode2FA.PUT("/disabled", control.DisabledTotp) // TODO: add disable recovery code
 	}

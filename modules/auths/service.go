@@ -14,7 +14,7 @@ import (
 
 type Service interface {
 	AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (authData *AuthData, isExists bool, err error)
-	RefreshAuth(ctx *gin.Context) (token *token_generator.SignedToken, isExists bool, err error)
+	RefreshAuth(ctx *gin.Context) (authData *AuthData, isExists bool, err error)
 	SignOutUser(ctx *gin.Context) (totalLogin int64, isExists bool, err error)
 	DeleteAllSession(ctx *gin.Context) (isExists bool, err error)
 	AllSessions(ctx *gin.Context) (allDevices []models.Users, err error)
@@ -29,7 +29,7 @@ func NewService(repo Repository) Service {
 	return service{repo: repo}
 }
 
-func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.SignedToken, isExists bool, err error) {
+func (s service) RefreshAuth(ctx *gin.Context) (authData *AuthData, isExists bool, err error) {
 	// check if refresh token still exists using exists (exists uuid:refresh_token)
 	// - if refresh token not exists, send new auth (isExists: false)
 	// - if refresh token exists, update token expired_at
@@ -60,7 +60,7 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 		return nil, false, err
 	}
 
-	_, err = s.setRedisSession(ctx, token, &userDetails)
+	totalLogin, err := s.setRedisSession(ctx, token, &userDetails)
 	if err != nil {
 		return nil, false, err
 	}
@@ -72,7 +72,13 @@ func (s service) RefreshAuth(ctx *gin.Context) (signedToken *token_generator.Sig
 		return nil, false, err
 	}
 
-	return token, true, nil
+	authData = &AuthData{
+		UserModel:  &userDetails,
+		TotalLogin: totalLogin,
+		Token:      token,
+	}
+
+	return authData, true, nil
 }
 
 func (s service) DeleteSession(ctx *gin.Context, uuid string) (totalLogin int64, isExists bool, err error) {
@@ -136,7 +142,7 @@ func (s service) AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (*Aut
 		return nil, false, err
 	}
 
-	userModel, notFound, err := s.repo.AuthenticatePassword(input)
+	userModel, notFound, err := s.repo.AuthenticatePassword(ctx, input)
 	if err != nil {
 		return nil, false, err
 	} else if notFound {
@@ -171,11 +177,18 @@ func (s service) generateToken(ctx *gin.Context, userModel models.Users) (signed
 	userRoles := strings.Split(userModel.Roles, ",")
 
 	userData := token_generator.UserDetails{
-		ID:           userModel.ID.String(),
-		Email:        userModel.Email,
-		Username:     userModel.Username,
-		UserRoles:    userRoles,
-		TwoFAEnabled: userModel.TwoFaEnabled,
+		ID:        userModel.ID.String(),
+		Email:     userModel.Email,
+		Username:  userModel.Username,
+		UserRoles: userRoles,
+	}
+
+	if userModel.TwoFaEnabled && userModel.TwoFaModels != nil {
+		userData.TwoFAModels = token_generator.TwoFAModels{
+			TOTP:         userModel.TwoFaModels.TOTP,
+			RecoveryCode: userModel.TwoFaModels.RecoveryCode,
+			Email:        userModel.TwoFaModels.Email,
+		}
 	}
 
 	tokenHelper := token_generator.NewJwt(secretToken, refreshToken, signMethod).SetCtx(ctx.Request)

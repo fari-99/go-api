@@ -18,7 +18,7 @@ type Service interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
 
 	// 2FA
-	CreateTotp(ctx *gin.Context) (models.TwoAuths, string, error)
+	CreateTotp(ctx *gin.Context) (string, string, error)
 	UserEnabledTotp(ctx *gin.Context, userID uint64, isEnabled bool) error
 
 	// Recovery Code
@@ -64,13 +64,13 @@ func (s service) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, 
 	return s.repo.GetDetails(ctx, userID)
 }
 
-func (s service) CreateTotp(ctx *gin.Context) (models.TwoAuths, string, error) {
+func (s service) CreateTotp(ctx *gin.Context) (string, string, error) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
 	encryptSecret, encodedSecret, err := s.EncryptKey()
 	if err != nil {
-		return models.TwoAuths{}, "", err
+		return "", "", err
 	}
 
 	twoAuthModel := models.TwoAuths{
@@ -81,10 +81,10 @@ func (s service) CreateTotp(ctx *gin.Context) (models.TwoAuths, string, error) {
 		Status:  constant.StatusActive,
 	}
 
-	savedModel, err := s.repo.CreateTotp(ctx, twoAuthModel)
+	_, err = s.repo.CreateTotp(ctx, twoAuthModel)
 	authLink := fmt.Sprintf("otpauth://totp/%s:%s?secret=%s&issuer=%s", twoAuthModel.Issuer, twoAuthModel.Account, encodedSecret, twoAuthModel.Issuer)
 
-	return savedModel, authLink, err
+	return encodedSecret, authLink, err
 }
 
 func (s service) UserEnabledTotp(ctx *gin.Context, userID uint64, isEnabled bool) error {

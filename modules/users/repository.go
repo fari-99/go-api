@@ -155,6 +155,24 @@ func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.Users, 
 		return nil, false, err
 	}
 
+	if !userModel.TwoFaEnabled {
+		return &userModel, false, nil
+	}
+
+	userModel.TwoFaModels = &models.TwoAuthsModels{}
+
+	var twoFaModel models.TwoAuths
+	err = db.Where(&models.TwoAuths{UserID: userModel.ID}).First(&twoFaModel).Error
+	if err == nil {
+		userModel.TwoFaModels.TOTP = true
+	}
+
+	var recoveryCodeModel models.TwoAuthRecoveries
+	err = db.Where(&models.TwoAuthRecoveries{UserID: userModel.ID}).First(&recoveryCodeModel).Error
+	if err == nil {
+		userModel.TwoFaModels.RecoveryCode = true
+	}
+
 	return &userModel, false, nil
 }
 

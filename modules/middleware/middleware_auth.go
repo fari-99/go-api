@@ -65,7 +65,7 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 	cookie, err := ctx.Request.Cookie("refresh_token")
 
 	var accessToken string
-	if err != nil || err == http.ErrNoCookie {
+	if err != nil || errors.Is(err, http.ErrNoCookie) {
 		accessToken = ctx.GetHeader("Authorization")
 	} else {
 		accessToken = fmt.Sprintf("Bearer %s", cookie.Value)
@@ -89,26 +89,26 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 		return
 	}
 
+	if isUsed, err := helpers.CheckFamily(ctx, claims.UserDetails.Username, claims.Uuid); err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+			"message": err.Error(),
+		})
+		ctx.Abort()
+		return
+	} else if isUsed {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("this token already used, please re-authenticate your account"),
+		})
+		ctx.Abort()
+		return
+	}
+
 	base.checkAuth(ctx, claims)
 }
 
 func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.JwtMapClaims) {
 	currentUser, err := helpers.GetCurrentUser(ctx, claims.Uuid)
 	if err != nil {
-		if isUsed, err := helpers.CheckFamily(ctx, "", claims.Uuid); err != nil {
-			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
-				"message": err.Error(),
-			})
-			ctx.Abort()
-			return
-		} else if isUsed {
-			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
-				"message": fmt.Sprintf("this token already used, please re-authenticate your account"),
-			})
-			ctx.Abort()
-			return
-		}
-
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"message":       fmt.Sprintf("authentication error, please re-login"),
 			"error_message": err.Error(),

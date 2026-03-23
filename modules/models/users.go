@@ -37,4 +37,6 @@ type UserProfile struct {
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `json:"deleted_at"`
+
+	TwoFaModels *TwoAuthsModels `gorm:"-" json:"two_fa_models"`
 }

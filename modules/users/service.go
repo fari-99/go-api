@@ -137,6 +137,8 @@ func (s service) UserProfile(ctx *gin.Context, userID uint64) (models.UserProfil
 
 		CreatedAt: userModel.CreatedAt,
 		UpdatedAt: userModel.UpdatedAt,
+
+		TwoFaModels: userModel.TwoFaModels,
 	}
 
 	return userProfile, nil
