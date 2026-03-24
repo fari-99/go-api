@@ -26,6 +26,7 @@ type Repository interface {
 	CreateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
 	GetAllRecoveryCode(ctx *gin.Context, userID uint64) (recoveryCodeModels []models.TwoAuthRecoveries, err error)
 	ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error)
+	DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error
 }
 
 type repository struct {
@@ -172,4 +173,23 @@ func (r repository) ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, 
 	}
 
 	return true, nil
+}
+
+func (r repository) DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error {
+	db := r.DB.WithContext(ctx)
+
+	var recoveryCodeModels []models.TwoAuthRecoveries
+	err := db.Where(&models.TwoAuthRecoveries{
+		UserID: models.IDType(userID),
+	}).Find(&recoveryCodeModels).Error
+	if err != nil {
+		return err
+	}
+
+	err = db.Delete(&recoveryCodeModels).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -26,7 +26,7 @@ type Service interface {
 	CreateRecoveryCode(ctx *gin.Context, userID uint64) ([]string, error)
 	GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.TwoAuthRecoveries, error)
 	ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error)
-	// DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error // TODO: create function
+	DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error
 
 	EncryptKey() ([]byte, string, error)
 	DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error)
@@ -106,4 +106,8 @@ func (s service) GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]models.T
 
 func (s service) ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error) {
 	return s.repo.ValidateRecoveryCode(ctx, recoveryCode, userID)
+}
+
+func (s service) DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error {
+	return s.repo.DeleteAllRecoveryCodes(ctx, userID)
 }

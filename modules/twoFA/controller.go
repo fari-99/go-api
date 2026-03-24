@@ -19,6 +19,53 @@ type controller struct {
 	service Service
 }
 
+func (c controller) disableAuthenticator(ctx *gin.Context, userID uint64) gin.H {
+	_, notFound, err := c.service.GetDetails(ctx, userID)
+	if err != nil {
+		return gin.H{
+			"error":         err.Error(),
+			"error_message": "error get 2FA configuration for your user",
+		}
+	} else if notFound {
+		return gin.H{
+			"error":         "user config not found",
+			"error_message": "user doesn't have 2FA configuration, please create one",
+		}
+	}
+
+	var input Request2FADisabled
+	err = ctx.BindJSON(&input)
+	if err != nil {
+		return gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to bind json input",
+		}
+	}
+
+	userModel, notFound, err := c.service.GetUserDetails(ctx, userID)
+	if err != nil {
+		return gin.H{
+			"error":         err.Error(),
+			"error_message": "error getting user details",
+		}
+	} else if notFound {
+		return gin.H{
+			"error":         "user not found",
+			"error_message": "user not found",
+		}
+	}
+
+	err = helpers.PasswordAuth(userModel.Password, input.Password)
+	if err != nil {
+		return gin.H{
+			"error":         err.Error(),
+			"error_message": "wrong password",
+		}
+	}
+
+	return nil
+}
+
 func (c controller) CreateTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
@@ -184,58 +231,15 @@ func (c controller) DisabledTotp(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
 
-	_, notFound, err := c.service.GetDetails(ctx, userID)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-			"error":         err.Error(),
-			"error_message": "error get 2FA configuration for your user",
-		})
-		return
-	} else if notFound {
-		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
-			"error":         "user config not found",
-			"error_message": "user doesn't have 2FA configuration, please create one",
-		})
+	errData := c.disableAuthenticator(ctx, userID)
+	if errData != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, errData)
 		return
 	}
 
-	var input Request2FADisabled
-	err = ctx.BindJSON(&input)
+	err := c.service.UserEnabledTotp(ctx, userID, false)
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-			"error":         err.Error(),
-			"error_message": "failed to bind json input",
-		})
-		return
-	}
-
-	userModel, notFound, err := c.service.GetUserDetails(ctx, userID)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-			"error":         err.Error(),
-			"error_message": "error getting user details",
-		})
-		return
-	} else if notFound {
-		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
-			"error":         "user not found",
-			"error_message": "user not found",
-		})
-		return
-	}
-
-	err = helpers.PasswordAuth(userModel.Password, input.Password)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-			"error":         err.Error(),
-			"error_message": "wrong password",
-		})
-		return
-	}
-
-	err = c.service.UserEnabledTotp(ctx, userID, false)
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, map[string]interface{}{
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"error":         err.Error(),
 			"error_message": "failed to update 2FA configuration",
 		})
@@ -359,5 +363,31 @@ func (c controller) ValidateRecoveryCode(ctx *gin.Context) {
 	}
 
 	helpers.NewResponse(ctx, http.StatusOK, fmt.Sprintf("success to authenticate"))
+	return
+}
+
+func (c controller) DisableRecoveryCode(ctx *gin.Context) {
+	uuid, _ := ctx.Get("uuid")
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
+	userID := currentUser.ID.Uint64()
+
+	errData := c.disableAuthenticator(ctx, userID)
+	if errData != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, errData)
+		return
+	}
+
+	err := c.service.DeleteAllRecoveryCodes(ctx, userID)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to update 2FA configuration",
+		})
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"message": "successfully disabled 2FA configuration [Recovery Code]",
+	})
 	return
 }
