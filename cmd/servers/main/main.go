@@ -19,6 +19,7 @@ import (
 	"go-api/modules/tests/xendit"
 	"go-api/modules/twoFA"
 	"go-api/modules/users"
+	"go-api/modules/whatsapp"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -89,6 +90,8 @@ func main() {
 	security_cameras.NewRegistrator(app.Group(""),
 		security_cameras.NewService(security_cameras.NewRepository(di)),
 		authentication)
+
+	whatsapp.NewRegistrator(app.Group(""), di, authentication)
 
 	xendit.NewXenditRoutes(app)
 
