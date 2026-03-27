@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"go-api/pkg/otp_helper"
+
 	"github.com/dgryski/dgoogauth"
 	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
@@ -388,6 +390,60 @@ func (c controller) DisableRecoveryCode(ctx *gin.Context) {
 
 	helpers.NewResponse(ctx, http.StatusOK, gin.H{
 		"message": "successfully disabled 2FA configuration [Recovery Code]",
+	})
+	return
+}
+
+func (c controller) EnabledOtp(ctx *gin.Context) {
+	uuid, _ := ctx.Get("uuid")
+	senderType, _ := ctx.Params.Get("sender_type")
+
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
+	userID := currentUser.ID.Uint64()
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"message": "success create otp",
+	})
+	return
+}
+
+func (c controller) CreateOtp(ctx *gin.Context) {
+	uuid, _ := ctx.Get("uuid")
+	senderType, _ := ctx.Params.Get("sender_type")
+	action, _ := ctx.Params.Get("action")
+
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
+	userID := currentUser.ID.Uint64()
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"message": "success create otp",
+	})
+	return
+}
+
+func (c controller) ValidateOtp(ctx *gin.Context) {
+	uuid, _ := ctx.Get("uuid")
+	senderType, _ := ctx.Params.Get("sender_type")
+	action, _ := ctx.Params.Get("action")
+
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
+	userID := currentUser.ID.Uint64()
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"message": "success validate otp",
+	})
+	return
+}
+
+func (c controller) DisableOtp(ctx *gin.Context) {
+	uuid, _ := ctx.Get("uuid")
+	senderType, _ := ctx.Params.Get("sender_type")
+
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
+	userID := currentUser.ID.Uint64()
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"message": "success disable otp",
 	})
 	return
 }

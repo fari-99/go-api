@@ -30,9 +30,12 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 		recoveryCode2FA.PUT("/disabled", control.DisableRecoveryCode)
 	}
 
-	otp2FA := app.Group("/users/2fa/otp")
+	otp2FA := app.Group("/users/2fa/otp/:sender_type")
 	{
 		otp2FA.Use(authHandler)
-
+		otp2FA.POST("/enabled", control.EnabledOtp)
+		otp2FA.POST("/create/:action", control.CreateOtp)
+		otp2FA.POST("/validate/:action", control.ValidateOtp)
+		otp2FA.PUT("/disabled", control.DisableOtp)
 	}
 }
