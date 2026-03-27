@@ -106,7 +106,7 @@ func (base *BaseCommand) getNotificationCommands() []*cli.Command {
 			Action: func(ctx context.Context, command *cli.Command) error {
 				log.Printf("Handling Whatsapp Notification")
 				db := configs.DatabaseBase(configs.MySQLType).GetMysqlConnection(true)
-				redis := configs.GetRedisSessionConfig()
+				redis := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
 				client := configs.WhatsappClient(ctx, redis)
 
 				baseEvent := handlers.NewBaseEventHandler(db, ctx, command)

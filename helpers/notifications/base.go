@@ -3,8 +3,14 @@ package notifications
 import (
 	"bytes"
 	"fmt"
-	"go-api/constant/constant_models"
 	"html/template"
+	"log"
+	"os"
+	"strings"
+	"time"
+
+	"go-api/constant/constant_models"
+	"go-api/helpers"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
@@ -63,6 +69,7 @@ func (base *NotificationHelper) setNotificationTemplate(templatesData []Notifica
 func (base *NotificationHelper) CompileNotificationTemplate(notificationData interface{}) (Notifications, error) {
 	notificationTemplates := base.notificationTemplates
 	notificationTypeLabels := constant_models.GetNotificationTypeLabel()
+	funcMap := base.getFuncMap()
 
 	notifications := make(Notifications)
 	for _, notificationTemplate := range notificationTemplates {
@@ -70,7 +77,7 @@ func (base *NotificationHelper) CompileNotificationTemplate(notificationData int
 		notificationTypeLabel := notificationTypeLabels[notificationType]
 
 		// compile body template
-		bodyTemplate := template.New(fmt.Sprintf("body-notification-%s-logs", notificationTypeLabel))
+		bodyTemplate := template.New(fmt.Sprintf("body-notification-%s-logs", notificationTypeLabel)).Funcs(funcMap)
 		_, err := bodyTemplate.Parse(notificationTemplate.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error parse body template -%s-, err := %s", notificationTypeLabel, err.Error())
@@ -83,7 +90,7 @@ func (base *NotificationHelper) CompileNotificationTemplate(notificationData int
 		}
 
 		// compile subject template
-		subjectTemplate := template.New(fmt.Sprintf("subject-notification-%s-logs", notificationTypeLabel))
+		subjectTemplate := template.New(fmt.Sprintf("subject-notification-%s-logs", notificationTypeLabel)).Funcs(funcMap)
 		_, err = subjectTemplate.Parse(notificationTemplate.Subject)
 		if err != nil {
 			return nil, fmt.Errorf("error parse subject template -%s-, err := %s", notificationTypeLabel, err.Error())
@@ -104,4 +111,69 @@ func (base *NotificationHelper) CompileNotificationTemplate(notificationData int
 	}
 
 	return notifications, nil
+}
+
+func (base *NotificationHelper) getFuncMap() template.FuncMap {
+	return template.FuncMap{
+		// The name "inc" is what the function will be called in the template text.
+		"inc": func(i int) int {
+			return i + 1
+		},
+		"string_date_format": func(date interface{}, parseFormat string, format string) string {
+			formattedDate := ""
+
+			switch date := date.(type) {
+			case string:
+				parsedDate, _ := time.Parse(parseFormat, date)
+				formattedDateData, err := helpers.ToLocale(&parsedDate, format)
+				if err != nil {
+					log.Println("error time ToLocale", err)
+				}
+
+				formattedDate = formattedDateData
+			}
+
+			return formattedDate
+		},
+		"date_format": func(date interface{}, format string) string {
+			formattedDate := ""
+			switch date := date.(type) {
+			case time.Time:
+				formattedDate, _ = helpers.ToLocale(&date, format)
+			}
+
+			return formattedDate
+		},
+		"join": func(sep string, s []string) string {
+			return strings.Join(s, sep)
+		},
+		"default_url": func(urlType string) string {
+			switch urlType {
+			case "asset_url":
+				return os.Getenv("DMP_S3_ASSETS_URL")
+			case "logo_url":
+				return os.Getenv("EMAIL_NEW_LOGO_URL")
+			case "banner_url":
+				return os.Getenv("EMAIL_BANNER_URL")
+			case "youtube_url":
+				return os.Getenv("EMAIL_YOUTUBE_URL")
+			case "youtube_image":
+				return os.Getenv("EMAIL_YOUTUBE_IMAGE")
+			case "facebook_url":
+				return os.Getenv("EMAIL_FACEBOOK_URL")
+			case "facebook_image":
+				return os.Getenv("EMAIL_FACEBOOK_IMAGE")
+			case "instagram_url":
+				return os.Getenv("EMAIL_INSTAGRAM_URL")
+			case "instagram_image":
+				return os.Getenv("EMAIL_INSTAGRAM_IMAGE")
+			case "help_email":
+				return os.Getenv("EMAIL_HELP_EMAIL")
+			case "APP_BUYER_URL":
+				return os.Getenv("APP_BUYER_URL")
+			default:
+				return ""
+			}
+		},
+	}
 }

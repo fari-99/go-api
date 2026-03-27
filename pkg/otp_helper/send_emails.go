@@ -1,15 +1,9 @@
 package otp_helper
 
 import (
-	"bytes"
-	"fmt"
-	"html/template"
-	"log"
 	"os"
-	"strings"
-	"time"
 
-	"go-api/helpers"
+	"go-api/constant"
 	"go-api/helpers/notifications"
 	"go-api/modules/models"
 
@@ -67,95 +61,26 @@ func (s *sendEmailRequest) generateBody(action string, emailData *notifications.
 		return err
 	}
 
-	funcMap := template.FuncMap{
-		// The name "inc" is what the function will be called in the template text.
-		"inc": func(i int) int {
-			return i + 1
-		},
-		"string_date_format": func(date interface{}, parseFormat string, format string) string {
-			formattedDate := ""
-
-			switch date := date.(type) {
-			case string:
-				parsedDate, _ := time.Parse(parseFormat, date)
-				formattedDate, err = helpers.ToLocale(&parsedDate, format)
-				if err != nil {
-					log.Println("error time ToLocale", err)
-				}
-			}
-
-			return formattedDate
-		},
-		"date_format": func(date interface{}, format string) string {
-			formattedDate := ""
-			switch date := date.(type) {
-			case time.Time:
-				formattedDate, _ = helpers.ToLocale(&date, format)
-			}
-
-			return formattedDate
-		},
-		"join": func(sep string, s []string) string {
-			return strings.Join(s, sep)
-		},
-		"default_url": func(urlType string) string {
-			switch urlType {
-			case "asset_url":
-				return os.Getenv("DMP_S3_ASSETS_URL")
-			case "logo_url":
-				return os.Getenv("EMAIL_NEW_LOGO_URL")
-			case "banner_url":
-				return os.Getenv("EMAIL_BANNER_URL")
-			case "youtube_url":
-				return os.Getenv("EMAIL_YOUTUBE_URL")
-			case "youtube_image":
-				return os.Getenv("EMAIL_YOUTUBE_IMAGE")
-			case "facebook_url":
-				return os.Getenv("EMAIL_FACEBOOK_URL")
-			case "facebook_image":
-				return os.Getenv("EMAIL_FACEBOOK_IMAGE")
-			case "instagram_url":
-				return os.Getenv("EMAIL_INSTAGRAM_URL")
-			case "instagram_image":
-				return os.Getenv("EMAIL_INSTAGRAM_IMAGE")
-			case "help_email":
-				return os.Getenv("EMAIL_HELP_EMAIL")
-			case "APP_BUYER_URL":
-				return os.Getenv("APP_BUYER_URL")
-			default:
-				return ""
-			}
+	notifTemplateData := []notifications.NotificationTemplate{
+		{
+			NotificationType: constant.NotificationTypeEmail,
+			Subject:          emailOtpTemplate.Subject,
+			Body:             emailOtpTemplate.Body,
 		},
 	}
 
-	// compile body template
-	bodyTemplate := template.New("body-notification-logs").Funcs(funcMap)
-	_, err = bodyTemplate.Parse(emailOtpTemplate.Body)
+	notifHelper, err := notifications.NewNotificationHelper(notifTemplateData)
 	if err != nil {
-		return fmt.Errorf("error parse body template, err := %s", err.Error())
+		return err
 	}
 
-	bodyBuffer := bytes.NewBufferString("")
-	err = bodyTemplate.Execute(bodyBuffer, notificationData)
+	notifResult, err := notifHelper.CompileNotificationTemplate(notificationData)
 	if err != nil {
-		return fmt.Errorf("error execute data to body template, err := %s", err.Error())
+		return err
 	}
 
-	// compile subject template
-	subjectTemplate := template.New("subject-notification-logs")
-	_, err = subjectTemplate.Parse(emailOtpTemplate.Body)
-	if err != nil {
-		return fmt.Errorf("error parse subject template, err := %s", err.Error())
-	}
-
-	subjectBuffer := bytes.NewBufferString("")
-	err = subjectTemplate.Execute(subjectBuffer, notificationData)
-	if err != nil {
-		return fmt.Errorf("error execute data to subject template, err := %s", err.Error())
-	}
-
-	emailData.Subject = subjectBuffer.String()
-	emailData.Body = bodyBuffer.String()
+	emailData.Body = notifResult[constant.NotificationTypeEmail].Body
+	emailData.Subject = notifResult[constant.NotificationTypeEmail].Subject
 	return nil
 }
 

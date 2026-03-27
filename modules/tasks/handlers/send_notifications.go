@@ -11,7 +11,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/spf13/cast"
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
-	waProto "go.mau.fi/whatsmeow/binary/proto"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
 
@@ -120,7 +120,7 @@ func (base *BaseEventHandler) NotificationWhatsappHandler(body rabbitmq.Consumer
 
 	whatsappClient := base.WhatsappClient
 	targetJid := types.NewJID("6281317699454", types.DefaultUserServer)
-	message := &waProto.Message{
+	message := &waE2E.Message{
 		Conversation: proto.String(input.NotificationTemplate.Body),
 	}
 

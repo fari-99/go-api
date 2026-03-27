@@ -14,7 +14,7 @@ type whatsappTemplate struct {
 func getWhatsappOtpTemplate(db *gorm.DB, action string) (*whatsappTemplate, error) {
 	var smsTemplateModel models.NotificationTemplates
 	err := db.Where(&models.NotificationTemplates{
-		NotificationType: 3, // sms
+		NotificationType: 3, // whatsapp
 		Action:           action,
 		Status:           99,
 	}).First(&smsTemplateModel).Error
