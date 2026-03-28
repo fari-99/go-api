@@ -27,6 +27,11 @@ type Repository interface {
 	GetAllRecoveryCode(ctx *gin.Context, userID uint64) (recoveryCodeModels []models.TwoAuthRecoveries, err error)
 	ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error)
 	DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error
+
+	// OTP
+	GetOtpDetails(ctx *gin.Context, userID uint64, senderType string) (*models.TwoAuths, bool, error)
+	CreateOtpRecord(ctx *gin.Context, userID uint64, senderType string) error
+	DeleteOtpRecord(ctx *gin.Context, userID uint64, senderType string) error
 }
 
 type repository struct {
@@ -192,4 +197,48 @@ func (r repository) DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) erro
 	}
 
 	return nil
+}
+
+func (r repository) GetOtpDetails(ctx *gin.Context, userID uint64, senderType string) (*models.TwoAuths, bool, error) {
+	db := r.DB.WithContext(ctx)
+
+	var twoAuthModel models.TwoAuths
+	err := db.Where(&models.TwoAuths{
+		UserID:   models.IDType(userID),
+		Type:     "otp",
+		SendType: senderType,
+		Status:   constant.StatusActive,
+	}).First(&twoAuthModel).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, true, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+
+	return &twoAuthModel, false, nil
+}
+
+func (r repository) CreateOtpRecord(ctx *gin.Context, userID uint64, senderType string) error {
+	db := r.DB.WithContext(ctx)
+
+	// deactivate any existing OTP record for this sender type
+	db.Model(&models.TwoAuths{}).
+		Where("user_id = ? AND type = ? AND send_type = ?", userID, "otp", senderType).
+		Update("status", constant.StatusNonActive)
+
+	model := models.TwoAuths{
+		UserID:   models.IDType(userID),
+		Type:     "otp",
+		SendType: senderType,
+		Status:   constant.StatusActive,
+	}
+
+	return db.Create(&model).Error
+}
+
+func (r repository) DeleteOtpRecord(ctx *gin.Context, userID uint64, senderType string) error {
+	db := r.DB.WithContext(ctx)
+
+	return db.Where("user_id = ? AND type = ? AND send_type = ?", userID, "otp", senderType).
+		Delete(&models.TwoAuths{}).Error
 }

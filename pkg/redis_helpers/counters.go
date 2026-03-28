@@ -13,9 +13,11 @@ import (
 
 const CounterTypeTotp = "counter_totp"
 const CounterTypeRecoveryCode = "counter_recovery_code"
+const CounterTypeOtp = "counter_otp"
 
 const CounterTotpKey = "COUNTER_TOTP:%d:%s"
 const CounterRecoveryCodeKey = "COUNTER_RECOVERY_CODE:%d:%s"
+const CounterOtpKey = "COUNTER_OTP:%d:%s"
 
 const TwoFAActionTypeCreate = "create"                // first time create
 const TwoFAActionTypeLogin = "login"                  // when login
@@ -44,16 +46,15 @@ func (conf *CounterConfig) Count() error {
 		return errors.New("user_id or action is required")
 	}
 
-	if _, ok := ActionType[conf.Action]; !ok {
-		return fmt.Errorf("invalid action: %s", conf.Action)
-	}
-
 	var key string
 	maxExpMinutes := conf.MaxExpMinutes
 	maxCounter := conf.MaxCounter
 
 	switch conf.Type {
 	case CounterTypeTotp:
+		if _, ok := ActionType[conf.Action]; !ok {
+			return fmt.Errorf("invalid action: %s", conf.Action)
+		}
 		key = fmt.Sprintf(CounterTotpKey, conf.UserID, conf.Action)
 		if maxExpMinutes <= 0 {
 			maxExpMinutes, _ = strconv.ParseInt(os.Getenv("MAX_EXPIRED_COUNTER_TOTP"), 10, 64)
@@ -70,6 +71,9 @@ func (conf *CounterConfig) Count() error {
 		}
 
 	case CounterTypeRecoveryCode:
+		if _, ok := ActionType[conf.Action]; !ok {
+			return fmt.Errorf("invalid action: %s", conf.Action)
+		}
 		key = fmt.Sprintf(CounterRecoveryCodeKey, conf.UserID, conf.Action)
 		if maxExpMinutes <= 0 {
 			maxExpMinutes, _ = strconv.ParseInt(os.Getenv("MAX_EXPIRED_COUNTER_RECOVERY_CODE"), 10, 64)
@@ -82,6 +86,23 @@ func (conf *CounterConfig) Count() error {
 			maxCounter, _ = strconv.ParseInt(os.Getenv("MAX_COUNTER_VALUE_RECOVERY_CODE"), 10, 64)
 			if maxCounter == 0 {
 				maxCounter = 3
+			}
+		}
+
+	case CounterTypeOtp:
+		// OTP actions are free-form (e.g. "enable_otp", "login", etc.) — no strict validation
+		key = fmt.Sprintf(CounterOtpKey, conf.UserID, conf.Action)
+		if maxExpMinutes <= 0 {
+			maxExpMinutes, _ = strconv.ParseInt(os.Getenv("MAX_EXPIRED_COUNTER_OTP"), 10, 64)
+			if maxExpMinutes == 0 {
+				maxExpMinutes = 5
+			}
+		}
+
+		if maxCounter <= 0 {
+			maxCounter, _ = strconv.ParseInt(os.Getenv("MAX_COUNTER_VALUE_OTP"), 10, 64)
+			if maxCounter == 0 {
+				maxCounter = 5
 			}
 		}
 
@@ -98,17 +119,24 @@ func (conf *CounterConfig) Reset() error {
 		return errors.New("user_id or action is required")
 	}
 
-	if _, ok := ActionType[conf.Action]; !ok {
-		return fmt.Errorf("invalid action: %s", conf.Action)
-	}
-
 	var key string
 	switch conf.Type {
 	case CounterTypeTotp:
+		if _, ok := ActionType[conf.Action]; !ok {
+			return fmt.Errorf("invalid action: %s", conf.Action)
+		}
 		key = fmt.Sprintf(CounterTotpKey, conf.UserID, conf.Action)
 
 	case CounterTypeRecoveryCode:
+		if _, ok := ActionType[conf.Action]; !ok {
+			return fmt.Errorf("invalid action: %s", conf.Action)
+		}
 		key = fmt.Sprintf(CounterRecoveryCodeKey, conf.UserID, conf.Action)
+
+	case CounterTypeOtp:
+		// OTP actions are free-form — no strict validation
+		key = fmt.Sprintf(CounterOtpKey, conf.UserID, conf.Action)
+
 	default:
 		return fmt.Errorf("invalid type [%s]", conf.Type)
 	}

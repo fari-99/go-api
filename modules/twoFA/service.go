@@ -28,6 +28,11 @@ type Service interface {
 	ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, userID uint64) (bool, error)
 	DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error
 
+	// OTP
+	GetOtpDetails(ctx *gin.Context, userID uint64, senderType string) (*models.TwoAuths, bool, error)
+	CreateOtpRecord(ctx *gin.Context, userID uint64, senderType string) error
+	DeleteOtpRecord(ctx *gin.Context, userID uint64, senderType string) error
+
 	EncryptKey() ([]byte, string, error)
 	DecryptKey(twoAuthModel models.TwoAuths) ([]byte, error)
 }
@@ -110,4 +115,16 @@ func (s service) ValidateRecoveryCode(ctx *gin.Context, recoveryCode string, use
 
 func (s service) DeleteAllRecoveryCodes(ctx *gin.Context, userID uint64) error {
 	return s.repo.DeleteAllRecoveryCodes(ctx, userID)
+}
+
+func (s service) GetOtpDetails(ctx *gin.Context, userID uint64, senderType string) (*models.TwoAuths, bool, error) {
+	return s.repo.GetOtpDetails(ctx, userID, senderType)
+}
+
+func (s service) CreateOtpRecord(ctx *gin.Context, userID uint64, senderType string) error {
+	return s.repo.CreateOtpRecord(ctx, userID, senderType)
+}
+
+func (s service) DeleteOtpRecord(ctx *gin.Context, userID uint64, senderType string) error {
+	return s.repo.DeleteOtpRecord(ctx, userID, senderType)
 }
