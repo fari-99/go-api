@@ -18,6 +18,7 @@ import (
 const OtpSenderSms = "sms"
 const OtpSenderEmail = "email"
 const OtpSenderWhatsapp = "whatsapp"
+const OtpSenderTelegram = "telegram"
 
 const otpKeyPrefix = "otp:%d:%s:%s" // otp:user_id:sender_type:action
 
@@ -25,6 +26,7 @@ var otpSender = map[string]bool{
 	OtpSenderSms:      true,
 	OtpSenderEmail:    true,
 	OtpSenderWhatsapp: true,
+	OtpSenderTelegram: true,
 }
 
 func isOtpSender(senderType string) bool {
@@ -39,7 +41,8 @@ type OtpSender struct {
 	db          *gorm.DB
 	expireTime  time.Duration
 
-	userID uint64
+	userID    uint64
+	manualOtp string
 }
 
 func NewOtpSender(ctx context.Context) *OtpSender {
@@ -61,6 +64,11 @@ func (o *OtpSender) SetUserID(userID uint64) *OtpSender {
 	return o
 }
 
+func (o *OtpSender) SetOtp(otp string) *OtpSender {
+	o.manualOtp = otp
+	return o
+}
+
 func (o *OtpSender) SendOtp(senderType string, action string) error {
 	if !isOtpSender(senderType) {
 		return fmt.Errorf("invalid sender type: %s", senderType)
@@ -68,26 +76,31 @@ func (o *OtpSender) SendOtp(senderType string, action string) error {
 
 	otpKey := spew.Sprintf(otpKeyPrefix, o.userID, senderType, action)
 
-	// generate otp
-	otp, err := generateOtp(6)
-	if err != nil {
-		return fmt.Errorf("failed to generate OTP: %w", err)
+	otp := o.manualOtp
+	if otp == "" {
+		// generate otp
+		var err error
+		otp, err = generateOtp(6)
+		if err != nil {
+			return fmt.Errorf("failed to generate OTP: %w", err)
+		}
 	}
 
 	// save otp to redis
-	err = o.redisClient.Set(o.ctx, otpKey, otp, o.expireTime).Err()
+	err := o.redisClient.Set(o.ctx, otpKey, otp, o.expireTime).Err()
 	if err != nil {
 		return fmt.Errorf("failed to save otp to redis: %w", err)
 	}
 
 	switch senderType {
-	case OtpSenderSms:
-		break
 	case OtpSenderEmail:
-		emailHelper := sendEmailOtp(o.db).setSendTo(o.userID)
-		err = emailHelper.send(action, otp)
+		return sendEmailOtp(o.db).setSendTo(o.userID).send(action, otp)
+	case OtpSenderSms:
+		return sendSmsOtp(o.db).setSendTo(o.userID).send(action, otp)
 	case OtpSenderWhatsapp:
-		break
+		return sendWhatsappOtp(o.db).setSendTo(o.userID).send(action, otp)
+	case OtpSenderTelegram:
+		return sendTelegramOtp(o.db).setSendTo(o.userID).send(action, otp)
 	}
 
 	return nil

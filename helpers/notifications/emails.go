@@ -21,7 +21,7 @@ func SendEmail(email Email) error {
 	dialer := configs.GetEmail()
 
 	headers := make(map[string][]string)
-	if email.From != "" {
+	if email.From == "" {
 		return fmt.Errorf("invalid email from address")
 	}
 
