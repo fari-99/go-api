@@ -3,6 +3,7 @@ module go-api
 go 1.25.0
 
 require (
+	firebase.google.com/go/v4 v4.19.0
 	github.com/Blank-Xu/sql-adapter v1.1.2
 	github.com/IBM/sarama v1.45.2
 	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.3
@@ -38,6 +39,7 @@ require (
 	github.com/xendit/xendit-go/v7 v7.0.0
 	go.mau.fi/whatsmeow v0.0.0-20260322133016-ce4daa5e5a86
 	golang.org/x/crypto v0.49.0
+	google.golang.org/api v0.240.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/mysql v1.6.0
@@ -77,9 +79,12 @@ require (
 require (
 	cloud.google.com/go v0.121.3 // indirect
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
+	cloud.google.com/go/firestore v1.18.0 // indirect
 	cloud.google.com/go/iam v1.5.2 // indirect
+	cloud.google.com/go/longrunning v0.6.7 // indirect
 	cloud.google.com/go/storage v1.55.0 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
+	github.com/MicahParks/keyfunc v1.9.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.41.4 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.7 // indirect
@@ -116,8 +121,10 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.27.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/golang/mock v1.6.0 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.2 // indirect
@@ -173,7 +180,7 @@ require (
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.41.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
-	google.golang.org/api v0.240.0 // indirect
+	google.golang.org/appengine/v2 v2.0.6 // indirect
 	google.golang.org/genproto v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/grpc v1.79.3 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

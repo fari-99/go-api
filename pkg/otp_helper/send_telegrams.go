@@ -1,6 +1,9 @@
 package otp_helper
 
 import (
+	"errors"
+
+	"go-api/constant"
 	"go-api/helpers/notifications"
 	"go-api/modules/models"
 
@@ -21,10 +24,13 @@ func sendTelegramOtp(db *gorm.DB) *sendTelegramRequest {
 func (s *sendTelegramRequest) setSendTo(userID uint64) *sendTelegramRequest {
 	db := s.db
 
-	var userModel models.Users
-	db.Where("id = ?", userID).First(&userModel)
+	var userModel models.UserSocials
+	db.Where(&models.UserSocials{
+		UserID:           models.IDType(userID),
+		NotificationType: constant.NotificationTypeTelegram,
+	}).First(&userModel)
 
-	s.telegramID = userModel.TelegramId
+	s.telegramID = userModel.Token
 	return s
 }
 
@@ -33,8 +39,13 @@ type telegramNotificationData struct {
 }
 
 func (s *sendTelegramRequest) send(action, otp string) error {
+	telegramToken := s.telegramID
+	if telegramToken == "" {
+		return errors.New("user telegram token is empty")
+	}
+
 	telegramData := notifications.TelegramData{
-		To: s.telegramID,
+		To: telegramToken,
 	}
 
 	notificationData := telegramNotificationData{

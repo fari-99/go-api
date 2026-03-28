@@ -1,6 +1,8 @@
 package otp_helper
 
 import (
+	"fmt"
+
 	"go-api/helpers/notifications"
 	"go-api/modules/models"
 
@@ -24,7 +26,7 @@ func (s *sendWhatsappRequest) setSendTo(userID uint64) *sendWhatsappRequest {
 	var userModel models.Users
 	db.Where("id = ?", userID).First(&userModel)
 
-	s.phone = userModel.Phone
+	s.phone = userModel.MobilePhone
 	return s
 }
 
@@ -33,8 +35,13 @@ type whatsappNotificationData struct {
 }
 
 func (s *sendWhatsappRequest) send(action, otp string) error {
+	phoneNumber := s.phone
+	if phoneNumber == "" {
+		return fmt.Errorf("user phone number is empty [whatsapp]")
+	}
+
 	whatsappData := notifications.WhatsappData{
-		To: s.phone,
+		To: phoneNumber,
 	}
 
 	notificationData := whatsappNotificationData{
