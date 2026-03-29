@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"go-api/constant"
 	"go-api/pkg/otp_helper"
 
 	"github.com/dgryski/dgoogauth"
 	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
-	"github.com/go-redsync/redsync/v4"
 
 	"go-api/helpers"
-	"go-api/modules/configs"
 	"go-api/pkg/redis_helpers"
 )
 
@@ -122,25 +121,19 @@ func (c controller) ValidateTotp(ctx *gin.Context) {
 		return
 	}
 
-	keyRedLock := "VALIDATE_TOTP:" + currentUser.ID.String()
-	redLock := configs.GetRedisLock()
-	mutex := redLock.NewMutex(keyRedLock)
-	if err := mutex.Lock(); err != nil {
+	keyRedLock := fmt.Sprintf(constant.RedLockValidateTotp, currentUser.ID.Uint64())
+	keyLockHelper := helpers.RedisLock()
+	keyLockHelper.SetContext(ctx)
+	err := keyLockHelper.Lock(keyRedLock)
+	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
-			"error_message": "failed to acquire redis lock",
+			"error_message": "failed to acquire redis lock for otp",
 		})
 		return
 	}
 
-	defer func(mutex *redsync.Mutex) {
-		if ok, err := mutex.Unlock(); !ok || err != nil {
-			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-				"error_message": "failed to unlock redis lock for totp",
-			})
-			return
-		}
-	}(mutex)
+	defer keyLockHelper.Unlock()
 
 	countRed := redis_helpers.CounterConfig{
 		Ctx:    ctx.Request.Context(),
@@ -149,7 +142,7 @@ func (c controller) ValidateTotp(ctx *gin.Context) {
 		Action: action,
 	}
 
-	err := countRed.Count()
+	err = countRed.Count()
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -290,25 +283,19 @@ func (c controller) ValidateRecoveryCode(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
 
-	keyRedLock := "VALIDATE_RECOVERY_CODE:" + currentUser.ID.String()
-	redLock := configs.GetRedisLock()
-	mutex := redLock.NewMutex(keyRedLock)
-	if err := mutex.Lock(); err != nil {
+	keyRedLock := fmt.Sprintf(constant.RedLockValidateRecoveryCode, userID)
+	keyLockHelper := helpers.RedisLock()
+	keyLockHelper.SetContext(ctx)
+	err := keyLockHelper.Lock(keyRedLock)
+	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
-			"error_message": "failed to acquire redis lock for recovery code",
+			"error_message": "failed to acquire redis lock for otp",
 		})
 		return
 	}
 
-	defer func(mutex *redsync.Mutex) {
-		if ok, err := mutex.Unlock(); !ok || err != nil {
-			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-				"error_message": "failed to unlock redis lock for recovery code",
-			})
-			return
-		}
-	}(mutex)
+	defer keyLockHelper.Unlock()
 
 	action, _ := ctx.Params.Get("action")
 	countRed := redis_helpers.CounterConfig{
@@ -318,7 +305,7 @@ func (c controller) ValidateRecoveryCode(ctx *gin.Context) {
 		Action: action,
 	}
 
-	err := countRed.Count()
+	err = countRed.Count()
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -468,24 +455,19 @@ func (c controller) CreateOtp(ctx *gin.Context) {
 	}
 
 	// redis lock: prevent concurrent OTP sends for the same user+sender+action
-	keyRedLock := fmt.Sprintf("CREATE_OTP:%d:%s:%s", userID, senderType, action)
-	redLock := configs.GetRedisLock()
-	mutex := redLock.NewMutex(keyRedLock)
-	if err = mutex.Lock(); err != nil {
+	keyRedLock := fmt.Sprintf(constant.RedLockCreateOtp, userID, senderType, action)
+	keyLockHelper := helpers.RedisLock()
+	keyLockHelper.SetContext(ctx)
+	err = keyLockHelper.Lock(keyRedLock)
+	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
-			"error_message": "failed to acquire redis lock",
+			"error_message": "failed to acquire redis lock for otp",
 		})
 		return
 	}
-	defer func(mutex *redsync.Mutex) {
-		if ok, err := mutex.Unlock(); !ok || err != nil {
-			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-				"error_message": "failed to unlock redis lock for otp",
-			})
-			return
-		}
-	}(mutex)
+
+	defer keyLockHelper.Unlock()
 
 	// counter: rate-limit OTP sends
 	countRed := redis_helpers.CounterConfig{
@@ -540,24 +522,19 @@ func (c controller) ValidateOtp(ctx *gin.Context) {
 	}
 
 	// redis lock: prevent concurrent OTP validations for the same user+sender+action
-	keyRedLock := fmt.Sprintf("VALIDATE_OTP:%d:%s:%s", userID, senderType, action)
-	redLock := configs.GetRedisLock()
-	mutex := redLock.NewMutex(keyRedLock)
-	if err = mutex.Lock(); err != nil {
+	keyRedLock := fmt.Sprintf(constant.RedLockValidateOtp, userID, senderType, action)
+	keyLockHelper := helpers.RedisLock()
+	keyLockHelper.SetContext(ctx)
+	err = keyLockHelper.Lock(keyRedLock)
+	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
-			"error_message": "failed to acquire redis lock",
+			"error_message": "failed to acquire redis lock for otp",
 		})
 		return
 	}
-	defer func(mutex *redsync.Mutex) {
-		if ok, err := mutex.Unlock(); !ok || err != nil {
-			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
-				"error_message": "failed to unlock redis lock for otp",
-			})
-			return
-		}
-	}(mutex)
+
+	defer keyLockHelper.Unlock()
 
 	// counter: rate-limit OTP validation attempts
 	countRed := redis_helpers.CounterConfig{

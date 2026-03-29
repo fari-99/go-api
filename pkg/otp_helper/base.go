@@ -3,6 +3,7 @@ package otp_helper
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -86,8 +87,16 @@ func (o *OtpSender) SendOtp(senderType string, action string) error {
 		}
 	}
 
+	// check if otp already created
+	res, err := o.redisClient.Get(o.ctx, otpKey).Result()
+	if !errors.Is(err, redis.Nil) {
+		return fmt.Errorf("error checking OTP from redis: %w", err)
+	} else if res != "" {
+		return fmt.Errorf("OTP already exists/send, please wait [%0.f]: %s", o.expireTime.Seconds(), otp)
+	}
+
 	// save otp to redis
-	err := o.redisClient.Set(o.ctx, otpKey, otp, o.expireTime).Err()
+	err = o.redisClient.Set(o.ctx, otpKey, otp, o.expireTime).Err()
 	if err != nil {
 		return fmt.Errorf("failed to save otp to redis: %w", err)
 	}
