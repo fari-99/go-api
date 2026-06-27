@@ -3,12 +3,14 @@ package finite_states
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+
 	"go-api/bussiness_flow"
 	"go-api/helpers"
 	"go-api/modules/configs"
 	"go-api/modules/models"
-	"net/http"
 )
 
 type FiniteStateController struct {
@@ -62,7 +64,7 @@ func (controller *FiniteStateController) GetAvailableTransitionsAction(ctx *gin.
 	}
 
 	// Get available transitions
-	availableTransitions, err := baseSM.GetAvailableTransitions()
+	availableTransitions, err := baseSM.GetAvailableTransitions(ctx)
 	if err != nil {
 		msg := fmt.Errorf("error get available transition, err := %s", err.Error())
 		helpers.NewResponse(ctx, http.StatusInternalServerError, msg.Error())
@@ -108,7 +110,7 @@ func (controller *FiniteStateController) ChangeStateAction(ctx *gin.Context) {
 	}
 
 	// Change State
-	isChanged, err := baseSM.ChangeStateMachine()
+	isChanged, err := baseSM.ChangeStateMachine(ctx)
 	if err != nil {
 		msg := fmt.Errorf("state not changed, err := %s", err.Error())
 		helpers.NewResponse(ctx, http.StatusInternalServerError, msg.Error())

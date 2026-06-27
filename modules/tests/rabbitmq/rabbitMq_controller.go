@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/fari-99/go-helper/rabbitmq"
+	"github.com/gin-gonic/gin"
+
 	"go-api/helpers"
 	"go-api/modules/configs"
-	"go-api/modules/configs/rabbitmq"
-
-	"github.com/gin-gonic/gin"
 )
 
 type RabbitMqController struct {

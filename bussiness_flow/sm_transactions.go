@@ -1,7 +1,9 @@
 package bussiness_flow
 
 import (
+	"context"
 	"fmt"
+
 	"go-api/bussiness_flow/properties/emails"
 	"go-api/bussiness_flow/properties/new_objects"
 	"go-api/constant"
@@ -12,11 +14,12 @@ import (
 
 // ==================== Constanta Model PO to ConstantBase for FSM =====================
 
-/**
+/*
+*
 Note : every time you create new finite state file, you must add your configName to base.go on this function
-	- GetAvailableTransitions
-	- getEventState
-	- getAllStatus
+  - GetAvailableTransitions
+  - getEventState
+  - getAllStatus
 */
 func (base *BaseSMTransaction) GetTransactionStatus() (map[int]*ConstantBase, error) {
 	// init Statuses
@@ -42,7 +45,8 @@ func (base *BaseSMTransaction) GetTransactionStatus() (map[int]*ConstantBase, er
 	return PoCStatuses, nil
 }
 
-/**
+/*
+*
 Get Transaction status properties
 - this function handling, create new object, get config email, etc
 - it's entity editable or deletable
@@ -107,10 +111,11 @@ func GetTransactionProperties(constantKey int) (properties StateProperties, err 
 
 // ==================== Configuration EVENT, Transition Name, And State =====================
 
-/**
+/*
+*
 Descriptions : this is for assign event, transitions and state
 Note :
-	- Create different transitions name, this for making event callback easier
+  - Create different transitions name, this for making event callback easier
 */
 func (base *BaseSMTransaction) GetSMTransaction() (currentStateName string, stateEvents fsm.Events, stateCallbacks fsm.Callbacks, err error) {
 
@@ -149,10 +154,10 @@ func (base *BaseSMTransaction) GetSMTransaction() (currentStateName string, stat
 	// this example you can change state to on progress,
 	// but it will always can't change state to delivered
 	stateCallbacks = fsm.Callbacks{
-		"before_" + constant.TransactionConfirmed: func(e *fsm.Event) {
-			state, err := base.TransactionConfirmed(e)
+		"before_" + constant.TransactionConfirmed: func(ctx context.Context, event *fsm.Event) {
+			state, err := base.TransactionConfirmed(event)
 			if !state || err != nil {
-				e.Cancel()
+				event.Cancel()
 			}
 		},
 	}

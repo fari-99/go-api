@@ -1,12 +1,14 @@
 package bussiness_flow
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"reflect"
+
 	"go-api/bussiness_flow/properties/emails"
 	"go-api/bussiness_flow/properties/new_objects"
 	"go-api/constant"
-	"reflect"
 
 	"github.com/looplab/fsm"
 )
@@ -38,7 +40,7 @@ type ConstantBase struct {
 type StateProperties struct {
 	StateStatus int `json:"state_status,omitempty"`
 
-	//UpdateItem []updateItems.UpdateItems `json:"update_item,omitempty"`
+	// UpdateItem []updateItems.UpdateItems `json:"update_item,omitempty"`
 
 	Editable  bool                       `json:"editable,omitempty"`
 	Deletable new_object.CreateNewObject `json:"deletable,omitempty"`
@@ -92,14 +94,14 @@ func (base *BaseSMTransaction) GetEventState() (err error) {
 	return
 }
 
-func (base *BaseSMTransaction) ChangeStateMachine() (success bool, err error) {
+func (base *BaseSMTransaction) ChangeStateMachine(ctx context.Context) (success bool, err error) {
 	success = false // assume all state can't change state
 
 	currentState := base.Fsm.Current()
 
 	transitionName := base.TransitionName
 
-	err = base.Fsm.Event(transitionName)
+	err = base.Fsm.Event(ctx, transitionName)
 
 	if currentState == base.Fsm.Current() {
 		return
@@ -109,7 +111,7 @@ func (base *BaseSMTransaction) ChangeStateMachine() (success bool, err error) {
 	return
 }
 
-func (base *BaseSMTransaction) GetAvailableTransitions() (transitions map[string]TransactionTransitions, err error) {
+func (base *BaseSMTransaction) GetAvailableTransitions(ctx context.Context) (transitions map[string]TransactionTransitions, err error) {
 	var constantBase = make(map[int]*ConstantBase)
 	transitions = make(map[string]TransactionTransitions)
 
@@ -137,7 +139,7 @@ func (base *BaseSMTransaction) GetAvailableTransitions() (transitions map[string
 		// set state using current state
 		base.Fsm.SetState(currentState)
 
-		err = base.Fsm.Event(transitionName)
+		err = base.Fsm.Event(ctx, transitionName)
 		if err != nil {
 			return
 		}

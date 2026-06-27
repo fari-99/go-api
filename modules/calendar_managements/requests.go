@@ -27,7 +27,7 @@ func (m CreateCalendarManagementRequest) Validate() error {
 }
 
 type UpdateCalendarManagementRequest struct {
-	CountryID    string    `json:"country_id"`
+	CountryID    uint64    `json:"country_id"`
 	Date         time.Time `json:"date"`
 	Descriptions string    `json:"descriptions"`
 	Status       int8      `json:"status"`
