@@ -1,7 +1,6 @@
 package auths
 
 import (
-	"context"
 	"os"
 	"strings"
 
@@ -17,7 +16,7 @@ type Service interface {
 	RefreshAuth(ctx *gin.Context) (authData *AuthData, isExists bool, err error)
 	SignOutUser(ctx *gin.Context) (totalLogin int64, isExists bool, err error)
 	DeleteAllSession(ctx *gin.Context) (isExists bool, err error)
-	AllSessions(ctx *gin.Context) (allDevices []models.Users, err error)
+	AllSessions(ctx *gin.Context) (allDevices []helpers.SessionRedisData, err error)
 	DeleteSession(ctx *gin.Context, uuid string) (totalLogin int64, isExists bool, err error)
 }
 
@@ -93,7 +92,7 @@ func (s service) DeleteSession(ctx *gin.Context, uuid string) (totalLogin int64,
 	return totalLogin, true, nil
 }
 
-func (s service) AllSessions(ctx *gin.Context) (allDevices []models.Users, err error) {
+func (s service) AllSessions(ctx *gin.Context) (allDevices []helpers.SessionRedisData, err error) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
@@ -205,7 +204,7 @@ func (s service) generateToken(ctx *gin.Context, userModel models.Users) (signed
 	return token, nil
 }
 
-func (s service) setRedisSession(ctx context.Context, token *token_generator.SignedToken, userModel *models.Users) (totalLogin int64, err error) {
+func (s service) setRedisSession(ctx *gin.Context, token *token_generator.SignedToken, userModel *models.Users) (totalLogin int64, err error) {
 	dataSession := helpers.SessionData{
 		Token: helpers.SessionToken{
 			AccessExpiredAt:  token.AccessExpiredAt,
@@ -216,6 +215,8 @@ func (s service) setRedisSession(ctx context.Context, token *token_generator.Sig
 		UserID:        userModel.ID.String(),
 		UserDetails:   userModel,
 		Authorization: true,
+		UserAgent:     ctx.GetHeader("User-Agent"),
+		IPAddress:     ctx.ClientIP(),
 	}
 
 	return helpers.SetupLoginSession(ctx, userModel.Username, dataSession)

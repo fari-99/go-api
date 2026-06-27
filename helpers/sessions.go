@@ -40,6 +40,23 @@ type SessionData struct {
 	UserID        string      `json:"user_id"`
 	UserDetails   interface{} `json:"user_details"`
 	Authorization bool        `json:"authorization"`
+	UserAgent     string      `json:"user_agent"`
+	IPAddress     string      `json:"ip_address"`
+}
+
+type SessionUserData struct {
+	ID           models.IDType          `json:"id"`
+	Username     string                 `json:"username"`
+	Email        string                 `json:"email"`
+	Roles        string                 `json:"roles"`
+	TwoFaEnabled bool                   `json:"two_fa_enabled"`
+	TwoFaModels  *models.TwoAuthsModels `json:"two_fa_models,omitempty"`
+}
+
+type SessionRedisData struct {
+	UserDetails SessionUserData `json:"user_details"`
+	UserAgent   string          `json:"user_agent"`
+	IPAddress   string          `json:"ip_address"`
 }
 
 type FamilyCheck struct {
@@ -145,7 +162,23 @@ func getAllUuid(ctx context.Context, username string) (accessUuids []string, ref
 
 func setRedisSession(ctx context.Context, username string, data SessionData) error {
 	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
-	dataMarshal, _ := json.Marshal(data.UserDetails) // TODO : Adding device details
+
+	userDetails, _ := data.UserDetails.(*models.Users)
+	sessionRedisData := SessionRedisData{
+		UserAgent: data.UserAgent,
+		IPAddress: data.IPAddress,
+	}
+	if userDetails != nil {
+		sessionRedisData.UserDetails = SessionUserData{
+			ID:           userDetails.ID,
+			Username:     userDetails.Username,
+			Email:        userDetails.Email,
+			Roles:        userDetails.Roles,
+			TwoFaEnabled: userDetails.TwoFaEnabled,
+			TwoFaModels:  userDetails.TwoFaModels,
+		}
+	}
+	dataMarshal, _ := json.Marshal(sessionRedisData)
 
 	keyRedis := getKeyRedis(username, data.Token.Uuid)
 
@@ -178,23 +211,23 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 	return nil
 }
 
-func GetAllSessions(ctx context.Context, username string) ([]models.Users, error) {
+func GetAllSessions(ctx context.Context, username string) ([]SessionRedisData, error) {
 	_, refreshUuids, err := getAllUuid(ctx, username)
 	if err != nil {
 		return nil, err
 	}
 
-	var users []models.Users
+	var sessions []SessionRedisData
 	for _, refreshUuid := range refreshUuids {
-		user, err := GetCurrentUser(ctx, refreshUuid)
+		session, err := GetCurrentSession(ctx, refreshUuid)
 		if err != nil {
 			return nil, err
 		}
 
-		users = append(users, *user)
+		sessions = append(sessions, *session)
 	}
 
-	return users, nil
+	return sessions, nil
 }
 
 func CheckToken(ctx context.Context, username, uuid string) (isExistAccess, isExistRefresh bool, err error) {
@@ -382,10 +415,8 @@ func CheckFamily(ctx context.Context, username, oldUuid string) (isUsed bool, er
 	return true, nil
 }
 
-// GetCurrentUser get current user session from cookie uuid, uuid already set when jwt claim already set.
-// you can access it by -> uuid, _ := ctx.Get("uuid")
-// TODO: change return to users and device login details
-func GetCurrentUser(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
+// GetCurrentSession returns the full session data (user + device info) from the access token key.
+func GetCurrentSession(ctx context.Context, uuidIdentifier string) (*SessionRedisData, error) {
 	keyRedis := getKeyRedis("", uuidIdentifier)
 
 	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
@@ -394,16 +425,14 @@ func GetCurrentUser(ctx context.Context, uuidIdentifier string) (*models.Users, 
 		return nil, err
 	}
 
-	var userData models.Users
-	_ = json.Unmarshal([]byte(redisData), &userData)
+	var sessionData SessionRedisData
+	_ = json.Unmarshal([]byte(redisData), &sessionData)
 
-	return &userData, nil
+	return &sessionData, nil
 }
 
-// GetCurrentUserRefresh get current user session from cookie uuid, uuid already set when jwt claim already set.
-// you can access it by -> uuid, _ := ctx.Get("uuid")
-// TODO: change return to users and device login details
-func GetCurrentUserRefresh(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
+// GetCurrentSessionRefresh returns the full session data (user + device info) from the refresh token key.
+func GetCurrentSessionRefresh(ctx context.Context, uuidIdentifier string) (*SessionRedisData, error) {
 	keyRedis := getKeyRedis("", uuidIdentifier)
 
 	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
@@ -412,10 +441,41 @@ func GetCurrentUserRefresh(ctx context.Context, uuidIdentifier string) (*models.
 		return nil, err
 	}
 
-	var userData models.Users
-	_ = json.Unmarshal([]byte(redisData), &userData)
+	var sessionData SessionRedisData
+	_ = json.Unmarshal([]byte(redisData), &sessionData)
 
-	return &userData, nil
+	return &sessionData, nil
+}
+
+// GetCurrentUser returns the user model from the access token session.
+func GetCurrentUser(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
+	sessionData, err := GetCurrentSession(ctx, uuidIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	return sessionUserDataToModel(sessionData.UserDetails), nil
+}
+
+// GetCurrentUserRefresh returns the user model from the refresh token session.
+func GetCurrentUserRefresh(ctx context.Context, uuidIdentifier string) (*models.Users, error) {
+	sessionData, err := GetCurrentSessionRefresh(ctx, uuidIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	return sessionUserDataToModel(sessionData.UserDetails), nil
+}
+
+func sessionUserDataToModel(u SessionUserData) *models.Users {
+	return &models.Users{
+		Base:         models.Base{ID: u.ID},
+		Username:     u.Username,
+		Email:        u.Email,
+		Roles:        u.Roles,
+		TwoFaEnabled: u.TwoFaEnabled,
+		TwoFaModels:  u.TwoFaModels,
+	}
 }
 
 func getTimeDuration(input interface{}) time.Duration {
