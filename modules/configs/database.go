@@ -31,7 +31,8 @@ const MySQLType = "MYSQL"
 const PostgresType = "POSTGRES"
 
 type DatabaseConfig struct {
-	Type string `json:"type"`
+	Type   string `json:"type"`
+	Suffix string `json:"suffix"`
 
 	Username       string `json:"username"`
 	Password       string `json:"password"`
@@ -42,21 +43,31 @@ type DatabaseConfig struct {
 	DatabaseConfig string `json:"database_config"`
 }
 
-func DatabaseBase(databaseType string) *DatabaseConfig {
+// DatabaseBase returns a DatabaseConfig populated from env vars.
+// An optional suffix differentiates multiple connections of the same type
+// (e.g. "PRIMARY", "REPLICA"). Env var keys become TYPE_SUFFIX (e.g. USERNAME_DB_MYSQL_PRIMARY).
+func DatabaseBase(databaseType string, suffix ...string) *DatabaseConfig {
 	if !checkType(databaseType) {
 		panic(fmt.Sprintf("database type [%s] not recognized, need configuration for that type", databaseType))
 	}
 
-	// default database configuration
+	sfx := ""
+	if len(suffix) > 0 && suffix[0] != "" {
+		sfx = "_" + suffix[0]
+	}
+
+	envKey := databaseType + sfx
+
 	databaseConfig := DatabaseConfig{
 		Type:           databaseType,
-		Username:       os.Getenv(fmt.Sprintf("USERNAME_DB_%s", databaseType)),
-		Password:       os.Getenv(fmt.Sprintf("PASSWORD_DB_%s", databaseType)),
-		DatabaseType:   os.Getenv(fmt.Sprintf("DATABASE_TYPE_%s", databaseType)),
-		DatabaseHost:   os.Getenv(fmt.Sprintf("DATABASE_HOST_%s", databaseType)),
-		DatabasePort:   os.Getenv(fmt.Sprintf("DATABASE_PORT_%s", databaseType)),
-		DatabaseName:   os.Getenv(fmt.Sprintf("DATABASE_NAME_%s", databaseType)),
-		DatabaseConfig: os.Getenv(fmt.Sprintf("DATABASE_CONFIG_%s", databaseType)),
+		Suffix:         sfx,
+		Username:       os.Getenv(fmt.Sprintf("USERNAME_DB_%s", envKey)),
+		Password:       os.Getenv(fmt.Sprintf("PASSWORD_DB_%s", envKey)),
+		DatabaseType:   os.Getenv(fmt.Sprintf("DATABASE_TYPE_%s", envKey)),
+		DatabaseHost:   os.Getenv(fmt.Sprintf("DATABASE_HOST_%s", envKey)),
+		DatabasePort:   os.Getenv(fmt.Sprintf("DATABASE_PORT_%s", envKey)),
+		DatabaseName:   os.Getenv(fmt.Sprintf("DATABASE_NAME_%s", envKey)),
+		DatabaseConfig: os.Getenv(fmt.Sprintf("DATABASE_CONFIG_%s", envKey)),
 	}
 
 	return &databaseConfig
@@ -150,9 +161,10 @@ func (base *DatabaseConfig) GetMysqlConnection(isSingleton bool) *gorm.DB {
 			panic(err)
 		}
 
-		maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
-		maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
-		maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
+		envKey := base.Type + base.Suffix
+		maxLifetime := cast.ToInt64(os.Getenv(fmt.Sprintf("DATABASE_MAX_CONNECTION_LIFETIME_%s", envKey)))
+		maxIdleConn := cast.ToInt64(os.Getenv(fmt.Sprintf("DATABASE_MAX_IDLE_CONNECTION_%s", envKey)))
+		maxOpenConn := cast.ToInt64(os.Getenv(fmt.Sprintf("DATABASE_MAX_OPEN_CONNECTION_%s", envKey)))
 
 		sqlDB, err := db.DB()
 		if err != nil {
@@ -199,9 +211,10 @@ func (base *DatabaseConfig) GetPostgresConnection(isSingleton bool) *gorm.DB {
 			panic(err)
 		}
 
-		maxLifetime := cast.ToInt64(os.Getenv("DATABASE_MAX_CONNECTION_LIFETIME_MYSQL"))
-		maxIdleConn := cast.ToInt64(os.Getenv("DATABASE_MAX_IDLE_CONNECTION_MYSQL"))
-		maxOpenConn := cast.ToInt64(os.Getenv("DATABASE_MAX_OPEN_CONNECTION_MYSQL"))
+		envKey := base.Type + base.Suffix
+		maxLifetime := cast.ToInt64(os.Getenv(fmt.Sprintf("DATABASE_MAX_CONNECTION_LIFETIME_%s", envKey)))
+		maxIdleConn := cast.ToInt64(os.Getenv(fmt.Sprintf("DATABASE_MAX_IDLE_CONNECTION_%s", envKey)))
+		maxOpenConn := cast.ToInt64(os.Getenv(fmt.Sprintf("DATABASE_MAX_OPEN_CONNECTION_%s", envKey)))
 
 		sqlDB, err := db.DB()
 		if err != nil {
