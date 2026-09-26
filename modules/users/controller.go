@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/fari-99/go-helper/rabbitmq"
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,7 @@ func (c controller) CreateAction(ctx *gin.Context) {
 
 	_, err = c.service.CreateUser(ctx, input)
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
 			"error_message": "failed to create user, please try again",
 		})
@@ -52,6 +53,143 @@ func (c controller) UserProfileAction(ctx *gin.Context) {
 	}
 
 	helpers.NewResponse(ctx, http.StatusOK, userProfile)
+	return
+}
+
+func (c controller) GetListAction(ctx *gin.Context) {
+	pageQuery := ctx.DefaultQuery("page", "1")
+	page, _ := strconv.ParseInt(pageQuery, 10, 64)
+
+	limitQuery := ctx.DefaultQuery("limit", "10")
+	limit, _ := strconv.ParseInt(limitQuery, 10, 64)
+
+	filter := RequestListUsers{
+		Page:    int(page),
+		Limit:   int(limit),
+		OrderBy: ctx.DefaultQuery("order_by", ""),
+		Search:  ctx.DefaultQuery("search", ""),
+	}
+
+	items, paginatorData, err := c.service.GetList(ctx, filter)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	result := map[string]interface{}{
+		"paginator": paginatorData,
+		"items":     items,
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, result)
+	return
+}
+
+func (c controller) GetDetailAction(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	detail, notFound, err := c.service.UserDetails(ctx, id)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	} else if notFound {
+		helpers.NewResponse(ctx, http.StatusNotFound, "user not found")
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, detail)
+	return
+}
+
+func (c controller) GetUserRolesAction(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	roleIDs, err := c.service.GetUserRoles(ctx, id)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{"role_ids": roleIDs})
+	return
+}
+
+func (c controller) UpdateUserRolesAction(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	var input RequestUserRoles
+	if err = ctx.BindJSON(&input); err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err = c.service.UpdateUserRoles(ctx, id, input.RoleIDs); err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to update user roles, please try again",
+		})
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, "User roles successfully updated")
+	return
+}
+
+func (c controller) UpdateAction(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	var input RequestUpdateUser
+	if err = ctx.BindJSON(&input); err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	result, err := c.service.UpdateUserAction(ctx, id, input)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to update user, please try again",
+		})
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, result)
+	return
+}
+
+func (c controller) DeleteAction(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	err = c.service.DeleteUser(ctx, id)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to delete user, please try again",
+		})
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, "User successfully deleted")
 	return
 }
 

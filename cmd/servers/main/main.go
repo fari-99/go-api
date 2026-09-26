@@ -13,6 +13,7 @@ import (
 	"go-api/modules/middleware"
 	"go-api/modules/notifications"
 	"go-api/modules/permissions"
+	"go-api/modules/roles"
 	"go-api/modules/security_cameras"
 	"go-api/modules/state_machine"
 	"go-api/modules/storages"
@@ -82,6 +83,10 @@ func main() {
 
 	permissions.NewRegistrator(app.Group(""),
 		permissions.NewService(permissions.NewRepository(di)),
+		authentication)
+
+	roles.NewRegistrator(app.Group(""),
+		roles.NewService(roles.NewRepository(di)),
 		authentication)
 
 	hasura.NewRegistrator(app.Group(""),

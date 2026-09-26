@@ -3,7 +3,32 @@ package users
 import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+
+	"go-api/constant"
 )
+
+type RequestListUsers struct {
+	Page    int    `json:"page"`
+	Limit   int    `json:"limit"`
+	OrderBy string `json:"order_by"`
+	Search  string `json:"search"`
+}
+
+type RequestUpdateUser struct {
+	Username    string `json:"username"`
+	Email       string `json:"email"`
+	MobilePhone string `json:"mobile_phone"`
+	Status      int8   `json:"status"`
+}
+
+func (request RequestUpdateUser) Validate() error {
+	return validation.ValidateStruct(&request,
+		validation.Field(&request.Email, validation.Required, is.Email),
+		validation.Field(&request.Username, validation.Required),
+		validation.Field(&request.Status, validation.Required,
+			validation.In(int8(constant.StatusActive), int8(constant.StatusNonActive), int8(constant.StatusDeleted))),
+	)
+}
 
 type RequestCreateUser struct {
 	Username string `json:"username"`
@@ -50,6 +75,10 @@ func (request ForgotUsernameRequest) Validate() error {
 	return validation.ValidateStruct(&request,
 		validation.Field(&request.Email, validation.Required),
 	)
+}
+
+type RequestUserRoles struct {
+	RoleIDs []uint64 `json:"role_ids"`
 }
 
 type ResetPasswordRequest struct {

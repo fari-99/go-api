@@ -22,7 +22,7 @@ func ParamsDefault(ctx *gin.Context, key string, defaultValue string) string {
 
 func LoggingMessage(message string, data interface{}) {
 	if data == nil {
-		log.Printf(message)
+		log.Print(message)
 		return
 	}
 

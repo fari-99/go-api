@@ -12,6 +12,7 @@ import (
 	"go-api/helpers/notifications"
 	"go-api/modules/models"
 
+	paginator "github.com/dmitryburov/gorm-paginator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,6 +20,11 @@ type Service interface {
 	CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error)
 	UserProfile(ctx *gin.Context, userID uint64) (models.UserProfile, error)
 	UserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
+	GetList(ctx *gin.Context, input RequestListUsers) ([]models.Users, *paginator.Pagination, error)
+	GetUserRoles(ctx *gin.Context, userID uint64) ([]uint64, error)
+	UpdateUserRoles(ctx *gin.Context, userID uint64, roleIDs []uint64) error
+	UpdateUserAction(ctx *gin.Context, id uint64, input RequestUpdateUser) (*models.Users, error)
+	DeleteUser(ctx *gin.Context, id uint64) error
 	ChangePassword(ctx *gin.Context, input RequestChangePassword) (exists bool, err error)
 	ForgotPassword(ctx *gin.Context, input ForgotPasswordRequest) (userCodes *models.UserCodes, notFound bool, err error)
 	ForgotUsername(ctx *gin.Context, input ForgotUsernameRequest) (exists bool, err error)
@@ -148,6 +154,56 @@ func (s service) UserProfile(ctx *gin.Context, userID uint64) (models.UserProfil
 func (s service) UserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
 	userModel, notFound, err := s.repo.GetDetails(ctx, userID)
 	return userModel, notFound, err
+}
+
+func (s service) GetList(ctx *gin.Context, input RequestListUsers) ([]models.Users, *paginator.Pagination, error) {
+	return s.repo.GetList(ctx, input)
+}
+
+func (s service) GetUserRoles(ctx *gin.Context, userID uint64) ([]uint64, error) {
+	return s.repo.GetUserRoleIDs(ctx, userID)
+}
+
+func (s service) UpdateUserRoles(ctx *gin.Context, userID uint64, roleIDs []uint64) error {
+	_, notFound, err := s.repo.GetDetails(ctx, userID)
+	if err != nil {
+		return err
+	} else if notFound {
+		return fmt.Errorf("user not found")
+	}
+
+	return s.repo.SetUserRoles(ctx, userID, roleIDs)
+}
+
+func (s service) UpdateUserAction(ctx *gin.Context, id uint64, input RequestUpdateUser) (*models.Users, error) {
+	if err := input.Validate(); err != nil {
+		return nil, err
+	}
+
+	userModel, notFound, err := s.repo.GetDetails(ctx, id)
+	if err != nil {
+		return nil, err
+	} else if notFound {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	userModel.Username = input.Username
+	userModel.Email = input.Email
+	userModel.MobilePhone = input.MobilePhone
+	userModel.Status = input.Status
+
+	return s.repo.UpdateUser(ctx, *userModel)
+}
+
+func (s service) DeleteUser(ctx *gin.Context, id uint64) error {
+	_, notFound, err := s.repo.GetDetails(ctx, id)
+	if err != nil {
+		return err
+	} else if notFound {
+		return fmt.Errorf("user not found")
+	}
+
+	return s.repo.DeleteUser(ctx, id)
 }
 
 func (s service) CreateUser(ctx *gin.Context, input RequestCreateUser) (*models.Users, error) {

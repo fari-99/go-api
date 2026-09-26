@@ -16,6 +16,13 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 		userPrivate.POST("/create", control.CreateAction)
 		userPrivate.GET("/profile", control.UserProfileAction)
 		userPrivate.GET("/change-password", control.ChangePasswordAction)
+
+		userPrivate.GET("/", control.GetListAction)
+		userPrivate.GET("/:id", control.GetDetailAction)
+		userPrivate.PUT("/:id", control.UpdateAction)
+		userPrivate.DELETE("/:id", control.DeleteAction)
+		userPrivate.GET("/:id/roles", control.GetUserRolesAction)
+		userPrivate.PUT("/:id/roles", control.UpdateUserRolesAction)
 	}
 
 	userPublic := app.Group("/users")
