@@ -40,7 +40,7 @@ func (base *BaseMiddleware) authServe(ctx *gin.Context) {
 
 	claims, next, err := base.checkAuthHeader(accessToken, "access_token")
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"message":       "You must login to access",
 			"error_message": err.Error(),
 		})
@@ -49,7 +49,7 @@ func (base *BaseMiddleware) authServe(ctx *gin.Context) {
 	}
 
 	if !next || !claims.TokenData.Authorized {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"message": "You must login to access",
 		})
 		ctx.Abort()
@@ -73,7 +73,7 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 
 	claims, next, err := base.checkAuthHeader(accessToken, "refresh_token")
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"message":       "You must login to access",
 			"error_message": err.Error(),
 		})
@@ -82,7 +82,7 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 	}
 
 	if !next || !claims.TokenData.Authorized {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"message": "You must login to access",
 		})
 		ctx.Abort()
@@ -96,7 +96,7 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	} else if isUsed {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"message": fmt.Sprintf("this token already used, please re-authenticate your account"),
 		})
 		ctx.Abort()
@@ -109,7 +109,7 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.JwtMapClaims) {
 	currentUser, err := helpers.GetCurrentUser(ctx, claims.Uuid)
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"message":       fmt.Sprintf("authentication error, please re-login"),
 			"error_message": err.Error(),
 		})

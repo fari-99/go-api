@@ -16,6 +16,7 @@ import (
 
 type Repository interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
+	GetTotpDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
 	GetUserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
 
 	// 2FA
@@ -45,6 +46,18 @@ func NewRepository(di *configs.DI) Repository {
 func (r repository) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error) {
 	var twoAuthModel models.TwoAuths
 	err := r.DB.Where(&models.TwoAuths{UserID: models.IDType(userID), Status: constant.StatusActive}).First(&twoAuthModel).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, true, nil
+	} else if err != nil {
+		return nil, false, err
+	}
+
+	return &twoAuthModel, false, nil
+}
+
+func (r repository) GetTotpDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error) {
+	var twoAuthModel models.TwoAuths
+	err := r.DB.Where(&models.TwoAuths{UserID: models.IDType(userID), Type: "totp", Status: constant.StatusActive}).First(&twoAuthModel).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, true, nil
 	} else if err != nil {
@@ -114,7 +127,7 @@ func (r repository) GetAllRecoveryCode(ctx *gin.Context, userID uint64) ([]model
 	db := r.DB.WithContext(ctx)
 
 	var recoveryCodes []models.TwoAuthRecoveries
-	err := db.Where(&models.TwoAuthRecoveries{UserID: models.IDType(userID)}).Find(&recoveryCodes).Error
+	err := db.Where(&models.TwoAuthRecoveries{UserID: models.IDType(userID), Status: constant.StatusActive}).Find(&recoveryCodes).Error
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package users
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -14,6 +15,11 @@ import (
 
 	paginator "github.com/dmitryburov/gorm-paginator"
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	ErrInvalidCurrentPassword = errors.New("invalid current password")
+	ErrWeakNewPassword        = errors.New("new password is not strong enough")
 )
 
 type Service interface {
@@ -108,7 +114,7 @@ func (s service) ChangePassword(ctx *gin.Context, input RequestChangePassword) (
 
 	err = helpers.PasswordAuth(userModel.Password, input.CurrentPassword)
 	if err != nil { // Password not match!!
-		return true, err
+		return true, ErrInvalidCurrentPassword
 	}
 
 	password := gohelper.Passwords{
@@ -119,7 +125,7 @@ func (s service) ChangePassword(ctx *gin.Context, input RequestChangePassword) (
 
 	hashPassword, err := gohelper.GeneratePassword(password, cast.ToInt8(os.Getenv("PASSWORD_COST")))
 	if err != nil {
-		return true, err
+		return true, ErrWeakNewPassword
 	}
 
 	userModel.Password = *hashPassword

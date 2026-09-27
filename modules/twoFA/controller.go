@@ -8,7 +8,6 @@ import (
 	"go-api/constant"
 	"go-api/pkg/otp_helper"
 
-	"github.com/dgryski/dgoogauth"
 	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
 
@@ -72,7 +71,7 @@ func (c controller) CreateTotp(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID
 
-	_, notFound, err := c.service.GetDetails(ctx, userID.Uint64())
+	_, notFound, err := c.service.GetTotpDetails(ctx, userID.Uint64())
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -155,7 +154,7 @@ func (c controller) ValidateTotp(ctx *gin.Context) {
 		_ = countRed.Reset()
 	}()
 
-	twoAuthModel, notFound, err := c.service.GetDetails(ctx, userID)
+	twoAuthModel, notFound, err := c.service.GetTotpDetails(ctx, userID)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
 			"error":         err.Error(),
@@ -179,15 +178,9 @@ func (c controller) ValidateTotp(ctx *gin.Context) {
 		return
 	}
 
-	otpConfig := &dgoogauth.OTPConfig{
-		Secret:      string(secret),
-		WindowSize:  3,
-		HotpCounter: 0,
-	}
-
 	otpValue := ctx.DefaultQuery("otp_value", "")
 
-	isAuth, err := otpConfig.Authenticate(otpValue)
+	isAuth, err := c.service.VerifyTotpCode(secret, otpValue)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 			"error":         err.Error(),
@@ -226,13 +219,82 @@ func (c controller) DisabledTotp(ctx *gin.Context) {
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 	userID := currentUser.ID.Uint64()
 
-	errData := c.disableAuthenticator(ctx, userID)
-	if errData != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, errData)
+	twoAuthModel, notFound, err := c.service.GetTotpDetails(ctx, userID)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "error get 2FA configuration for your user",
+		})
+		return
+	} else if notFound {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         "user config not found",
+			"error_message": "user doesn't have 2FA configuration, please create one",
+		})
 		return
 	}
 
-	err := c.service.UserEnabledTotp(ctx, userID, false)
+	var input RequestDisableTotp
+	err = ctx.BindJSON(&input)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to bind json input",
+		})
+		return
+	}
+
+	userModel, notFound, err := c.service.GetUserDetails(ctx, userID)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "error getting user details",
+		})
+		return
+	} else if notFound {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         "user not found",
+			"error_message": "user not found",
+		})
+		return
+	}
+
+	err = helpers.PasswordAuth(userModel.Password, input.Password)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "wrong password",
+		})
+		return
+	}
+
+	secret, err := c.service.DecryptKey(*twoAuthModel)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to decrypt key of your configuration",
+		})
+		return
+	}
+
+	isAuth, err := c.service.VerifyTotpCode(secret, input.OtpValue)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to authenticate otp",
+		})
+		return
+	}
+
+	if !isAuth {
+		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
+			"error":         "not authorized",
+			"error_message": "invalid totp code",
+		})
+		return
+	}
+
+	err = c.service.UserEnabledTotp(ctx, userID, false)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
 			"error":         err.Error(),
@@ -275,6 +337,32 @@ func (c controller) CreateRecoveryCode(ctx *gin.Context) {
 	}
 
 	helpers.NewResponse(ctx, http.StatusOK, code)
+	return
+}
+
+func (c controller) GetRecoveryCodes(ctx *gin.Context) {
+	uuid, _ := ctx.Get("uuid")
+	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
+	userID := currentUser.ID.Uint64()
+
+	recoveryCodeModels, err := c.service.GetAllRecoveryCode(ctx, userID)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+			"error":         err.Error(),
+			"error_message": "error get recovery codes for your user",
+		})
+		return
+	}
+
+	codes := make([]string, 0, len(recoveryCodeModels))
+	for _, recoveryCodeModel := range recoveryCodeModels {
+		codes = append(codes, recoveryCodeModel.Code)
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"codes": codes,
+		"count": len(codes),
+	})
 	return
 }
 

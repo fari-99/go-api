@@ -7,6 +7,7 @@ import (
 
 	gohelper "github.com/fari-99/go-helper"
 	"github.com/fari-99/go-helper/crypts"
+	"github.com/dgryski/dgoogauth"
 	"github.com/gin-gonic/gin"
 
 	"go-api/constant"
@@ -16,10 +17,12 @@ import (
 
 type Service interface {
 	GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
+	GetTotpDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error)
 	GetUserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error)
 
 	// 2FA
 	CreateTotp(ctx *gin.Context) (string, string, error)
+	VerifyTotpCode(secret []byte, otpValue string) (bool, error)
 	UserEnabledTotp(ctx *gin.Context, userID uint64, isEnabled bool) error
 
 	// Recovery Code
@@ -70,6 +73,10 @@ func (s service) GetDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, 
 	return s.repo.GetDetails(ctx, userID)
 }
 
+func (s service) GetTotpDetails(ctx *gin.Context, userID uint64) (*models.TwoAuths, bool, error) {
+	return s.repo.GetTotpDetails(ctx, userID)
+}
+
 func (s service) GetUserDetails(ctx *gin.Context, userID uint64) (*models.Users, bool, error) {
 	return s.repo.GetUserDetails(ctx, userID)
 }
@@ -85,6 +92,7 @@ func (s service) CreateTotp(ctx *gin.Context) (string, string, error) {
 
 	twoAuthModel := models.TwoAuths{
 		UserID:  currentUser.ID,
+		Type:    "totp",
 		Account: currentUser.Email,
 		Issuer:  os.Getenv("APP_NAME"),
 		Secret:  string(encryptSecret),
@@ -95,6 +103,16 @@ func (s service) CreateTotp(ctx *gin.Context) (string, string, error) {
 	authLink := fmt.Sprintf("otpauth://totp/%s:%s?secret=%s&issuer=%s", twoAuthModel.Issuer, twoAuthModel.Account, encodedSecret, twoAuthModel.Issuer)
 
 	return encodedSecret, authLink, err
+}
+
+func (s service) VerifyTotpCode(secret []byte, otpValue string) (bool, error) {
+	otpConfig := &dgoogauth.OTPConfig{
+		Secret:      string(secret),
+		WindowSize:  3,
+		HotpCounter: 0,
+	}
+
+	return otpConfig.Authenticate(otpValue)
 }
 
 func (s service) UserEnabledTotp(ctx *gin.Context, userID uint64, isEnabled bool) error {

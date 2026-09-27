@@ -1,6 +1,8 @@
 package users
 
 import (
+	"errors"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 
@@ -53,7 +55,13 @@ func (request RequestChangePassword) Validate() error {
 	return validation.ValidateStruct(&request,
 		validation.Field(&request.CurrentPassword, validation.Required),
 		validation.Field(&request.NewPassword, validation.Required),
-		validation.Field(&request.NewPasswordConfirm, validation.Required),
+		validation.Field(&request.NewPasswordConfirm, validation.Required, validation.By(func(value interface{}) error {
+			confirm, _ := value.(string)
+			if confirm != request.NewPassword {
+				return errors.New("new_password_confirm does not match new_password")
+			}
+			return nil
+		})),
 	)
 }
 

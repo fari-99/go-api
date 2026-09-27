@@ -2,9 +2,12 @@ package users
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 
 	"github.com/fari-99/go-helper/rabbitmq"
 	"github.com/gin-gonic/gin"
@@ -203,10 +206,29 @@ func (c controller) ChangePasswordAction(ctx *gin.Context) {
 
 	exists, err := c.service.ChangePassword(ctx, input)
 	if err != nil {
-		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
-			"error":         err.Error(),
-			"error_message": "error changing your password",
-		})
+		var validationErrs validation.Errors
+		switch {
+		case errors.Is(err, ErrInvalidCurrentPassword):
+			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+				"error":         err.Error(),
+				"error_message": "invalid current password",
+			})
+		case errors.Is(err, ErrWeakNewPassword):
+			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+				"error":         err.Error(),
+				"error_message": "new password is not strong enough, please choose a stronger one",
+			})
+		case errors.As(err, &validationErrs):
+			helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
+				"error":         err.Error(),
+				"error_message": err.Error(),
+			})
+		default:
+			helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+				"error":         err.Error(),
+				"error_message": "error changing your password",
+			})
+		}
 		return
 	} else if !exists {
 		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{
