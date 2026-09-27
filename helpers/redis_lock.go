@@ -24,9 +24,9 @@ func (r *RedisLockHelper) SetContext(ctx context.Context) *RedisLockHelper {
 	return r
 }
 
-func (r *RedisLockHelper) Lock(key string) error {
+func (r *RedisLockHelper) Lock(key string, options ...redsync.Option) error {
 	redLock := configs.GetRedisLock()
-	r.mutex = redLock.NewMutex(key)
+	r.mutex = redLock.NewMutex(key, options...)
 
 	if r.ctx != nil {
 		return r.mutex.LockContext(r.ctx)

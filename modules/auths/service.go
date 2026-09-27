@@ -96,7 +96,7 @@ func (s service) AllSessions(ctx *gin.Context) (allDevices []helpers.SessionRedi
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
 
-	return helpers.GetAllSessions(ctx, currentUser.Username)
+	return helpers.GetAllSessions(ctx, currentUser.Username, uuid.(string))
 }
 
 func (s service) SignOutUser(ctx *gin.Context) (int64, bool, error) {

@@ -11,7 +11,7 @@ This directory contains the core business logic of the application, divided into
 
 ### 🔔 Notifications & Communication
 - **Notifications**: Centralizing notification delivery for Firebase (FCM), Emails, and Webhooks.
-- **WhatsApp**: Native WhatsApp integration for messaging and automation.
+- **[WhatsApp](whatsapp/README.md)**: Native WhatsApp integration for messaging and automation — pairing via terminal QR or REST API.
 - **Telegrams**: Integration with Telegram Bot API for real-time alerts.
 
 ### 📹 Specialized Domains

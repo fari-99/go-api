@@ -11,16 +11,19 @@ import (
 
 	"go-api/constant"
 	"go-api/modules/configs"
+	"go-api/modules/models"
 )
 
 type Repository interface {
-	GetDetail(ctx *gin.Context, id int64) (interface{}, bool, error)
-	GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *paginator.Pagination, error)
-	Create(ctx *gin.Context, model interface{}) (interface{}, error)
-	Update(ctx *gin.Context, model interface{}) (interface{}, error)
+	GetDetail(ctx *gin.Context, id int64) (models.NotificationTemplates, bool, error)
+	GetList(ctx *gin.Context, filter RequestListFilter) ([]models.NotificationTemplates, *paginator.Pagination, error)
+	Create(ctx *gin.Context, model models.NotificationTemplates) (models.NotificationTemplates, error)
+	Update(ctx *gin.Context, model models.NotificationTemplates) (models.NotificationTemplates, error)
 	Delete(ctx *gin.Context, id int64) error
 
 	QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bool, err error)
+
+	GetUserWithSocials(ctx *gin.Context, userID int64) (models.Users, bool, error)
 }
 
 type repository struct {
@@ -43,24 +46,32 @@ func (r repository) QRCodeWhatsapp(ctx *gin.Context) (qrCode string, isExists bo
 	return qrCode, true, nil
 }
 
-func (r repository) GetDetail(ctx *gin.Context, id int64) (interface{}, bool, error) {
-	db := r.DB
+func (r repository) GetDetail(ctx *gin.Context, id int64) (models.NotificationTemplates, bool, error) {
+	db := r.DB.WithContext(ctx)
 
-	var model interface{}
+	var model models.NotificationTemplates
 	err := db.First(&model, id).Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, true, nil
+		return models.NotificationTemplates{}, true, nil
 	} else if err != nil {
-		return nil, false, err
+		return models.NotificationTemplates{}, false, err
 	}
 
 	return model, false, nil
 }
 
-func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]interface{}, *paginator.Pagination, error) {
-	db := r.DB
+func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]models.NotificationTemplates, *paginator.Pagination, error) {
+	db := r.DB.WithContext(ctx)
 
-	var models []interface{}
+	if filter.NotificationType != 0 {
+		db = db.Where("notification_type = ?", filter.NotificationType)
+	}
+
+	if filter.Action != "" {
+		db = db.Where("action = ?", filter.Action)
+	}
+
+	var templateModels []models.NotificationTemplates
 	page, err := paginator.Pages(&paginator.Param{
 		DB: db,
 		Paging: &paginator.Paging{
@@ -69,39 +80,52 @@ func (r repository) GetList(ctx *gin.Context, filter RequestListFilter) ([]inter
 			Limit:   filter.Limit,
 			ShowSQL: false,
 		},
-	}, &models)
+	}, &templateModels)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return models, page, nil
+	return templateModels, page, nil
 }
 
-func (r repository) Create(ctx *gin.Context, model interface{}) (interface{}, error) {
-	db := r.DB
+func (r repository) Create(ctx *gin.Context, model models.NotificationTemplates) (models.NotificationTemplates, error) {
+	db := r.DB.WithContext(ctx)
 	err := db.Create(&model).Error
 	if err != nil {
-		return nil, err
+		return models.NotificationTemplates{}, err
 	}
 
 	return model, nil
 }
 
-func (r repository) Update(ctx *gin.Context, model interface{}) (interface{}, error) {
-	db := r.DB
+func (r repository) Update(ctx *gin.Context, model models.NotificationTemplates) (models.NotificationTemplates, error) {
+	db := r.DB.WithContext(ctx)
 	err := db.Save(&model).Error
 	return model, err
 }
 
 func (r repository) Delete(ctx *gin.Context, id int64) error {
-	model, notFound, err := r.GetDetail(ctx, id)
+	_, notFound, err := r.GetDetail(ctx, id)
 	if notFound {
-		return fmt.Errorf("model not found")
+		return fmt.Errorf("notification template not found")
 	} else if err != nil {
 		return err
 	}
 
-	db := r.DB
-	err = db.Delete(&model, id).Error
-	return err
+	db := r.DB.WithContext(ctx)
+	return db.Delete(&models.NotificationTemplates{}, id).Error
+}
+
+func (r repository) GetUserWithSocials(ctx *gin.Context, userID int64) (models.Users, bool, error) {
+	db := r.DB.WithContext(ctx)
+
+	var user models.Users
+	err := db.Preload("UserSocials").First(&user, userID).Error
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return models.Users{}, true, nil
+	} else if err != nil {
+		return models.Users{}, false, err
+	}
+
+	return user, false, nil
 }

@@ -16,6 +16,8 @@ func NewRegistrator(app *gin.RouterGroup, di *configs.DI, authHandler gin.Handle
 	{
 		whatsappClient.Use(authHandler)
 		whatsappClient.POST("/login", control.LoginAction)
-		whatsappClient.POST("/qr-code", control.QRCodeAction)
+		whatsappClient.POST("/logout", control.LogoutAction)
+		whatsappClient.GET("/qr-code", control.QRCodeAction)
+		whatsappClient.GET("/status", control.StatusAction)
 	}
 }

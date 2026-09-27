@@ -19,6 +19,8 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 		notifications.PUT("/:id", control.UpdateAction)
 		notifications.DELETE("/:id", control.DeleteAction)
 
+		notifications.POST("/send", control.SendManualAction)
+
 		notifications.GET("/qr-code/whatsapp", control.GetQRCodeWhatsapp)
 	}
 }

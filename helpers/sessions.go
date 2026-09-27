@@ -54,9 +54,13 @@ type SessionUserData struct {
 }
 
 type SessionRedisData struct {
-	UserDetails SessionUserData `json:"user_details"`
-	UserAgent   string          `json:"user_agent"`
-	IPAddress   string          `json:"ip_address"`
+	Uuid             string          `json:"uuid"`
+	IsCurrent        bool            `json:"is_current"`
+	UserDetails      SessionUserData `json:"user_details"`
+	UserAgent        string          `json:"user_agent"`
+	IPAddress        string          `json:"ip_address"`
+	AccessExpiredAt  time.Time       `json:"access_expired_at"`
+	RefreshExpiredAt time.Time       `json:"refresh_expired_at"`
 }
 
 type FamilyCheck struct {
@@ -211,17 +215,41 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 	return nil
 }
 
-func GetAllSessions(ctx context.Context, username string) ([]SessionRedisData, error) {
+func GetAllSessions(ctx context.Context, username string, currentUuid string) ([]SessionRedisData, error) {
+	// getAllUuid already prunes any uuid whose refresh token has expired, so
+	// everything left here is, by definition, not an expired session.
 	_, refreshUuids, err := getAllUuid(ctx, username)
 	if err != nil {
 		return nil, err
 	}
 
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
+	keyRedis := getKeyRedis(username, "")
+
 	var sessions []SessionRedisData
 	for _, refreshUuid := range refreshUuids {
+		// the access token key can age out before the refresh key does (access
+		// lifetime is much shorter); both were written with the same payload,
+		// so fall back to the refresh copy instead of dropping a live session.
 		session, err := GetCurrentSession(ctx, refreshUuid)
 		if err != nil {
-			return nil, err
+			session, err = GetCurrentSessionRefresh(ctx, refreshUuid)
+			if err != nil {
+				continue // genuinely gone (race with expiry/removal) - not something to surface as a device
+			}
+		}
+
+		session.Uuid = refreshUuid
+		session.IsCurrent = refreshUuid == currentUuid
+
+		// the zset score *is* the expiry (that's what removeExpiredToken prunes
+		// against), so read it from there instead of keeping a second copy that
+		// could drift out of sync with it.
+		if score, err := redisSession.ZScore(ctx, keyRedis.KeyTotalAccess, refreshUuid).Result(); err == nil {
+			session.AccessExpiredAt = time.Unix(int64(score), 0)
+		}
+		if score, err := redisSession.ZScore(ctx, keyRedis.KeyTotalRefresh, refreshUuid).Result(); err == nil {
+			session.RefreshExpiredAt = time.Unix(int64(score), 0)
 		}
 
 		sessions = append(sessions, *session)

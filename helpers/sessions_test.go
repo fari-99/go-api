@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 
 	"go-api/modules/configs"
 )
@@ -198,6 +199,83 @@ func TestRefreshRotation_ReusedOldTokenIsDetectedAsCollision(t *testing.T) {
 	}
 	if isUsedAgain {
 		t.Fatalf("expected family marker to be cleared after being consumed once")
+	}
+}
+
+// TestGetAllSessions_ExcludesExpiredAndFallsBackToRefreshCopy covers the two
+// edge cases around listing devices: a session whose access-token copy has
+// already aged out (shorter TTL than the refresh token) must still show up
+// by falling back to the refresh copy, while a session that is genuinely
+// expired (its refresh entry's score is in the past) must not show up at all.
+func TestGetAllSessions_ExcludesExpiredAndFallsBackToRefreshCopy(t *testing.T) {
+	setTotalLoginSession(t, "5")
+
+	ctx := context.Background()
+	username := fmt.Sprintf("test-list-%s", uuid.NewString())
+	liveUuid := uuid.NewString()
+	accessLapsedUuid := uuid.NewString()
+	expiredUuid := uuid.NewString()
+	cleanupSession(t, username, liveUuid, accessLapsedUuid, expiredUuid)
+
+	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)
+
+	beforeCreate := time.Now()
+	for _, id := range []string{liveUuid, accessLapsedUuid, expiredUuid} {
+		if _, err := SetupLoginSession(ctx, username, newTestSessionData(id)); err != nil {
+			t.Fatalf("SetupLoginSession(%s) failed: %s", id, err.Error())
+		}
+	}
+
+	// simulate the access token key having already aged out while the refresh
+	// token (and its zset entry) are still alive.
+	accessLapsedKeys := getKeyRedis(username, accessLapsedUuid)
+	if err := redisSession.Del(ctx, accessLapsedKeys.KeyAccess).Err(); err != nil {
+		t.Fatalf("failed to simulate lapsed access key: %s", err.Error())
+	}
+
+	// simulate a genuinely expired session by pushing its zset score into the past.
+	expiredKeys := getKeyRedis(username, expiredUuid)
+	pastScore := float64(time.Now().Add(-1 * time.Hour).Unix())
+	backdated := redis.Z{Score: pastScore, Member: expiredUuid}
+	if err := redisSession.ZAdd(ctx, expiredKeys.KeyTotalAccess, backdated).Err(); err != nil {
+		t.Fatalf("failed to backdate access zset score: %s", err.Error())
+	}
+	if err := redisSession.ZAdd(ctx, expiredKeys.KeyTotalRefresh, backdated).Err(); err != nil {
+		t.Fatalf("failed to backdate refresh zset score: %s", err.Error())
+	}
+
+	sessions, err := GetAllSessions(ctx, username, liveUuid)
+	if err != nil {
+		t.Fatalf("GetAllSessions failed: %s", err.Error())
+	}
+
+	seen := make(map[string]SessionRedisData)
+	for _, s := range sessions {
+		seen[s.Uuid] = s
+	}
+
+	if _, ok := seen[liveUuid]; !ok {
+		t.Fatalf("expected live session %s to be listed", liveUuid)
+	}
+	if !seen[liveUuid].IsCurrent {
+		t.Fatalf("expected live session %s to be marked as current", liveUuid)
+	}
+
+	// expiry must reflect the zset score (the authoritative expiry the store already
+	// prunes against), not some separately-tracked copy that could drift from it.
+	wantAccessExpiry := beforeCreate.Add(1 * time.Hour)
+	wantRefreshExpiry := beforeCreate.Add(24 * time.Hour)
+	if diff := seen[liveUuid].AccessExpiredAt.Sub(wantAccessExpiry); diff < -5*time.Second || diff > 5*time.Second {
+		t.Fatalf("expected access_expired_at near %s, got %s", wantAccessExpiry, seen[liveUuid].AccessExpiredAt)
+	}
+	if diff := seen[liveUuid].RefreshExpiredAt.Sub(wantRefreshExpiry); diff < -5*time.Second || diff > 5*time.Second {
+		t.Fatalf("expected refresh_expired_at near %s, got %s", wantRefreshExpiry, seen[liveUuid].RefreshExpiredAt)
+	}
+	if _, ok := seen[accessLapsedUuid]; !ok {
+		t.Fatalf("expected session %s with a lapsed access key to still be listed via refresh fallback", accessLapsedUuid)
+	}
+	if _, ok := seen[expiredUuid]; ok {
+		t.Fatalf("expired session %s must not be listed", expiredUuid)
 	}
 }
 
