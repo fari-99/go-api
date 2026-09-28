@@ -169,8 +169,11 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 
 	userDetails, _ := data.UserDetails.(*models.Users)
 	sessionRedisData := SessionRedisData{
-		UserAgent: data.UserAgent,
-		IPAddress: data.IPAddress,
+		Uuid:             data.Token.Uuid,
+		UserAgent:        data.UserAgent,
+		IPAddress:        data.IPAddress,
+		AccessExpiredAt:  data.Token.AccessExpiredAt,
+		RefreshExpiredAt: data.Token.RefreshExpiredAt,
 	}
 	if userDetails != nil {
 		sessionRedisData.UserDetails = SessionUserData{
