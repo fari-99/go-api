@@ -14,7 +14,6 @@ import (
 	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
-	"google.golang.org/protobuf/proto"
 
 	"go-api/constant"
 	"go-api/helpers"
@@ -113,7 +112,7 @@ func sendWhatsappWhatsmeow(data WhatsappData) error {
 	// makes usync/LID lookups on the server time out instead of failing fast.
 	targetJid := types.NewJID(normalizePhoneForJid(data.To), types.DefaultUserServer)
 	message := &waE2E.Message{
-		Conversation: proto.String(data.Message),
+		Conversation: new(data.Message),
 	}
 
 	_, err := client.SendMessage(context.Background(), targetJid, message)

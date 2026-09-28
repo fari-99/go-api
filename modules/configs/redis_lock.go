@@ -41,7 +41,7 @@ func getRedisLockConfig() redis.UniversalOptions {
 
 func GetRedisLock() *redsync.Redsync {
 	redisOption := getRedisLockConfig()
-	client := redis.NewUniversalClient(&redisOption)
+	client := redis.NewUniversalClient(new(redisOption))
 
 	err := client.Ping(context.Background()).Err()
 	if err != nil {

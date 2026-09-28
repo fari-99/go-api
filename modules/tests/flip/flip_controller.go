@@ -199,8 +199,7 @@ func (c controller) GetAllDisbursement(ctx *gin.Context) {
 	input.Pagination = ctx.DefaultQuery("pagination", "10")
 	input.Page = ctx.DefaultQuery("page", "1")
 	input.Sort = ctx.DefaultQuery("sort", "id")
-	attribute := ctx.DefaultQuery("attribute", "")
-	input.Attribute = &attribute
+	input.Attribute = new(ctx.DefaultQuery("attribute", ""))
 
 	baseFlip := flip.NewBaseFlip()
 	baseFlip.SetIdempotencyKey(uuid.New().String())
