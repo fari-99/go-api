@@ -152,8 +152,8 @@ github.com/fari-99/aws-presignpost-s3-go v1.1.0 h1:zACjugVrILMAh3wLdXQVZpEWc7SSO
 github.com/fari-99/aws-presignpost-s3-go v1.1.0/go.mod h1:llHyyeQWJqalFcJV4isGssj6R9fNFCY0oOMr8mg74ok=
 github.com/fari-99/go-flip v1.0.1 h1:gbaOSk53LqEphiU6xzDfbq+VQcw+B+7/VxAhopri1JM=
 github.com/fari-99/go-flip v1.0.1/go.mod h1:NeDCjgNMfo7zHK01GLIbn5wPlJm2RL/qxlRdCY2PPmc=
-github.com/fari-99/go-helper v1.6.1 h1:7KXa6g+A/hw2mVfkskHats3C38w+oTzF1/fU7ZauYZo=
-github.com/fari-99/go-helper v1.6.1/go.mod h1:dCLk5gzxyegt018N5O3BN7qC0bHKc1oDmwDhAd26Pfg=
+github.com/fari-99/go-helper v1.6.3 h1:S8wJGFsEDnAswjaNVKVzGu2IbvkWpitMflkqFqzBpnc=
+github.com/fari-99/go-helper v1.6.3/go.mod h1:dCLk5gzxyegt018N5O3BN7qC0bHKc1oDmwDhAd26Pfg=
 github.com/felixge/httpsnoop v1.1.0 h1:3YtUj32ZZkqZtt3sZZsClsymw/QDuVfpNhoA31zeORc=
 github.com/felixge/httpsnoop v1.1.0/go.mod h1:Zqxgdd+1Rkcz8euOqdr7lqgCRJztwr5hp9vDSi5UZCE=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
