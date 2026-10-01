@@ -7,13 +7,15 @@ require (
 	github.com/Blank-Xu/sql-adapter v1.2.1
 	github.com/IBM/sarama v1.61.1
 	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.3
+	github.com/alicebob/miniredis/v2 v2.39.0
 	github.com/casbin/casbin/v2 v2.135.0
+	github.com/coder/websocket v1.8.15
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dgryski/dgoogauth v0.0.0-20190221195224-5a805980a5f3
 	github.com/dmitryburov/gorm-paginator v0.9.6
 	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/fari-99/go-flip v1.0.1
-	github.com/fari-99/go-helper v1.6.3
+	github.com/fari-99/go-helper v1.7.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.4.1
 	github.com/go-redis/cache/v9 v9.0.0
@@ -89,7 +91,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.7 // indirect
 	github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 // indirect
-	github.com/coder/websocket v1.8.15 // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect
 	github.com/elliotchance/orderedmap/v3 v3.1.1 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.39.0 // indirect
@@ -153,6 +154,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.58 // indirect
 	github.com/vmihailenco/go-tinylfu v0.2.2 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.mau.fi/libsignal v0.2.2 // indirect
 	go.mau.fi/util v0.10.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.9.1 // indirect

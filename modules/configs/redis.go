@@ -15,6 +15,7 @@ import (
 
 const REDIS_SESSION_PREFIX = "REDIS_SESSION"
 const REDIS_COUNTING_PREFIX = "REDIS_COUNTING"
+const REDIS_WS_AUTH_PREFIX = "REDIS_WS_AUTH"
 
 // RedisInstance holds a named redis client
 type RedisInstance struct {

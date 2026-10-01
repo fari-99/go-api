@@ -1,6 +1,6 @@
 # PRD: WebSocket File Upload (S3/GCS) with Short-Lived Token Auth
 
-- Status: Draft v3 (all open questions resolved, see §6-§7)
+- Status: Implemented v1 (see §11 for what was built and how it was verified)
 - Owner: TBD
 - Related module: `modules/storages`
 - Author: generated with Claude Code from codebase research on 2026-09-28, revised 2026-09-30 with owner decisions
@@ -226,23 +226,41 @@ handshake: `wss://.../ws/storages/upload?token=<encrypted_access_token>`.
 
 ### 5.6 WebSocket wire protocol
 
-Text/JSON control frames + binary data frames on the same connection:
+Text frames are JSON control messages; binary frames are data. Every upload has a client-chosen
+numeric `id` (uint32) so several files can be in flight on one socket (up to the §5.7 cap).
+
+**Binary frame layout:** `[4 bytes big-endian upload id][payload]`. Max frame size is
+`WS_UPLOAD_MAX_CHUNK_KB` + 4 bytes.
 
 ```
-→ {"type":"start","id":"f1","file_name":"...","file_type":"...","size":12345,"mime":"..."}
-→ <binary chunk>
-→ <binary chunk>
-→ {"type":"end","id":"f1"}
-→ {"type":"renew","refresh_token":"..."}
-← {"type":"progress","id":"f1","received":8192}
-← {"type":"ack","id":"f1","storage":{...models.Storages...}}
-← {"type":"renewed", ...}
-← {"type":"error","id":"f1","code":"...","message":"..."}
+→ {"type":"start","id":1,"file_name":"a.png","file_type":"avatars","size":12345}
+→ <binary: id=1 + chunk>   (repeat)
+→ {"type":"end","id":1}
+→ {"type":"abort","id":1}
+→ {"type":"renew","refresh_token":"<encrypted>"}
+→ {"type":"ping"}
+← {"type":"started","id":1}
+← {"type":"progress","id":1,"received":8192}
+← {"type":"ack","id":1,"storage":{...models.Storages...}}
+← {"type":"renewed","access_token":"...","refresh_token":"...","access_expires_at":"...","refresh_expires_at":"..."}
+← {"type":"pong"}
+← {"type":"error","id":1,"code":"...","message":"..."}
 ```
 
-Multiple files per connection = repeat `start`/binary/`end`, each with an `id` so concurrent
-in-flight files (up to the §5.7 cap) can be told apart. Declared `size` is only a hint used to
-reject early; enforcement counts actual bytes received.
+`size` is optional (0 = unknown); when given it must match the bytes received at `end`.
+`file_type` is a storage folder name and must match `[A-Za-z0-9_-]{1,64}`. The client `mime` is
+ignored; MIME is sniffed server-side.
+
+Error codes: `token_expired`, `too_many_uploads`, `file_too_large`, `size_mismatch`,
+`invalid_file_type`, `invalid_file_name`, `duplicate_id`, `unknown_upload`, `empty_file`,
+`upload_stalled`, `connection_limit`, `bad_message`, `unknown_type`, `upload_failed`,
+`internal_error`, `unauthorized`.
+
+Close codes: `4401` session revoked / refresh token reused / bad renew, `4408` access token
+expired and not renewed (only closed when no upload is in flight), `1009` connection byte cap.
+
+Backpressure: the read loop is single-threaded, so a slow storage backend slows the client; if a
+chunk can't be queued within `WS_UPLOAD_STALL_SECONDS` that upload is aborted (`upload_stalled`).
 
 ### 5.7 Limits and concurrency (decision: env-driven)
 
@@ -363,3 +381,31 @@ No open questions remain blocking implementation.
 | Redis config (env) | `global.env` (repo root) |
 | S3/GCS/JWT env vars | `.env`, `.env.example` |
 | Composition root | `cmd/servers/main/main.go` |
+
+## 11. Implementation Status (2026-09-30)
+
+All milestones in §9 are implemented.
+
+| Milestone | Where |
+|---|---|
+| 1. `STORAGE_DRIVER` for REST | `modules/storages/service.go` (`newStorageBase`) |
+| 2. Token issue/refresh, encryption, decrypt middleware, `REDIS_WS_AUTH` | `modules/ws_auth/`, `modules/configs/redis.go` |
+| 3. WS endpoint `GET /ws/storages/upload`, ping/renew/watchdog | `modules/storages/ws_controller.go`, `registrator.go` |
+| 4. Streaming storage package, protocol, limits, concurrency, `models.Storages` insert | `pkg/wsstorage/`, `modules/storages/ws_*.go` |
+| 5. Tests | `pkg/wsstorage/*_test.go`, `modules/ws_auth/service_test.go`, `modules/storages/ws_controller_test.go` |
+
+Endpoints: `POST /storages/ws-token` (REST session auth, rate limited),
+`POST /storages/ws-token/refresh` (`{"refresh_token": "..."}`), `GET /ws/storages/upload?token=...`.
+
+Notes / deviations from the design above:
+- Tests use `miniredis` (in-memory Redis), a new test-only dependency.
+- `wsstorage` and the `ws_auth` service/config now live in go-helper v1.7.0 (`wsstorage`, `ws_auth`);
+  go-api keeps only the gin controller, middleware and registrator. `crypts.Decrypt` no longer
+  panics on short input (fixed in the same release).
+- The feature flag from milestone 5 was not added (the project has none); the WS routes are
+  registered unconditionally and `ws_auth.NewService` panics at startup if the `WS_*` secrets or
+  `REDIS_WS_AUTH_*` are missing.
+- Renewal keeps a family alive for as long as the client keeps renewing before the 30 minute
+  refresh token expires (sliding session). Cap the total lifetime later if that is unwanted.
+- Not verified against real S3/GCS (no credentials in this environment): only the local driver is
+  covered by tests. The S3/GCS code paths compile and follow the vendored implementation.

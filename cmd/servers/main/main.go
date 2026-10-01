@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	wsauth "github.com/fari-99/go-helper/ws_auth"
 	"go-api/modules/auths"
 	"go-api/modules/configs"
 	"go-api/modules/hasura"
@@ -21,6 +22,7 @@ import (
 	"go-api/modules/twoFA"
 	"go-api/modules/users"
 	"go-api/modules/whatsapp"
+	"go-api/modules/ws_auth"
 
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -61,9 +63,12 @@ func main() {
 		state_machine.NewService(state_machine.NewRepository(di)),
 		authentication)
 
+	wsAuth := wsauth.NewService(configs.GetRedis(configs.REDIS_WS_AUTH_PREFIX), wsauth.ConfigFromEnv())
+	ws_auth.NewRegistrator(app.Group(""), wsAuth, authentication)
+
 	storages.NewRegistrator(app.Group(""),
 		storages.NewService(storages.NewRepository(di)),
-		authentication)
+		authentication, wsAuth)
 
 	notifications.NewRegistrator(app.Group(""),
 		notifications.NewService(notifications.NewRepository(di)),
