@@ -63,8 +63,12 @@ func main() {
 		state_machine.NewService(state_machine.NewRepository(di)),
 		authentication)
 
-	wsAuth := wsauth.NewService(configs.GetRedis(configs.REDIS_WS_AUTH_PREFIX), wsauth.ConfigFromEnv())
-	ws_auth.NewRegistrator(app.Group(""), wsAuth, authentication)
+	// WebSocket upload is opt-in (WS_UPLOAD_ENABLED); when off, no WS secrets or Redis are needed
+	var wsAuth wsauth.Service
+	if ws_auth.Enabled() {
+		wsAuth = wsauth.NewService(configs.GetRedis(configs.REDIS_WS_AUTH_PREFIX), wsauth.ConfigFromEnv())
+		ws_auth.NewRegistrator(app.Group(""), wsAuth, authentication)
+	}
 
 	storages.NewRegistrator(app.Group(""),
 		storages.NewService(storages.NewRepository(di)),

@@ -26,7 +26,10 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 		privateStorage.POST("/s3-policy", authHandler, control.S3Policy)
 	}
 
-	// WebSocket upload, authenticated with the short-lived encrypted WS token (see modules/ws_auth)
-	wsControl := newWSController(control.service, wsAuth)
-	app.GET("/ws/storages/upload", ws_auth.Middleware(wsAuth), wsControl.UploadAction)
+	// WebSocket upload, authenticated with the short-lived encrypted WS token (see modules/ws_auth).
+	// wsAuth is nil when WS_UPLOAD_ENABLED is off.
+	if wsAuth != nil {
+		wsControl := newWSController(control.service, wsAuth)
+		app.GET("/ws/storages/upload", ws_auth.Middleware(wsAuth), wsControl.UploadAction)
+	}
 }

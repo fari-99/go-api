@@ -402,9 +402,9 @@ Notes / deviations from the design above:
 - `wsstorage` and the `ws_auth` service/config now live in go-helper v1.7.0 (`wsstorage`, `ws_auth`);
   go-api keeps only the gin controller, middleware and registrator. `crypts.Decrypt` no longer
   panics on short input (fixed in the same release).
-- The feature flag from milestone 5 was not added (the project has none); the WS routes are
-  registered unconditionally and `ws_auth.NewService` panics at startup if the `WS_*` secrets or
-  `REDIS_WS_AUTH_*` are missing.
+- Feature flag: `WS_UPLOAD_ENABLED` (default `false`). When off, the WS routes are not registered and
+  no `WS_*` secrets or `REDIS_WS_AUTH_*` are needed. When on, `wsauth.NewService` still panics at
+  startup if the `WS_*` secrets are missing.
 - Renewal keeps a family alive for as long as the client keeps renewing before the 30 minute
   refresh token expires (sliding session). Cap the total lifetime later if that is unwanted.
 - Not verified against real S3/GCS (no credentials in this environment): only the local driver is
