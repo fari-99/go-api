@@ -2,15 +2,18 @@ package storages
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"io"
+	"mime"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/fari-99/go-helper/crypts"
 	"github.com/fari-99/go-helper/storages"
@@ -41,8 +44,8 @@ func (c controller) DetailAction(ctx *gin.Context) {
 			"error_message": "error getting storage data",
 		})
 		return
-	} else if !notFound {
-		helpers.NewResponse(ctx, http.StatusOK, gin.H{
+	} else if notFound {
+		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{
 			"error_message": "storage id not found",
 		})
 		return
@@ -50,6 +53,68 @@ func (c controller) DetailAction(ctx *gin.Context) {
 
 	helpers.NewResponse(ctx, http.StatusOK, storageModel)
 	return
+}
+
+func (c controller) ListAction(ctx *gin.Context) {
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "20"))
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	items, paginatorData, err := c.service.GetList(ctx, page, limit)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{
+			"error":         err.Error(),
+			"error_message": "failed to list files",
+		})
+		return
+	}
+
+	helpers.NewResponse(ctx, http.StatusOK, gin.H{
+		"paginator": paginatorData,
+		"items":     items,
+	})
+}
+
+// ContentAction streams the file with its stored MIME type. Range requests are supported, so
+// audio/video can seek. Only the owner can read it. ?download=1 forces a download.
+func (c controller) ContentAction(ctx *gin.Context) {
+	storageID, err := strconv.ParseUint(ctx.Param("storageID"), 10, 64)
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusBadRequest, gin.H{"message": "storageID is not valid"})
+		return
+	}
+
+	storageModel, file, err := c.service.OpenOwned(ctx, storageID)
+	if errors.Is(err, ErrStorageNotFound) {
+		helpers.NewResponse(ctx, http.StatusNotFound, gin.H{"message": "file not found"})
+		return
+	} else if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{"message": "failed to open file"})
+		return
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		helpers.NewResponse(ctx, http.StatusInternalServerError, gin.H{"message": "failed to read file"})
+		return
+	}
+
+	// only media is shown inline; anything else (html, text, ...) is always a download
+	disposition := "attachment"
+	if ctx.Query("download") != "1" && isInlineMime(storageModel.Mime) {
+		disposition = "inline"
+	}
+
+	name := strings.NewReplacer("\"", "", "\r", "", "\n", "").Replace(storageModel.OriginalFilename)
+	ctx.Header("Content-Type", storageModel.Mime)
+	ctx.Header("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": name}))
+	ctx.Header("X-Content-Type-Options", "nosniff")
+	ctx.Header("Content-Security-Policy", "default-src 'none'; sandbox")
+	ctx.Header("Cache-Control", "private, max-age=300")
+	http.ServeContent(ctx.Writer, ctx.Request, "", stat.ModTime(), file)
 }
 
 func (c controller) S3Policy(ctx *gin.Context) {
@@ -188,4 +253,8 @@ func (c controller) GetImages(ctx *gin.Context) {
 	responseWriter.WriteHeader(http.StatusOK)
 	_, _ = io.Copy(responseWriter, buf)
 	return
+}
+
+func isInlineMime(mimeType string) bool {
+	return strings.HasPrefix(mimeType, "image/") || strings.HasPrefix(mimeType, "video/") || strings.HasPrefix(mimeType, "audio/")
 }

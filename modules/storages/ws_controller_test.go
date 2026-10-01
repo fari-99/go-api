@@ -15,6 +15,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/coder/websocket"
+	paginator "github.com/dmitryburov/gorm-paginator"
 	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -41,6 +42,14 @@ func (f *fakeService) CreateStorage(_ *gin.Context, m models.Storages) (*models.
 	m.ID = models.IDType(len(f.saved) + 1)
 	f.saved = append(f.saved, m)
 	return &m, nil
+}
+
+func (f *fakeService) GetList(*gin.Context, int, int) ([]models.Storages, *paginator.Pagination, error) {
+	return nil, nil, nil
+}
+
+func (f *fakeService) OpenOwned(*gin.Context, uint64) (*models.Storages, *os.File, error) {
+	return nil, nil, ErrStorageNotFound
 }
 
 type wsHarness struct {

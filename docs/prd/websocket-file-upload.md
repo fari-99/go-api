@@ -409,3 +409,36 @@ Notes / deviations from the design above:
   refresh token expires (sliding session). Cap the total lifetime later if that is unwanted.
 - Not verified against real S3/GCS (no credentials in this environment): only the local driver is
   covered by tests. The S3/GCS code paths compile and follow the vendored implementation.
+
+## 12. TODO: Short-Lived Signed URLs for File Access
+
+Today `GET /storages/:storageID/content` needs the `Authorization` header, so the frontend fetches
+the file as a blob (`StorageUploader.vue`). `<video>` and `<audio>` therefore download the whole
+file before playing, and Range seeking is unused. Signed URLs would let the tags load the URL
+directly and stream.
+
+- [ ] `POST /storages/:storageID/signed-url` (session auth, owner only): returns
+      `{"url": "/storages/:id/content?sig=...", "expires_at": "..."}`.
+- [ ] Signature: HMAC-SHA256 over `storageID | expires_at | disposition` with a new
+      `STORAGE_URL_SIGNING_KEY` (support a `_PREVIOUS` key for rotation, like `WS_TOKEN_ENCRYPTION_KEY`).
+      Compare in constant time. Do not reuse the JWT secrets.
+- [ ] `STORAGE_SIGNED_URL_TTL_SECONDS` env (default 300). Long enough for a video to buffer; the
+      frontend asks for a fresh URL on play/seek errors.
+- [ ] `GET /storages/:storageID/content` accepts either the `Authorization` header (current) or a
+      valid `sig`+`exp` query. Signed access skips the session lookup, so the owner check happens
+      when the URL is issued. Any bad or expired signature returns the same generic 404/401.
+- [ ] Keep Range support, `nosniff`, the CSP sandbox header and the inline-media-only rule.
+- [ ] `?download=1` must be part of the signed payload so a signature for `inline` can't be
+      replayed as a download (and vice versa).
+- [ ] Return signed URLs in the `GET /storages` list (or a batch endpoint) to avoid one request per row.
+- [ ] Revocation: a signed URL stays valid until it expires even if the file is deleted; the
+      handler must still check the record exists and `status = active`.
+- [ ] CORS/cookies: media tags send no credentials, so the URL must be self-contained. Confirm the
+      CORS middleware does not block cross-origin `<video>` loads from `vue.fadhlan.loc`.
+- [ ] Logging: do not log the full query string for this route (the signature is a bearer secret).
+- [ ] Tests: valid, expired, tampered id/exp/disposition, rotated key, Range through a signed URL,
+      and deleted file.
+- [ ] Frontend: switch `StorageUploader.vue` previews from blob fetch to `<video :src>` /
+      `<audio :src>` with the signed URL; re-request on error. Keep the blob path for downloads if desired.
+- [ ] Optional: for S3/GCS, return a native presigned URL via `PreSignGetFiles` instead of proxying
+      the bytes through go-api (then Range is handled by the bucket).

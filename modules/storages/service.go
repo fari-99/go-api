@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	paginator "github.com/dmitryburov/gorm-paginator"
 	"github.com/fari-99/go-helper/storages"
 	"github.com/gin-gonic/gin"
 
@@ -18,6 +19,9 @@ type Service interface {
 	GetDetail(ctx *gin.Context, storageID uint64) (storageModel *models.Storages, notFound bool, err error)
 	Uploads(ctx *gin.Context, form *multipart.Form) ([]models.Storages, error)
 	CreateStorage(ctx *gin.Context, storageModel models.Storages) (*models.Storages, error)
+	GetList(ctx *gin.Context, page, limit int) ([]models.Storages, *paginator.Pagination, error)
+	// OpenOwned opens the stored file of a storage record owned by the current user.
+	OpenOwned(ctx *gin.Context, storageID uint64) (*models.Storages, *os.File, error)
 }
 
 type service struct {
@@ -100,4 +104,51 @@ func newStorageBase(file *multipart.FileHeader, fileType string) *storages.Stora
 	}
 
 	return storageBase
+}
+
+func (s service) currentUserID(ctx *gin.Context) (uint64, error) {
+	uuid, _ := ctx.Get("uuid")
+	uuidString, _ := uuid.(string)
+
+	currentUser, err := helpers.GetCurrentUser(ctx, uuidString)
+	if err != nil {
+		return 0, err
+	}
+
+	return currentUser.ID.Uint64(), nil
+}
+
+func (s service) GetList(ctx *gin.Context, page, limit int) ([]models.Storages, *paginator.Pagination, error) {
+	userID, err := s.currentUserID(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return s.repo.GetList(ctx, userID, page, limit)
+}
+
+var ErrStorageNotFound = fmt.Errorf("file not found")
+
+func (s service) OpenOwned(ctx *gin.Context, storageID uint64) (*models.Storages, *os.File, error) {
+	userID, err := s.currentUserID(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	storageModel, notFound, err := s.repo.GetDetail(ctx, storageID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// someone else's file is reported as not found so ids can't be probed
+	if notFound || storageModel.CreatedBy.Uint64() != userID || storageModel.Status != constant.StatusActive {
+		return nil, nil, ErrStorageNotFound
+	}
+
+	file, err := newStorageBase(nil, "").GetFiles(storageModel.Type, storageModel.Path, storageModel.Filename)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return storageModel, file, nil
 }
