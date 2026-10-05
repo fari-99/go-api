@@ -14,6 +14,17 @@ type controller struct {
 	service Service
 }
 
+// AuthenticateAction godoc
+// @Summary      Authenticate user
+// @Description  Login with email and password. Sets refresh_token cookie, returns access token.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      RequestAuthUser  true  "Credentials"
+// @Success      200   {object}  helpers.Response
+// @Failure      400   {object}  helpers.Response
+// @Failure      404   {object}  helpers.Response
+// @Router       /users/auth [post]
 func (c controller) AuthenticateAction(ctx *gin.Context) {
 	var input RequestAuthUser
 	err := ctx.BindJSON(&input)
@@ -57,6 +68,15 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 	return
 }
 
+// RefreshSession godoc
+// @Summary      Refresh session
+// @Description  Issue new access token using refresh_token cookie.
+// @Tags         auth
+// @Produce      json
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      401  {object}  helpers.Response
+// @Router       /users/sessions/refresh [post]
 func (c controller) RefreshSession(ctx *gin.Context) {
 	authData, isExists, err := c.service.RefreshAuth(ctx)
 	if !isExists {
@@ -93,6 +113,14 @@ func (c controller) RefreshSession(ctx *gin.Context) {
 	return
 }
 
+// GetAllSession godoc
+// @Summary      List sessions
+// @Tags         auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/sessions/ [get]
 func (c controller) GetAllSession(ctx *gin.Context) {
 	allDevices, err := c.service.AllSessions(ctx)
 	if err != nil {
@@ -104,6 +132,15 @@ func (c controller) GetAllSession(ctx *gin.Context) {
 	return
 }
 
+// SignOutAction godoc
+// @Summary      Sign out current session
+// @Tags         auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /users/sessions/sign-out [post]
 func (c controller) SignOutAction(ctx *gin.Context) {
 	totalLogin, notFound, err := c.service.SignOutUser(ctx)
 	if err != nil {
@@ -118,6 +155,16 @@ func (c controller) SignOutAction(ctx *gin.Context) {
 	return
 }
 
+// DeleteSession godoc
+// @Summary      Delete one session
+// @Tags         auth
+// @Produce      json
+// @Security     BearerAuth
+// @Param        uuid  query     string  true  "Session UUID"
+// @Success      200   {object}  helpers.Response
+// @Failure      400   {object}  helpers.Response
+// @Failure      404   {object}  helpers.Response
+// @Router       /users/sessions/delete [delete]
 func (c controller) DeleteSession(ctx *gin.Context) {
 	uuid, isExist := ctx.GetQuery("uuid")
 	if !isExist {
@@ -140,6 +187,15 @@ func (c controller) DeleteSession(ctx *gin.Context) {
 	return
 }
 
+// DeleteAllSessionAction godoc
+// @Summary      Delete all sessions
+// @Tags         auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /users/sessions/all [delete]
 func (c controller) DeleteAllSessionAction(ctx *gin.Context) {
 	isExist, err := c.service.DeleteAllSession(ctx)
 	if err != nil {

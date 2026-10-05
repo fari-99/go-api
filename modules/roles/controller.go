@@ -13,6 +13,16 @@ type controller struct {
 	service Service
 }
 
+// GetDetailAction godoc
+// @Summary      Get role detail
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Role ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /roles/{id} [get]
 func (c controller) GetDetailAction(ctx *gin.Context) {
 	id := ctx.Param("id")
 	detail, notFound, err := c.service.GetDetail(ctx, id)
@@ -28,6 +38,15 @@ func (c controller) GetDetailAction(ctx *gin.Context) {
 	return
 }
 
+// CountPermissionsAction godoc
+// @Summary      Count permissions of role
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Role ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /roles/{id}/permissions-count [get]
 func (c controller) CountPermissionsAction(ctx *gin.Context) {
 	id := ctx.Param("id")
 	count, err := c.service.CountPermissions(ctx, id)
@@ -43,6 +62,17 @@ func (c controller) CountPermissionsAction(ctx *gin.Context) {
 	return
 }
 
+// GetListAction godoc
+// @Summary      List roles
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page  query  int  false  "Page (default 1)"
+// @Param        limit  query  int  false  "Page size (default 10)"
+// @Param        order_by  query  string  false  "Order by"
+// @Success      200  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /roles/ [get]
 func (c controller) GetListAction(ctx *gin.Context) {
 	pageQuery := ctx.DefaultQuery("page", "1")
 	page, _ := strconv.ParseInt(pageQuery, 10, 64)
@@ -71,6 +101,16 @@ func (c controller) GetListAction(ctx *gin.Context) {
 	return
 }
 
+// CreateAction godoc
+// @Summary      Create role
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestRole  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /roles/ [post]
 func (c controller) CreateAction(ctx *gin.Context) {
 	var input RequestRole
 	err := ctx.BindJSON(&input)
@@ -92,6 +132,17 @@ func (c controller) CreateAction(ctx *gin.Context) {
 	return
 }
 
+// UpdateAction godoc
+// @Summary      Update role
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Role ID"
+// @Param        body  body  RequestRole  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /roles/{id} [put]
 func (c controller) UpdateAction(ctx *gin.Context) {
 	id := ctx.Param("id")
 
@@ -115,6 +166,15 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 	return
 }
 
+// DeleteAction godoc
+// @Summary      Delete role
+// @Tags         roles
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Role ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /roles/{id} [delete]
 func (c controller) DeleteAction(ctx *gin.Context) {
 	id := ctx.Param("id")
 	err := c.service.Delete(ctx, id)

@@ -17,6 +17,16 @@ type controller struct {
 }
 
 // IssueAction issues a WS token pair for the logged in (REST session) user.
+// IssueAction godoc
+// @Summary      Issue websocket token pair
+// @Tags         ws-auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      401  {object}  helpers.Response
+// @Failure      429  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /storages/ws-token [post]
 func (c controller) IssueAction(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	uuidString, _ := uuid.(string)
@@ -50,6 +60,17 @@ type refreshRequest struct {
 }
 
 // RefreshAction rotates a token pair. Authorization is the refresh token itself.
+// RefreshAction godoc
+// @Summary      Rotate websocket token pair
+// @Tags         ws-auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body  refreshRequest  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      401  {object}  helpers.Response
+// @Failure      429  {object}  helpers.Response
+// @Router       /storages/ws-token/refresh [post]
 func (c controller) RefreshAction(ctx *gin.Context) {
 	var req refreshRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

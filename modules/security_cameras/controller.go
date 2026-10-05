@@ -14,6 +14,16 @@ type controller struct {
 	service Service
 }
 
+// GetDetailAction godoc
+// @Summary      Get security camera detail
+// @Tags         security-cameras
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Camera ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /security-cameras/{id} [get]
 func (c controller) GetDetailAction(ctx *gin.Context) {
 	id := ctx.Param("id")
 	detail, isExists, err := c.service.GetDetail(ctx, id)
@@ -29,6 +39,17 @@ func (c controller) GetDetailAction(ctx *gin.Context) {
 	return
 }
 
+// GetListAction godoc
+// @Summary      List security cameras
+// @Tags         security-cameras
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page  query  int  false  "Page (default 1)"
+// @Param        limit  query  int  false  "Page size (default 10)"
+// @Param        order_by  query  string  false  "Order by"
+// @Success      200  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /security-cameras/ [get]
 func (c controller) GetListAction(ctx *gin.Context) {
 	pageQuery := ctx.DefaultQuery("page", "1")
 	page, _ := strconv.ParseInt(pageQuery, 10, 64)
@@ -57,6 +78,16 @@ func (c controller) GetListAction(ctx *gin.Context) {
 	return
 }
 
+// CreateAction godoc
+// @Summary      Create security camera
+// @Tags         security-cameras
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  models.SecurityCameras  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /security-cameras/ [post]
 func (c controller) CreateAction(ctx *gin.Context) {
 	var input models.SecurityCameras
 	err := ctx.BindJSON(&input)
@@ -75,6 +106,17 @@ func (c controller) CreateAction(ctx *gin.Context) {
 	return
 }
 
+// UpdateAction godoc
+// @Summary      Update security camera
+// @Tags         security-cameras
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Camera ID"
+// @Param        body  body  models.SecurityCameras  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /security-cameras/{id} [put]
 func (c controller) UpdateAction(ctx *gin.Context) {
 	id := ctx.Param("id")
 	var input models.SecurityCameras
@@ -94,6 +136,15 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 	return
 }
 
+// DeleteAction godoc
+// @Summary      Delete security camera
+// @Tags         security-cameras
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  string  true  "Camera ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /security-cameras/{id} [delete]
 func (c controller) DeleteAction(ctx *gin.Context) {
 	id := ctx.Param("id")
 	err := c.service.Delete(ctx, id)

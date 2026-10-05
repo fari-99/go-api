@@ -18,6 +18,14 @@ type controller struct {
 	di *configs.DI
 }
 
+// QRCodeAction godoc
+// @Summary      Get WhatsApp QR code
+// @Tags         whatsapp
+// @Produce      png
+// @Security     BearerAuth
+// @Success      200  {file}  file
+// @Failure      404  {object}  helpers.Response
+// @Router       /whatsapp/qr-code [get]
 func (c controller) QRCodeAction(ctx *gin.Context) {
 	redisClient := c.di.RedisSession
 
@@ -45,6 +53,13 @@ func (c controller) QRCodeAction(ctx *gin.Context) {
 	return
 }
 
+// StatusAction godoc
+// @Summary      Get WhatsApp status
+// @Tags         whatsapp
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Router       /whatsapp/status [get]
 func (c controller) StatusAction(ctx *gin.Context) {
 	redisClient := c.di.RedisSession
 
@@ -54,6 +69,14 @@ func (c controller) StatusAction(ctx *gin.Context) {
 	return
 }
 
+// LogoutAction godoc
+// @Summary      Logout WhatsApp
+// @Tags         whatsapp
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /whatsapp/logout [post]
 func (c controller) LogoutAction(ctx *gin.Context) {
 	redisClient := c.di.RedisSession
 
@@ -71,6 +94,14 @@ func (c controller) LogoutAction(ctx *gin.Context) {
 	return
 }
 
+// LoginAction godoc
+// @Summary      Trigger WhatsApp login QR generation
+// @Tags         whatsapp
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /whatsapp/login [post]
 func (c controller) LoginAction(ctx *gin.Context) {
 	redisClient := c.di.RedisSession
 

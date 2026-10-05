@@ -27,6 +27,15 @@ type controller struct {
 	service Service
 }
 
+// DetailAction godoc
+// @Summary      Get storage detail
+// @Tags         storages
+// @Produce      json
+// @Param        storageID  path  string  true  "Storage ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /storages/{storageID} [get]
 func (c controller) DetailAction(ctx *gin.Context) {
 	storageIDParam, isExist := ctx.Params.Get("storageID")
 	if !isExist {
@@ -55,6 +64,16 @@ func (c controller) DetailAction(ctx *gin.Context) {
 	return
 }
 
+// ListAction godoc
+// @Summary      List storages
+// @Tags         storages
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page  query  int  false  "Page (default 1)"
+// @Param        limit  query  int  false  "Page size (default 20)"
+// @Success      200  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /storages [get]
 func (c controller) ListAction(ctx *gin.Context) {
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "20"))
@@ -79,6 +98,17 @@ func (c controller) ListAction(ctx *gin.Context) {
 
 // ContentAction streams the file with its stored MIME type. Range requests are supported, so
 // audio/video can seek. Only the owner can read it. ?download=1 forces a download.
+// ContentAction godoc
+// @Summary      Get file content
+// @Tags         storages
+// @Produce      octet-stream
+// @Security     BearerAuth
+// @Param        storageID  path  int  true  "Storage ID"
+// @Param        download  query  string  false  "1 to force download"
+// @Success      200  {file}  file
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /storages/{storageID}/content [get]
 func (c controller) ContentAction(ctx *gin.Context) {
 	storageID, err := strconv.ParseUint(ctx.Param("storageID"), 10, 64)
 	if err != nil {
@@ -117,11 +147,26 @@ func (c controller) ContentAction(ctx *gin.Context) {
 	http.ServeContent(ctx.Writer, ctx.Request, "", stat.ModTime(), file)
 }
 
+// S3Policy godoc
+// @Summary      Get S3 upload policy
+// @Tags         storages
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Router       /storages/s3-policy [post]
 func (c controller) S3Policy(ctx *gin.Context) {
 	helpers.NewResponse(ctx, http.StatusBadRequest, "nice")
 	return
 }
 
+// UploadAction godoc
+// @Summary      Upload files (multipart, max 8MB)
+// @Tags         storages
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /storages/upload [post]
 func (c controller) UploadAction(ctx *gin.Context) {
 	err := ctx.Request.ParseMultipartForm(8 << 20) // 8 MB
 	if err != nil {
@@ -149,6 +194,17 @@ func (c controller) UploadAction(ctx *gin.Context) {
 	return
 }
 
+// GetImages godoc
+// @Summary      Get resized image
+// @Tags         storages
+// @Produce      image/*
+// @Param        storageID  path  string  true  "Encrypted storage ID"
+// @Param        methodType  path  string  true  "Resize method (default resize)"
+// @Param        imageSize  path  string  true  "WxH, e.g. 180x180"
+// @Success      200  {file}  file
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /storages/{storageID}/{methodType}/{imageSize} [get]
 func (c controller) GetImages(ctx *gin.Context) {
 	methodType := helpers.ParamsDefault(ctx, "methodType", "resize")
 	imageSize := helpers.ParamsDefault(ctx, "imageSize", "180x180")

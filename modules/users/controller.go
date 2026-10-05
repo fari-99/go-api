@@ -21,6 +21,16 @@ type controller struct {
 	service Service
 }
 
+// CreateAction godoc
+// @Summary      Create user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestCreateUser  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/create [post]
 func (c controller) CreateAction(ctx *gin.Context) {
 	var input RequestCreateUser
 	err := ctx.BindJSON(&input)
@@ -42,6 +52,13 @@ func (c controller) CreateAction(ctx *gin.Context) {
 	return
 }
 
+// UserProfileAction godoc
+// @Summary      Get current user profile
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Router       /users/profile [get]
 func (c controller) UserProfileAction(ctx *gin.Context) {
 	uuidSession, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuidSession.(string))
@@ -59,6 +76,18 @@ func (c controller) UserProfileAction(ctx *gin.Context) {
 	return
 }
 
+// GetListAction godoc
+// @Summary      List users
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page  query  int  false  "Page (default 1)"
+// @Param        limit  query  int  false  "Page size (default 10)"
+// @Param        order_by  query  string  false  "Order by"
+// @Param        search  query  string  false  "Search keyword"
+// @Success      200  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /users/ [get]
 func (c controller) GetListAction(ctx *gin.Context) {
 	pageQuery := ctx.DefaultQuery("page", "1")
 	page, _ := strconv.ParseInt(pageQuery, 10, 64)
@@ -88,6 +117,17 @@ func (c controller) GetListAction(ctx *gin.Context) {
 	return
 }
 
+// GetDetailAction godoc
+// @Summary      Get user detail
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "User ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /users/{id} [get]
 func (c controller) GetDetailAction(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -108,6 +148,16 @@ func (c controller) GetDetailAction(ctx *gin.Context) {
 	return
 }
 
+// GetUserRolesAction godoc
+// @Summary      Get role IDs of user
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "User ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /users/{id}/roles [get]
 func (c controller) GetUserRolesAction(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -125,6 +175,17 @@ func (c controller) GetUserRolesAction(ctx *gin.Context) {
 	return
 }
 
+// UpdateUserRolesAction godoc
+// @Summary      Update roles of user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "User ID"
+// @Param        body  body  RequestUserRoles  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/{id}/roles [put]
 func (c controller) UpdateUserRolesAction(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -150,6 +211,17 @@ func (c controller) UpdateUserRolesAction(ctx *gin.Context) {
 	return
 }
 
+// UpdateAction godoc
+// @Summary      Update user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "User ID"
+// @Param        body  body  RequestUpdateUser  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/{id} [put]
 func (c controller) UpdateAction(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -176,6 +248,15 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 	return
 }
 
+// DeleteAction godoc
+// @Summary      Delete user
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "User ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/{id} [delete]
 func (c controller) DeleteAction(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -196,6 +277,17 @@ func (c controller) DeleteAction(ctx *gin.Context) {
 	return
 }
 
+// ChangePasswordAction godoc
+// @Summary      Change own password
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestChangePassword  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /users/change-password [put]
 func (c controller) ChangePasswordAction(ctx *gin.Context) {
 	var input RequestChangePassword
 	err := ctx.BindJSON(&input)
@@ -241,6 +333,16 @@ func (c controller) ChangePasswordAction(ctx *gin.Context) {
 	return
 }
 
+// ForgotPasswordAction godoc
+// @Summary      Request password reset code by email
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body  ForgotPasswordRequest  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /users/forgot-password [post]
 func (c controller) ForgotPasswordAction(ctx *gin.Context) {
 	var input ForgotPasswordRequest
 	err := ctx.BindJSON(&input)
@@ -297,6 +399,16 @@ func (c controller) ForgotPasswordAction(ctx *gin.Context) {
 	return
 }
 
+// ForgotUsernameAction godoc
+// @Summary      Send username to email
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body  ForgotUsernameRequest  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /users/forgot-username [post]
 func (c controller) ForgotUsernameAction(ctx *gin.Context) {
 	var input ForgotUsernameRequest
 	err := ctx.BindJSON(&input)
@@ -323,6 +435,16 @@ func (c controller) ForgotUsernameAction(ctx *gin.Context) {
 	return
 }
 
+// ResetPasswordAction godoc
+// @Summary      Reset password with token
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        body  body  ResetPasswordRequest  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /users/reset-password [post]
 func (c controller) ResetPasswordAction(ctx *gin.Context) {
 	var input ResetPasswordRequest
 	err := ctx.BindJSON(&input)

@@ -27,6 +27,14 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
+// @title                      Go API
+// @version                    1.0
+// @description                Go API service
+// @BasePath                   /
+// @securityDefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
+// @description                Type "Bearer" followed by the access token
 func main() {
 	// get parameter from cli
 	var host, port string

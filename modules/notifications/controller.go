@@ -16,6 +16,14 @@ type controller struct {
 	service Service
 }
 
+// GetQRCodeWhatsapp godoc
+// @Summary      Get WhatsApp login QR code
+// @Tags         notifications
+// @Produce      png
+// @Security     BearerAuth
+// @Success      200  {file}  file
+// @Failure      400  {object}  helpers.Response
+// @Router       /notifications/qr-code/whatsapp [get]
 func (c controller) GetQRCodeWhatsapp(ctx *gin.Context) {
 	qrCode, isExists, err := c.service.QRCodeWhatsapp(ctx)
 	if err != nil {
@@ -49,6 +57,16 @@ func (c controller) GetQRCodeWhatsapp(ctx *gin.Context) {
 	return
 }
 
+// GetDetailAction godoc
+// @Summary      Get notification template
+// @Tags         notifications
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "Template ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /notifications/{id} [get]
 func (c controller) GetDetailAction(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -72,6 +90,19 @@ func (c controller) GetDetailAction(ctx *gin.Context) {
 // GetListAction lists notification templates. Filter by notification_type to get
 // the templates available for a given channel (whatsapp, telegram, email, etc)
 // when picking one to send manually to a user.
+// GetListAction godoc
+// @Summary      List notification templates
+// @Tags         notifications
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page  query  int  false  "Page (default 1)"
+// @Param        limit  query  int  false  "Page size (default 10)"
+// @Param        order_by  query  string  false  "Order by"
+// @Param        notification_type  query  int  false  "Notification type"
+// @Param        action  query  string  false  "Action"
+// @Success      200  {object}  helpers.Response
+// @Failure      500  {object}  helpers.Response
+// @Router       /notifications/ [get]
 func (c controller) GetListAction(ctx *gin.Context) {
 	pageQuery := ctx.DefaultQuery("page", "1")
 	page, _ := strconv.ParseInt(pageQuery, 10, 64)
@@ -105,6 +136,16 @@ func (c controller) GetListAction(ctx *gin.Context) {
 	return
 }
 
+// CreateAction godoc
+// @Summary      Create notification template
+// @Tags         notifications
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestNotificationTemplate  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /notifications/ [post]
 func (c controller) CreateAction(ctx *gin.Context) {
 	var input RequestNotificationTemplate
 	if err := ctx.BindJSON(&input); err != nil {
@@ -130,6 +171,17 @@ func (c controller) CreateAction(ctx *gin.Context) {
 	return
 }
 
+// UpdateAction godoc
+// @Summary      Update notification template
+// @Tags         notifications
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "Template ID"
+// @Param        body  body  RequestNotificationTemplate  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /notifications/{id} [put]
 func (c controller) UpdateAction(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -161,6 +213,15 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 	return
 }
 
+// DeleteAction godoc
+// @Summary      Delete notification template
+// @Tags         notifications
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path  int  true  "Template ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /notifications/{id} [delete]
 func (c controller) DeleteAction(ctx *gin.Context) {
 	id, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -182,6 +243,16 @@ func (c controller) DeleteAction(ctx *gin.Context) {
 
 // SendManualAction sends an existing notification template to a single user right away,
 // dispatched through whichever channel (whatsapp, telegram, email, sms, push) the template is for.
+// SendManualAction godoc
+// @Summary      Send notification manually
+// @Tags         notifications
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestSendNotification  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /notifications/send [post]
 func (c controller) SendManualAction(ctx *gin.Context) {
 	var input RequestSendNotification
 	if err := ctx.BindJSON(&input); err != nil {

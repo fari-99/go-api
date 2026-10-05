@@ -56,6 +56,22 @@ type controlMessage struct {
 }
 
 // UploadAction upgrades to a WebSocket (already authenticated by ws_auth.Middleware) and serves uploads.
+//
+// @Summary      [WebSocket] Upload files over WebSocket
+// @Description  **WebSocket endpoint - NOT usable from OpenAPI/Swagger "Try it out".** OpenAPI cannot model
+// @Description  WebSocket connections or the frame protocol (binary chunk frames: 4 byte upload id + payload,
+// @Description  plus JSON control messages), so this entry is documentation only. Connect with a WebSocket
+// @Description  client (`ws://` / `wss://`) and see docs/prd/websocket-file-upload.md for the protocol.
+// @Description  Only registered when WS_UPLOAD_ENABLED=true.
+// @Description  Auth uses the short-lived WS access token from `POST /storages/ws-token` (not the normal session
+// @Description  token): `Authorization: Bearer <token>` header, or `?token=` query for browsers.
+// @Description  Close codes: 4401 session revoked / refresh token reused, 4408 access token expired and not renewed.
+// @Tags         storages-websocket
+// @Param        token          query   string  false  "WS access token (alternative to Authorization header, for browsers)"
+// @Param        Authorization  header  string  false  "Bearer <ws access token>"
+// @Success      101  {string}  string  "Switching Protocols (WebSocket upgrade)"
+// @Failure      401  {object}  helpers.Response
+// @Router       /ws/storages/upload [get]
 func (c wsController) UploadAction(ctx *gin.Context) {
 	sessionValue, _ := ctx.Get(ws_auth.ContextSession)
 	session, ok := sessionValue.(*wsauth.Session)

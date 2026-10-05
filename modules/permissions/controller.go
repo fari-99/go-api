@@ -17,6 +17,16 @@ type controller struct {
 	service Service
 }
 
+// CheckAction godoc
+// @Summary      Check permission
+// @Tags         permissions
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  CheckPermissions  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /permissions/check [post]
 func (r controller) CheckAction(ctx *gin.Context) {
 	var input CheckPermissions
 	if err := ctx.BindJSON(&input); err != nil {
@@ -55,6 +65,12 @@ func (r controller) CheckAction(ctx *gin.Context) {
 	return
 }
 
+// GetAction godoc
+// @Summary      List RBAC policies
+// @Tags         permissions
+// @Produce      json
+// @Success      200  {object}  helpers.Response
+// @Router       /permissions/ [get]
 func (r controller) GetAction(ctx *gin.Context) {
 	enforcer := configs.GetPermissionInstance()
 	allRoutes := configs.GetGinApplication().Routes()
@@ -113,6 +129,15 @@ func (r controller) GetAction(ctx *gin.Context) {
 	return
 }
 
+// EditAction godoc
+// @Summary      Update RBAC policy
+// @Tags         permissions
+// @Accept       json
+// @Produce      json
+// @Param        body  body  EditPermissions  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /permissions/update [put]
 func (r controller) EditAction(ctx *gin.Context) {
 	var input EditPermissions
 	if err := ctx.BindJSON(&input); err != nil {
@@ -202,6 +227,15 @@ func (r controller) EditAction(ctx *gin.Context) {
 	return
 }
 
+// DeleteAction godoc
+// @Summary      Delete RBAC policy
+// @Tags         permissions
+// @Accept       json
+// @Produce      json
+// @Param        body  body  DeletePermissions  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /permissions/delete [delete]
 func (r controller) DeleteAction(ctx *gin.Context) {
 	var input DeletePermissions
 	if err := ctx.BindJSON(&input); err != nil {
@@ -288,6 +322,15 @@ func (r controller) DeleteAction(ctx *gin.Context) {
 	return
 }
 
+// CreateAction godoc
+// @Summary      Create RBAC policy
+// @Tags         permissions
+// @Accept       json
+// @Produce      json
+// @Param        body  body  CreatePermissions  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /permissions/create [post]
 func (r controller) CreateAction(ctx *gin.Context) {
 	var input CreatePermissions
 	if err := ctx.BindJSON(&input); err != nil {

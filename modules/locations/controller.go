@@ -13,6 +13,17 @@ type controller struct {
 	service Service
 }
 
+// GetAllAction godoc
+// @Summary      List locations
+// @Tags         locations
+// @Produce      json
+// @Param        code  query  string  false  "Code"
+// @Param        name  query  string  false  "Name"
+// @Param        order  query  string  false  "asc|desc"
+// @Param        order_by  query  string  false  "Order by (default name)"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/ [get]
 func (c controller) GetAllAction(ctx *gin.Context) {
 	filter := FilterQueryLocations{
 		Code:    ctx.DefaultQuery("code", ""),
@@ -34,6 +45,15 @@ func (c controller) GetAllAction(ctx *gin.Context) {
 	return
 }
 
+// GetDetailAction godoc
+// @Summary      Get location detail
+// @Tags         locations
+// @Produce      json
+// @Param        locationID  path  string  true  "Location ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /locations/{locationID} [get]
 func (c controller) GetDetailAction(ctx *gin.Context) {
 	type UrlParams struct {
 		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
@@ -66,6 +86,16 @@ func (c controller) GetDetailAction(ctx *gin.Context) {
 	return
 }
 
+// CreateAction godoc
+// @Summary      Create location
+// @Tags         locations
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestCreateLocations  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/create [post]
 func (c controller) CreateAction(ctx *gin.Context) {
 	var input RequestCreateLocations
 	err := ctx.BindJSON(&input)
@@ -87,6 +117,17 @@ func (c controller) CreateAction(ctx *gin.Context) {
 	return
 }
 
+// UpdateAction godoc
+// @Summary      Update location
+// @Tags         locations
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        locationID  path  string  true  "Location ID"
+// @Param        body  body  RequestUpdateLocations  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/{locationID} [put]
 func (c controller) UpdateAction(ctx *gin.Context) {
 	var input RequestUpdateLocations
 	err := ctx.BindJSON(&input)
@@ -121,6 +162,16 @@ func (c controller) UpdateAction(ctx *gin.Context) {
 	return
 }
 
+// UpdateStatusAction godoc
+// @Summary      Update location status
+// @Tags         locations
+// @Produce      json
+// @Security     BearerAuth
+// @Param        locationID  path  string  true  "Location ID"
+// @Param        status  path  int  true  "Status"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/{locationID}/status/{status} [put]
 func (c controller) UpdateStatusAction(ctx *gin.Context) {
 	type UrlParams struct {
 		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
@@ -158,6 +209,15 @@ func (c controller) UpdateStatusAction(ctx *gin.Context) {
 	return
 }
 
+// DeleteAction godoc
+// @Summary      Delete location
+// @Tags         locations
+// @Produce      json
+// @Security     BearerAuth
+// @Param        locationID  path  string  true  "Location ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/{locationID} [delete]
 func (c controller) DeleteAction(ctx *gin.Context) {
 	type UrlParams struct {
 		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
@@ -187,6 +247,17 @@ func (c controller) DeleteAction(ctx *gin.Context) {
 
 // -------------------------------
 
+// GetAllActionLevel godoc
+// @Summary      List location levels
+// @Tags         location-levels
+// @Produce      json
+// @Security     BearerAuth
+// @Param        name  query  string  false  "Name"
+// @Param        order  query  string  false  "asc|desc"
+// @Param        order_by  query  string  false  "Order by (default name)"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/levels/ [get]
 func (c controller) GetAllActionLevel(ctx *gin.Context) {
 	filter := FilterQueryLocationLevel{
 		Name:    ctx.DefaultQuery("name", ""),
@@ -207,6 +278,16 @@ func (c controller) GetAllActionLevel(ctx *gin.Context) {
 	return
 }
 
+// GetDetailActionLevel godoc
+// @Summary      Get location level detail
+// @Tags         location-levels
+// @Produce      json
+// @Security     BearerAuth
+// @Param        levelID  path  string  true  "Level ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /locations/levels/{levelID} [get]
 func (c controller) GetDetailActionLevel(ctx *gin.Context) {
 	type UrlParams struct {
 		LevelID uint64 `uri:"levelID" binding:"required,uuid"`
@@ -239,6 +320,16 @@ func (c controller) GetDetailActionLevel(ctx *gin.Context) {
 	return
 }
 
+// CreateActionLevel godoc
+// @Summary      Create location level
+// @Tags         location-levels
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestCreateLocationLevel  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/levels/create [post]
 func (c controller) CreateActionLevel(ctx *gin.Context) {
 	var input RequestCreateLocationLevel
 	err := ctx.BindJSON(&input)
@@ -260,6 +351,17 @@ func (c controller) CreateActionLevel(ctx *gin.Context) {
 	return
 }
 
+// UpdateActionLevel godoc
+// @Summary      Update location level
+// @Tags         location-levels
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        levelID  path  string  true  "Level ID"
+// @Param        body  body  RequestUpdateLocationLevel  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/levels/{levelID} [put]
 func (c controller) UpdateActionLevel(ctx *gin.Context) {
 	var input RequestUpdateLocationLevel
 	err := ctx.BindJSON(&input)
@@ -294,6 +396,16 @@ func (c controller) UpdateActionLevel(ctx *gin.Context) {
 	return
 }
 
+// UpdateStatusActionLevel godoc
+// @Summary      Update location level status
+// @Tags         location-levels
+// @Produce      json
+// @Security     BearerAuth
+// @Param        levelID  path  string  true  "Level ID"
+// @Param        status  path  int  true  "Status"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/levels/{levelID}/status/{status} [put]
 func (c controller) UpdateStatusActionLevel(ctx *gin.Context) {
 	type UrlParams struct {
 		LocationID uint64 `uri:"locationID" binding:"required,uuid"`
@@ -331,6 +443,15 @@ func (c controller) UpdateStatusActionLevel(ctx *gin.Context) {
 	return
 }
 
+// DeleteActionLevel godoc
+// @Summary      Delete location level
+// @Tags         location-levels
+// @Produce      json
+// @Security     BearerAuth
+// @Param        levelID  path  string  true  "Level ID"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /locations/levels/{levelID}/delete [delete]
 func (c controller) DeleteActionLevel(ctx *gin.Context) {
 	type UrlParams struct {
 		LocationID uint64 `uri:"locationID" binding:"required,uuid"`

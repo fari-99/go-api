@@ -66,6 +66,14 @@ func (c controller) disableAuthenticator(ctx *gin.Context, userID uint64) gin.H 
 	return nil
 }
 
+// CreateTotp godoc
+// @Summary      Create TOTP secret
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/totp/create [post]
 func (c controller) CreateTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
@@ -102,6 +110,16 @@ func (c controller) CreateTotp(ctx *gin.Context) {
 	return
 }
 
+// ValidateTotp godoc
+// @Summary      Validate TOTP
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Param        action  path  string  true  "create | validate action"
+// @Param        otp_value  query  string  false  "OTP value"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/totp/validate/{action} [post]
 func (c controller) ValidateTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	action, _ := ctx.Params.Get("action")
@@ -214,6 +232,16 @@ func (c controller) ValidateTotp(ctx *gin.Context) {
 	return
 }
 
+// DisabledTotp godoc
+// @Summary      Disable TOTP
+// @Tags         2fa
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  RequestDisableTotp  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/totp/disabled [put]
 func (c controller) DisabledTotp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
@@ -307,6 +335,14 @@ func (c controller) DisabledTotp(ctx *gin.Context) {
 	return
 }
 
+// CreateRecoveryCode godoc
+// @Summary      Create recovery codes
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/recovery-code/create [post]
 func (c controller) CreateRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
@@ -340,6 +376,14 @@ func (c controller) CreateRecoveryCode(ctx *gin.Context) {
 	return
 }
 
+// GetRecoveryCodes godoc
+// @Summary      Get recovery codes
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/recovery-code/ [get]
 func (c controller) GetRecoveryCodes(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
@@ -366,6 +410,17 @@ func (c controller) GetRecoveryCodes(ctx *gin.Context) {
 	return
 }
 
+// ValidateRecoveryCode godoc
+// @Summary      Validate recovery code
+// @Tags         2fa
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        action  path  string  true  "create | validate action"
+// @Param        body  body  RequestValidateRecoveryCode  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/recovery-code/validate/{action} [post]
 func (c controller) ValidateRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
@@ -443,6 +498,14 @@ func (c controller) ValidateRecoveryCode(ctx *gin.Context) {
 	return
 }
 
+// DisableRecoveryCode godoc
+// @Summary      Disable recovery code
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/recovery-code/disabled [put]
 func (c controller) DisableRecoveryCode(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	currentUser, _ := helpers.GetCurrentUser(ctx, uuid.(string))
@@ -469,6 +532,15 @@ func (c controller) DisableRecoveryCode(ctx *gin.Context) {
 	return
 }
 
+// EnabledOtp godoc
+// @Summary      Enable OTP
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Param        sender_type  path  string  true  "OTP sender type (e.g. email, sms)"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/otp/{sender_type}/enabled [post]
 func (c controller) EnabledOtp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	senderType, _ := ctx.Params.Get("sender_type")
@@ -518,6 +590,17 @@ func (c controller) EnabledOtp(ctx *gin.Context) {
 	})
 }
 
+// CreateOtp godoc
+// @Summary      Send OTP
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Param        sender_type  path  string  true  "OTP sender type (e.g. email, sms)"
+// @Param        action  path  string  true  "create | validate action"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /users/2fa/otp/{sender_type}/create/{action} [post]
 func (c controller) CreateOtp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	senderType, _ := ctx.Params.Get("sender_type")
@@ -586,6 +669,19 @@ func (c controller) CreateOtp(ctx *gin.Context) {
 	})
 }
 
+// ValidateOtp godoc
+// @Summary      Validate OTP
+// @Tags         2fa
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        sender_type  path  string  true  "OTP sender type (e.g. email, sms)"
+// @Param        action  path  string  true  "create | validate action"
+// @Param        body  body  RequestValidateOtp  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Failure      404  {object}  helpers.Response
+// @Router       /users/2fa/otp/{sender_type}/validate/{action} [post]
 func (c controller) ValidateOtp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	senderType, _ := ctx.Params.Get("sender_type")
@@ -676,6 +772,15 @@ func (c controller) ValidateOtp(ctx *gin.Context) {
 	})
 }
 
+// DisableOtp godoc
+// @Summary      Disable OTP
+// @Tags         2fa
+// @Produce      json
+// @Security     BearerAuth
+// @Param        sender_type  path  string  true  "OTP sender type (e.g. email, sms)"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /users/2fa/otp/{sender_type}/disabled [put]
 func (c controller) DisableOtp(ctx *gin.Context) {
 	uuid, _ := ctx.Get("uuid")
 	senderType, _ := ctx.Params.Get("sender_type")

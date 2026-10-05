@@ -34,6 +34,12 @@ func GetClient(clientType string) *xendit.APIClient {
 	return xendit.NewClient(xenditApiKey)
 }
 
+// GetBalance godoc
+// @Summary      Get Xendit balance (test)
+// @Tags         xendit-test
+// @Produce      json
+// @Success      200  {object}  helpers.Response
+// @Router       /xendit/balance/ [get]
 func (c controller) GetBalance(ctx *gin.Context) {
 	xenCli := GetClient(prodXendit)
 	balanceResponse, httpRes, err := xenCli.BalanceApi.GetBalance(ctx).
@@ -54,6 +60,15 @@ func (c controller) GetBalance(ctx *gin.Context) {
 	return
 }
 
+// CustomersCreate godoc
+// @Summary      Create Xendit customer (test)
+// @Tags         xendit-test
+// @Accept       json
+// @Produce      json
+// @Param        body  body  object  true  "Request body"
+// @Success      200  {object}  helpers.Response
+// @Failure      400  {object}  helpers.Response
+// @Router       /xendit/customers/ [post]
 func (c controller) CustomersCreate(ctx *gin.Context) {
 	var input customer.CustomerRequest
 	err := ctx.BindJSON(&input)
