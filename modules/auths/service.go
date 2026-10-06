@@ -1,11 +1,14 @@
 package auths
 
 import (
+	"errors"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/fari-99/go-helper/token_generator"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 
 	"go-api/helpers"
 	"go-api/modules/models"
@@ -37,7 +40,13 @@ func (s service) RefreshAuth(ctx *gin.Context) (authData *AuthData, isExists boo
 
 	oldUuidSession, _ := ctx.Get("uuid")
 	oldUuid := oldUuidSession.(string)
-	currentUser, _ := helpers.GetCurrentUserRefresh(ctx, oldUuid)
+	currentUser, err := helpers.GetCurrentUserRefresh(ctx, oldUuid)
+	if errors.Is(err, redis.Nil) {
+		// session has no refresh token (login without remember me, or already expired/removed)
+		return nil, false, nil
+	} else if err != nil {
+		return nil, true, err
+	}
 
 	_, isExistRefresh, err := helpers.CheckToken(ctx, currentUser.Username, oldUuid)
 	if err != nil || !isExistRefresh {
@@ -151,6 +160,12 @@ func (s service) AuthenticateUser(ctx *gin.Context, input RequestAuthUser) (*Aut
 	token, err := s.generateToken(ctx, *userModel)
 	if err != nil {
 		return nil, false, err
+	}
+
+	if !input.RememberMe {
+		// no refresh token: not returned, and not stored in the redis session
+		token.RefreshToken = ""
+		token.RefreshExpiredAt = time.Time{}
 	}
 
 	totalLogin, err := s.setRedisSession(ctx, token, userModel)

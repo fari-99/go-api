@@ -122,9 +122,6 @@ func (s service) Delete(ctx *gin.Context, id string) error {
 	if _, err = enforcer.RemoveFilteredPolicy(0, subject); err != nil {
 		return err
 	}
-	if err = enforcer.SavePolicy(); err != nil {
-		return err
-	}
 
 	return s.repo.Delete(ctx, id)
 }
@@ -160,10 +157,6 @@ func migratePermissionSubject(oldSubject, newSubject string) error {
 		if _, err = enforcer.AddPolicy(toPolicyArgs(newPolicy)...); err != nil {
 			return err
 		}
-	}
-
-	if len(policies) > 0 {
-		return enforcer.SavePolicy()
 	}
 
 	return nil

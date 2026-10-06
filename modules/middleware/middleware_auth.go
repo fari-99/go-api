@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"go-api/helpers"
+	"go-api/modules/models"
 )
 
 // AuthMiddleware inits auth middleware config and returns new handler
@@ -56,7 +58,7 @@ func (base *BaseMiddleware) authServe(ctx *gin.Context) {
 		return
 	}
 
-	base.checkAuth(ctx, claims)
+	base.checkAuth(ctx, claims, helpers.GetCurrentUser)
 }
 
 // authServe checks user data such as user ID and roles.
@@ -103,11 +105,13 @@ func (base *BaseMiddleware) refreshServe(ctx *gin.Context) {
 		return
 	}
 
-	base.checkAuth(ctx, claims)
+	// the access token (and its redis key) is usually gone by the time we refresh, so
+	// the session has to come from the refresh token key
+	base.checkAuth(ctx, claims, helpers.GetCurrentUserRefresh)
 }
 
-func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.JwtMapClaims) {
-	currentUser, err := helpers.GetCurrentUser(ctx, claims.Uuid)
+func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.JwtMapClaims, getUser func(context.Context, string) (*models.Users, error)) {
+	currentUser, err := getUser(ctx, claims.Uuid)
 	if err != nil {
 		helpers.NewResponse(ctx, http.StatusUnauthorized, gin.H{
 			"message":       fmt.Sprintf("authentication error, please re-login"),

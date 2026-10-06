@@ -84,38 +84,61 @@ func getKeyRedis(username string, uuid string) KeyRedisSessionData {
 // after that we use that scoring system to expired time
 // then we sort the member by their score if the score less than expected value (time now unix), then they expired
 
+// removeExpiredToken prunes sessions per token, not per session: an expired
+// access token must not take a still-valid refresh token with it (that is the
+// whole point of refreshing), and vice versa. A session is only removed when
+// nothing valid is left of it.
 func removeExpiredToken(ctx context.Context, redisSession redis.UniversalClient, username string) (err error) {
 	keyRedis := getKeyRedis(username, "")
-	timeNow := cast.ToString(time.Now().Unix())
+	timeNow := time.Now().Unix()
+	timeNowString := cast.ToString(timeNow)
+
+	// still alive when the other token's score (its expiry) is in the future
+	isAlive := func(keyTotal, uuid string) bool {
+		score, err := redisSession.ZScore(ctx, keyTotal, uuid).Result()
+		return err == nil && int64(score) > timeNow
+	}
 
 	// get all expired access token
 	accessTokenUuids, err := redisSession.ZRangeByScore(ctx, keyRedis.KeyTotalAccess, &redis.ZRangeBy{
 		Min: negativeInfinite,
-		Max: timeNow,
+		Max: timeNowString,
 	}).Result()
 	if err != nil {
 		return err
 	}
 
-	// get all expired
+	// get all expired refresh token
 	refreshTokenUuids, err := redisSession.ZRangeByScore(ctx, keyRedis.KeyTotalRefresh, &redis.ZRangeBy{
 		Min: negativeInfinite,
-		Max: timeNow,
+		Max: timeNowString,
 	}).Result()
 	if err != nil {
 		return err
 	}
 
-	if len(accessTokenUuids) > 0 {
-		for _, accessTokenUuid := range accessTokenUuids {
-			_, _ = RemoveRedisSession(ctx, username, accessTokenUuid)
+	for _, accessTokenUuid := range accessTokenUuids {
+		if isAlive(keyRedis.KeyTotalRefresh, accessTokenUuid) {
+			// only the access token is gone, the session can still be refreshed
+			uuidKeys := getKeyRedis(username, accessTokenUuid)
+			redisSession.Del(ctx, uuidKeys.KeyAccess)
+			redisSession.ZRem(ctx, keyRedis.KeyTotalAccess, accessTokenUuid)
+			continue
 		}
+
+		_, _ = RemoveRedisSession(ctx, username, accessTokenUuid)
 	}
 
-	if len(refreshTokenUuids) > 0 {
-		for _, refreshTokenUuid := range refreshTokenUuids {
-			_, _ = RemoveRedisSession(ctx, username, refreshTokenUuid)
+	for _, refreshTokenUuid := range refreshTokenUuids {
+		if isAlive(keyRedis.KeyTotalAccess, refreshTokenUuid) {
+			// only the refresh token is gone, the access token is still usable
+			uuidKeys := getKeyRedis(username, refreshTokenUuid)
+			redisSession.Del(ctx, uuidKeys.KeyRefresh)
+			redisSession.ZRem(ctx, keyRedis.KeyTotalRefresh, refreshTokenUuid)
+			continue
 		}
+
+		_, _ = RemoveRedisSession(ctx, username, refreshTokenUuid)
 	}
 
 	return nil
@@ -129,17 +152,27 @@ func getTotalLogin(ctx context.Context, redisSession redis.UniversalClient, user
 		return 0, 0, err
 	}
 
-	totalLoginAccessToken, err = redisSession.ZCard(ctx, keyRedis.KeyTotalAccess).Result()
+	accessUuids, err := redisSession.ZRange(ctx, keyRedis.KeyTotalAccess, 0, -1).Result()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	totalLoginRefreshToken, err = redisSession.ZCard(ctx, keyRedis.KeyTotalRefresh).Result()
+	refreshUuids, err := redisSession.ZRange(ctx, keyRedis.KeyTotalRefresh, 0, -1).Result()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return totalLoginAccessToken, totalLoginRefreshToken, nil
+	// a session is one device whether it has an access token, a refresh token
+	// (access aged out, waiting to be refreshed) or both
+	sessions := make(map[string]struct{}, len(accessUuids)+len(refreshUuids))
+	for _, uuid := range accessUuids {
+		sessions[uuid] = struct{}{}
+	}
+	for _, uuid := range refreshUuids {
+		sessions[uuid] = struct{}{}
+	}
+
+	return int64(len(sessions)), int64(len(refreshUuids)), nil
 }
 
 func getAllUuid(ctx context.Context, username string) (accessUuids []string, refreshUuids []string, err error) {
@@ -194,9 +227,13 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 		return fmt.Errorf("error set redis session access token, err := %s", err.Error())
 	}
 
-	err = redisSession.Set(ctx, keyRedis.KeyRefresh, string(dataMarshal), getTimeDuration(data.Token.RefreshExpiredAt)).Err() // automatically expired
-	if err != nil {
-		return fmt.Errorf("error set redis session refresh token, err := %s", err.Error())
+	// zero RefreshExpiredAt means the session has no refresh token (login without remember me)
+	hasRefresh := !data.Token.RefreshExpiredAt.IsZero()
+	if hasRefresh {
+		err = redisSession.Set(ctx, keyRedis.KeyRefresh, string(dataMarshal), getTimeDuration(data.Token.RefreshExpiredAt)).Err() // automatically expired
+		if err != nil {
+			return fmt.Errorf("error set redis session refresh token, err := %s", err.Error())
+		}
 	}
 
 	err = redisSession.ZAdd(ctx, keyRedis.KeyTotalAccess, redis.Z{
@@ -205,6 +242,10 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 	}).Err()
 	if err != nil {
 		return err
+	}
+
+	if !hasRefresh {
+		return nil
 	}
 
 	err = redisSession.ZAdd(ctx, keyRedis.KeyTotalRefresh, redis.Z{
@@ -221,9 +262,21 @@ func setRedisSession(ctx context.Context, username string, data SessionData) err
 func GetAllSessions(ctx context.Context, username string, currentUuid string) ([]SessionRedisData, error) {
 	// getAllUuid already prunes any uuid whose refresh token has expired, so
 	// everything left here is, by definition, not an expired session.
-	_, refreshUuids, err := getAllUuid(ctx, username)
+	accessUuids, refreshUuids, err := getAllUuid(ctx, username)
 	if err != nil {
 		return nil, err
+	}
+
+	// sessions without a refresh token (login without remember me) only exist
+	// in the access set, so list those too.
+	seen := make(map[string]struct{}, len(refreshUuids))
+	for _, refreshUuid := range refreshUuids {
+		seen[refreshUuid] = struct{}{}
+	}
+	for _, accessUuid := range accessUuids {
+		if _, ok := seen[accessUuid]; !ok {
+			refreshUuids = append(refreshUuids, accessUuid)
+		}
 	}
 
 	redisSession := configs.GetRedis(configs.REDIS_SESSION_PREFIX)

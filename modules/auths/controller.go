@@ -54,15 +54,18 @@ func (c controller) AuthenticateAction(ctx *gin.Context) {
 		tokenCompiled["two_fa_models"] = authData.UserModel.TwoFaModels
 	}
 
-	http.SetCookie(ctx.Writer, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    authData.Token.RefreshToken,
-		Path:     "/",
-		Domain:   os.Getenv("PROJECT_DOMAIN"),
-		Expires:  authData.Token.RefreshExpiredAt,
-		Secure:   false,
-		HttpOnly: true,
-	})
+	// no refresh token when login without remember me
+	if authData.Token.RefreshToken != "" {
+		http.SetCookie(ctx.Writer, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    authData.Token.RefreshToken,
+			Path:     "/",
+			Domain:   os.Getenv("PROJECT_DOMAIN"),
+			Expires:  authData.Token.RefreshExpiredAt,
+			Secure:   false,
+			HttpOnly: true,
+		})
+	}
 
 	helpers.NewResponse(ctx, http.StatusOK, tokenCompiled)
 	return

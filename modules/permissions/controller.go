@@ -217,12 +217,6 @@ func (r controller) EditAction(ctx *gin.Context) {
 		return
 	}
 
-	err := enforcer.SavePolicy()
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, "failed saving updated policy, please try again")
-		return
-	}
-
 	helpers.NewResponse(ctx, http.StatusOK, "success update policy rule")
 	return
 }
@@ -312,12 +306,6 @@ func (r controller) DeleteAction(ctx *gin.Context) {
 		return
 	}
 
-	err := enforcer.SavePolicy()
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, "failed saving deleted policy, please try again")
-		return
-	}
-
 	helpers.NewResponse(ctx, http.StatusOK, "success delete policy permissions")
 	return
 }
@@ -404,12 +392,6 @@ func (r controller) CreateAction(ctx *gin.Context) {
 		helpers.NewResponse(ctx, http.StatusBadRequest, map[string]interface{}{
 			"error_message": "policy type is invalid, must be p or g",
 		})
-		return
-	}
-
-	err := enforcer.SavePolicy()
-	if err != nil {
-		helpers.NewResponse(ctx, http.StatusBadRequest, "failed saving created policy, please try again")
 		return
 	}
 

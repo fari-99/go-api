@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	sqladapter "github.com/Blank-Xu/sql-adapter"
-	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v3"
 )
 
 type permissionUtil struct {
@@ -16,34 +16,48 @@ type permissionUtil struct {
 }
 
 var permissionInstance *permissionUtil
-var permissionOnce sync.Once
+var permissionMutex sync.Mutex
 
+// GetPermissionInstance lazily builds the enforcer. A failed init is not cached,
+// so the next call retries instead of dereferencing a nil instance.
 func GetPermissionInstance() *casbin.Enforcer {
-	permissionOnce.Do(func() {
-		db := DatabaseBase(MySQLType).GetMysqlConnection(true)
-		sqlDB, _ := db.DB()
+	permissionMutex.Lock()
+	defer permissionMutex.Unlock()
 
-		adapterSQL, err := sqladapter.NewAdapter(sqlDB, "mysql", "api_rule_access")
-		if err != nil {
-			panic(err)
-		}
+	if permissionInstance != nil {
+		return permissionInstance.enforcer
+	}
 
-		enforcer, err := casbin.NewEnforcer("./modules/configs/rbac_model.conf", adapterSQL)
-		if err != nil {
-			panic(err)
-		}
+	db := DatabaseBase(MySQLType).GetMysqlConnection(true)
+	if db == nil {
+		panic(errors.New("permission enforcer: mysql connection unavailable"))
+	}
 
-		// Load the policy from DB.
-		if err = enforcer.LoadPolicy(); err != nil {
-			fmt.Println("LoadPolicy failed, err: ", err)
-		}
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
 
-		enforcer.AddFunction("RouteMatch", RouteMatchFunction)
+	adapterSQL, err := sqladapter.NewAdapter(sqlDB, "mysql", "api_rule_access")
+	if err != nil {
+		panic(err)
+	}
 
-		permissionInstance = &permissionUtil{
-			enforcer: enforcer,
-		}
-	})
+	enforcer, err := casbin.NewEnforcer("./modules/configs/rbac_model.conf", adapterSQL)
+	if err != nil {
+		panic(err)
+	}
+
+	// Load the policy from DB.
+	if err = enforcer.LoadPolicy(); err != nil {
+		fmt.Println("LoadPolicy failed, err: ", err)
+	}
+
+	enforcer.AddFunction("RouteMatch", RouteMatchFunction)
+
+	permissionInstance = &permissionUtil{
+		enforcer: enforcer,
+	}
 
 	return permissionInstance.enforcer
 }
