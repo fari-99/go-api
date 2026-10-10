@@ -186,7 +186,6 @@ func (base *BaseMiddleware) checkAuth(ctx *gin.Context, claims *token_generator.
 		}
 	}
 
-	ctx.Next()
 }
 
 func (base *BaseMiddleware) checkAuthHeader(authHeader string, typeClaims string) (*token_generator.JwtMapClaims, bool, error) {

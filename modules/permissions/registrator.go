@@ -10,18 +10,14 @@ func NewRegistrator(app *gin.RouterGroup, service Service, authHandler gin.Handl
 	log.Println("Setup Permissions RBAC router")
 	control := controller{service: service}
 
-	// Companies routes
-	public := app.Group("/permissions")
-	{
-		public.GET("/", control.GetAction)
-		public.POST("/create", control.CreateAction)
-		public.DELETE("/delete", control.DeleteAction)
-		public.PUT(`/update`, control.EditAction)
-	}
-
+	// every route here is gated: management routes must never be reachable without auth + RBAC
 	private := app.Group("/permissions")
 	{
 		private.Use(authHandler)
+		private.GET("/", control.GetAction)
+		private.POST("/create", control.CreateAction)
+		private.DELETE("/delete", control.DeleteAction)
+		private.PUT("/update", control.EditAction)
 		private.POST("/check", control.CheckAction)
 	}
 }

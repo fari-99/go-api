@@ -55,6 +55,8 @@ func (base *BaseCommand) CommandQueueTask() *BaseCommand {
 		commands = append(commands, queueCommand)
 	}
 
+	commands = append(commands, base.getRBACCommands()...)
+
 	base.Commands = commands
 	return base
 }

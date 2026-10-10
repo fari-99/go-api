@@ -41,10 +41,8 @@ func (r repository) AuthenticatePassword(ctx *gin.Context, input RequestAuthUser
 		return nil, false, err
 	}
 
-	if !customerModel.TwoFaEnabled {
-		return &customerModel, false, nil
-	}
-
+	// always load the full details: Roles (the Casbin subjects) are only populated
+	// there, and RBAC denies a session whose roles are empty
 	userModel, err := r.GetUserDetails(ctx, customerModel.ID.Uint64())
 	return &userModel, false, err
 }
