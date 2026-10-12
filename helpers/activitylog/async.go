@@ -165,11 +165,11 @@ func (a *Async) run() {
 	timer := time.NewTimer(a.cfg.FlushInterval)
 	defer timer.Stop()
 
-	flush := func(stopping bool) {
+	flush := func() {
 		if len(batch) == 0 {
 			return
 		}
-		a.publish(batch, stopping)
+		a.publish(batch)
 		batch = batch[:0]
 	}
 
@@ -178,11 +178,11 @@ func (a *Async) run() {
 		case m := <-a.queue:
 			batch = append(batch, m)
 			if len(batch) >= a.cfg.BatchSize {
-				flush(false)
+				flush()
 			}
 
 		case <-timer.C:
-			flush(false)
+			flush()
 			timer.Reset(a.cfg.FlushInterval)
 
 		case <-a.stop:
@@ -192,10 +192,10 @@ func (a *Async) run() {
 				case m := <-a.queue:
 					batch = append(batch, m)
 					if len(batch) >= a.cfg.BatchSize {
-						flush(true)
+						flush()
 					}
 				default:
-					flush(true)
+					flush()
 					return
 				}
 			}
@@ -205,7 +205,7 @@ func (a *Async) run() {
 
 // publish delivers a batch, retrying only the messages that failed. Anything
 // still failing after the retries goes to the fallback.
-func (a *Async) publish(batch []Message, stopping bool) {
+func (a *Async) publish(batch []Message) {
 	pending := append([]Message(nil), batch...)
 	backoff := a.cfg.RetryBackoff
 
@@ -217,7 +217,7 @@ func (a *Async) publish(batch []Message, stopping bool) {
 		if len(pending) == 0 {
 			return
 		}
-		if attempt >= a.cfg.MaxRetries || stopping {
+		if attempt >= a.cfg.MaxRetries {
 			log.Printf("activitylog: giving up on %d message(s), writing to fallback: %v", len(pending), err)
 			a.failed.Add(int64(len(pending)))
 			for _, m := range pending {

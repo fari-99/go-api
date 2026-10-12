@@ -404,3 +404,17 @@ func guard(db *gorm.DB, fn func()) {
 	}()
 	fn()
 }
+
+// WithActor returns a db handle whose statements are attributed to
+// actorUserID in the activity log. The result is safe to reuse for several
+// statements and to start a transaction from:
+//
+//	db := activitylog.WithActor(r.DB.WithContext(ctx), currentUser.ID)
+//	db.Create(&model)
+//	db.Transaction(func(tx *gorm.DB) error { ... })
+//
+// Without it (or an explicit db.Set(CurrentUserIDKey, ...)) the log is still
+// emitted but with actor_user_id 0 and a WARNING on the log output.
+func WithActor(db *gorm.DB, actorUserID interface{}) *gorm.DB {
+	return db.Set(CurrentUserIDKey, actorUserID).Session(&gorm.Session{})
+}

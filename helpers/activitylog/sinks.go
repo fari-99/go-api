@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"sync/atomic"
+	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/fari-99/go-helper/rabbitmq"
@@ -123,6 +125,12 @@ func NewRabbitMQPublisher(queueName string) (publisher *rabbitmq.QueueSetup, err
 		}
 	}()
 
+	// The helper dials in an endless loop when the broker is down, which would
+	// hang startup and the sink's worker. Fail fast with a bounded probe first.
+	if err := probeRabbitMQ(); err != nil {
+		return nil, fmt.Errorf("rabbitmq publisher: %w", err)
+	}
+
 	queue := rabbitmq.NewBaseQueue("", queueName)
 	if queue == nil {
 		return nil, fmt.Errorf("rabbitmq publisher: could not open connection")
@@ -138,6 +146,20 @@ func NewRabbitMQPublisher(queueName string) (publisher *rabbitmq.QueueSetup, err
 		},
 	)
 	return queue, nil
+}
+
+// probeRabbitMQ checks the broker is reachable (same RABBIT_* settings the
+// helper uses) within a few seconds.
+func probeRabbitMQ() error {
+	url := fmt.Sprintf("amqp://%s:%s@%s:%s/",
+		os.Getenv("RABBIT_USER"), os.Getenv("RABBIT_PASSWORD"),
+		os.Getenv("RABBIT_HOST"), os.Getenv("RABBIT_PORT"))
+
+	conn, err := amqp.DialConfig(url, amqp.Config{Dial: amqp.DefaultDial(5 * time.Second)})
+	if err != nil {
+		return err
+	}
+	return conn.Close()
 }
 
 func (r *RabbitMQSink) Publish(batch []Message) ([]Message, error) {
