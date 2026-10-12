@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 
+	"go-api/helpers/activitylog"
 	"go-api/pkg"
 )
 
@@ -131,19 +132,32 @@ func (base *DatabaseConfig) SetConnection() (*gorm.DB, error) {
 		Logger: base.getLogger(),
 	}
 
-	if base.Type == MySQLType {
-		db, err := gorm.Open(mysql.New(mysql.Config{
+	var db *gorm.DB
+	var err error
+	switch base.Type {
+	case MySQLType:
+		db, err = gorm.Open(mysql.New(mysql.Config{
 			DSN: conn,
 		}), gormConfig)
-		return db, err
-	} else if base.Type == PostgresType {
-		db, err := gorm.Open(postgres.New(postgres.Config{
+	case PostgresType:
+		db, err = gorm.Open(postgres.New(postgres.Config{
 			DSN:                  conn,
 			PreferSimpleProtocol: true,
 		}), gormConfig)
-		return db, err
+	default:
+		return nil, fmt.Errorf("database type [%s] not recognized, need configuration for that type", base.Type)
 	}
-	return nil, fmt.Errorf("database type [%s] not recognized, need configuration for that type", base.Type)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = activitylog.RegisterCallbacks(db)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register activity log callbacks: %v", err)
+	}
+
+	return db, nil
 }
 
 func (base *DatabaseConfig) GetMysqlConnection(isSingleton bool) *gorm.DB {

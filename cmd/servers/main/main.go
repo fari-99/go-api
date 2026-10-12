@@ -1,11 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"go-api/helpers/activitylog"
 	"go-api/modules/auths"
 	"go-api/modules/configs"
 	"go-api/modules/hasura"
@@ -51,6 +56,20 @@ func main() {
 	if rVal := recover(); rVal != nil {
 		fmt.Printf("Rval: %+v\n", rVal)
 	}
+
+	// Activity logs: stdout by default, or RabbitMQ / Kafka behind an async queue
+	// (ACTIVITY_LOG_DRIVER). Flush the queue on shutdown so deploys don't lose logs.
+	configs.InitActivityLog()
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = activitylog.Shutdown(ctx)
+		os.Exit(0)
+	}()
 
 	// Setup routes and run application
 	app := configs.GetGinApplication()
