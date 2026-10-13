@@ -13,6 +13,7 @@ import (
 	"go-api/helpers/activitylog"
 	"go-api/modules/auths"
 	"go-api/modules/configs"
+	"go-api/modules/file_managements"
 	"go-api/modules/hasura"
 	"go-api/modules/locations"
 	"go-api/modules/middleware"
@@ -113,6 +114,14 @@ func main() {
 	storages.NewRegistrator(app.Group(""),
 		storages.NewService(storages.NewRepository(di)),
 		authorized, wsAuth)
+
+	// File managements are opt-in (FILE_MANAGEMENT_ENABLED); when off, no queue publisher is opened
+	if file_managements.Enabled() {
+		file_managements.NewRegistrator(app.Group(""),
+			file_managements.NewService(file_managements.NewRepository(di),
+				file_managements.RegistryFromEnv(), file_managements.NewRabbitPublisher()),
+			authorized)
+	}
 
 	notifications.NewRegistrator(app.Group(""),
 		notifications.NewService(notifications.NewRepository(di)),

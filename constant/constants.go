@@ -28,3 +28,9 @@ const NotificationTypePushNotification = 5
 
 const UserCodesNew = 0
 const UserCodesUsed = 1
+
+const FileManagementNew = 1
+const FileManagementOnProgress = 2
+const FileManagementFailed = 3
+const FileManagementCancelled = 4
+const FileManagementCompleted = 5

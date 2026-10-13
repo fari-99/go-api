@@ -152,3 +152,23 @@ func (s service) OpenOwned(ctx *gin.Context, storageID uint64) (*models.Storages
 
 	return storageModel, file, nil
 }
+
+// OpenStoredFile opens the bytes of a storage record from the configured backend, for callers
+// outside an HTTP request (ex: queue workers). The returned close func must be called; for S3/GCS
+// it also removes the temp copy the download leaves behind.
+func OpenStoredFile(storageModel models.Storages) (*os.File, func(), error) {
+	file, err := newStorageBase(nil, "").GetFiles(storageModel.Type, storageModel.Path, storageModel.Filename)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	driver := strings.ToLower(os.Getenv("STORAGE_DRIVER"))
+	closeFile := func() {
+		_ = file.Close()
+		if driver == "s3" || driver == "gcs" {
+			_ = os.Remove(file.Name())
+		}
+	}
+
+	return file, closeFile, nil
+}
