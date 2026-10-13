@@ -99,7 +99,7 @@ func logCreate(db *gorm.DB) {
 		if db.Error != nil || db.Statement == nil || db.Statement.Schema == nil {
 			return
 		}
-		actor, ctx := resolveActor(db)
+		actor, ctx := resolveActor(db, true)
 		entity := db.Statement.Table
 
 		// A batch insert (slice value) gives us no per-row primary keys, so it
@@ -135,7 +135,7 @@ func logUpdate(db *gorm.DB) {
 		if db.Error != nil || db.RowsAffected == 0 || db.Statement == nil || db.Statement.Schema == nil {
 			return
 		}
-		actor, ctx := resolveActor(db)
+		actor, ctx := resolveActor(db, true)
 		entity := db.Statement.Table
 		newData := updatedDataMap(db)
 
@@ -173,7 +173,7 @@ func logDelete(db *gorm.DB) {
 		if db.Error != nil || db.RowsAffected == 0 || db.Statement == nil || db.Statement.Schema == nil {
 			return
 		}
-		actor, ctx := resolveActor(db)
+		actor, ctx := resolveActor(db, true)
 		entity := db.Statement.Table
 
 		// Bulk delete via WHERE condition — record the executed statement as the
@@ -193,7 +193,7 @@ func logDelete(db *gorm.DB) {
 //
 // In gorm.io/gorm, db.Set() stores values in db.Statement.Settings (a sync.Map).
 // We read them back with Statement.Settings.Load() rather than jinzhu's scope.Get().
-func resolveActor(db *gorm.DB) (actorUserID interface{}, ctx interface{}) {
+func resolveActor(db *gorm.DB, warn bool) (actorUserID interface{}, ctx interface{}) {
 	if value, ok := db.Statement.Settings.Load(CurrentUserIDKey); ok && value != nil {
 		ctxValue, _ := db.Statement.Settings.Load(CurrentUserCtxKey)
 		return value, ctxValue
@@ -207,7 +207,9 @@ func resolveActor(db *gorm.DB) (actorUserID interface{}, ctx interface{}) {
 
 	// Neither an actor id nor a context was provided: surface a WARNING so the
 	// gap is visible, and fall back to actor 0 (note #3). Never block the op.
-	log.Printf("activitylog: WARNING no actor set for operation on %q; defaulting actor_user_id to %d", db.Statement.Table, systemActorUserID)
+	if warn {
+		log.Printf("activitylog: WARNING no actor set for operation on %q; defaulting actor_user_id to %d", db.Statement.Table, systemActorUserID)
+	}
 	return systemActorUserID, nil
 }
 
@@ -270,6 +272,7 @@ func oldDataByPrimaryKey(db *gorm.DB) map[string]interface{} {
 	// Allocate a fresh struct of the same type to receive the old row.
 	oldRecord := reflect.New(db.Statement.ReflectValue.Type())
 	if err := db.Session(&gorm.Session{NewDB: true}).
+		Set(internalQueryKey, true).
 		Table(db.Statement.Table).
 		First(oldRecord.Interface(), pk).Error; err != nil {
 		// Row already gone / not found / query error — best-effort, skip old_data.

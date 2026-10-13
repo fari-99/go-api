@@ -34,6 +34,9 @@ const (
 	ActionBulkCreate = "BULK_CREATE"
 	ActionBulkUpdate = "BULK_UPDATE"
 	ActionBulkDelete = "BULK_DELETE"
+	// ActionRead is emitted for SELECT statements when read logging is enabled
+	// (see RegisterReadCallbacks). It carries the SQL, never the rows.
+	ActionRead = "READ"
 )
 
 // ActivityLog is the JSON payload emitted (one line) per audited mutation.
@@ -60,6 +63,11 @@ type ActivityLog struct {
 	OldData     map[string]interface{} `json:"old_data,omitempty"`
 	NewData     map[string]interface{} `json:"new_data,omitempty"`
 	Diff        map[string]FieldDiff   `json:"diff,omitempty"`
+
+	// Query and Rows are set for READ only: the SQL with its placeholders (no
+	// argument values) and the number of rows it returned when known.
+	Query string `json:"query,omitempty"`
+	Rows  *int64 `json:"rows,omitempty"`
 }
 
 // FieldDiff is a single changed field emitted under ActivityLog.Diff for
@@ -111,12 +119,14 @@ func LogActivity(actorUserID interface{}, action, entity string, entityID interf
 // tests can capture entries without parsing the output.
 var emitter = emit
 
+func nowRFC3339() string { return time.Now().UTC().Format(time.RFC3339) }
+
 // buildEntry assembles an ActivityLog, stamping the current UTC time (RFC3339)
 // and sanitizing the data maps. Split out from LogActivity so it can be unit
 // tested without capturing stdout.
 func buildEntry(actorUserID interface{}, action, entity string, entityID interface{}, oldData, newData map[string]interface{}) ActivityLog {
 	entry := ActivityLog{
-		Timestamp:   time.Now().UTC().Format(time.RFC3339),
+		Timestamp:   nowRFC3339(),
 		ActorUserID: actorUserID,
 		Action:      action,
 		Entity:      entity,

@@ -24,12 +24,37 @@ never written.
 
 ### What is NOT logged
 
-- Reads (`Find`, `First`, ...).
-- Raw SQL: `db.Exec(...)`, `db.Raw(...)`.
+- Reads, unless read logging is enabled (see below).
+- Raw writes: `db.Exec(...)`.
 - Inserts without a model: `db.Table("x").Create(map[string]interface{}{...})`.
 - Anything on a connection that did not go through `RegisterCallbacks`.
 
 If one of those needs an audit trail, call `LogActivity` yourself (below).
+
+## Read logging (opt-in)
+
+Off by default. Set `ACTIVITY_LOG_READ_ENABLED=true` to also log every `SELECT`
+as a `READ` entry. Because `SELECT * FROM users` has no identifier, the entry
+carries the **SQL statement**, not the rows:
+
+```json
+{"timestamp":"...","actor_user_id":42,"action":"READ","entity":"users",
+ "query":"SELECT * FROM `users` WHERE status = ? AND `users`.`deleted_at` IS NULL","rows":12}
+```
+
+- Argument values are never logged (placeholders only), and a query that
+  mentions a sensitive column is replaced with `[redacted]`.
+- `rows` is the number of rows returned (absent for `Scan`/`Rows`/`Row`).
+- Covers `Find`/`First`/`Count`/`Pluck`/`Scan`/`Rows` and `db.Raw(...).Find/Scan`.
+- Failed queries (incl. record-not-found) and gorm's own catalog queries are
+  skipped. The old-row lookup done for update/delete logs is never a read.
+- Reads are emitted immediately, even inside a transaction that rolls back.
+- No callback is registered when disabled, so there is zero overhead.
+- Volume is high: use a broker driver, and drop noisy tables with
+  `ACTIVITY_LOG_READ_EXCLUDE_TABLES=sessions,casbin_rule`.
+
+The actor is attributed the same way as for writes (`WithActor`); a read with
+no actor is logged with `actor_user_id: 0` and no warning.
 
 ## Setting the actor (do this)
 

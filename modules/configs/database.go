@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -155,6 +156,16 @@ func (base *DatabaseConfig) SetConnection() (*gorm.DB, error) {
 	err = activitylog.RegisterCallbacks(db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register activity log callbacks: %v", err)
+	}
+
+	// Read (SELECT) logging is opt-in: nothing is registered unless enabled.
+	if cast.ToBool(os.Getenv("ACTIVITY_LOG_READ_ENABLED")) {
+		err = activitylog.RegisterReadCallbacks(db, activitylog.ReadLogConfig{
+			ExcludeTables: strings.Split(os.Getenv("ACTIVITY_LOG_READ_EXCLUDE_TABLES"), ","),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to register activity log read callbacks: %v", err)
+		}
 	}
 
 	return db, nil
