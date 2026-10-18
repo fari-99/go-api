@@ -193,13 +193,16 @@ func (base *BaseMiddleware) checkAuthHeader(authHeader string, typeClaims string
 		return &token_generator.JwtMapClaims{}, false, errors.New("header Authorization Bearer Token is empty")
 	}
 
-	token := strings.Split(authHeader, " ")
+	scheme, tokenString, ok := strings.Cut(authHeader, " ")
+	if !ok || !strings.EqualFold(scheme, "Bearer") || tokenString == "" {
+		return &token_generator.JwtMapClaims{}, false, errors.New("header Authorization must be in format: Bearer <token>")
+	}
 
 	secretToken := os.Getenv("JWT_SECRET_TOKEN")
 	refreshToken := os.Getenv("JWT_REFRESH_TOKEN")
 	signMethod := os.Getenv("JWT_HMAC_HASH")
 
-	claims, err := token_generator.NewJwt(secretToken, refreshToken, signMethod).ParseToken(typeClaims, token[1])
+	claims, err := token_generator.NewJwt(secretToken, refreshToken, signMethod).ParseToken(typeClaims, tokenString)
 	if err != nil {
 		return &token_generator.JwtMapClaims{}, false, err
 	}
