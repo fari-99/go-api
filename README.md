@@ -111,7 +111,6 @@ To turn permission checks off during setup, set `RBAC_ENABLED=false` in `.env` a
 - **Subject format is `{RoleName}-{UserType}`**, for example `admin-Customer`. Policies must use this subject. `role_name` is not unique, so check for duplicate role rows before assigning policies.
 - **Users with no roles are always denied** on gated routes, even if the policy table is empty.
 - **Password helper rejects weak passwords**, including ones that contain the username or email parts (for example `Rbac-Admin-1` for `rbac-admin@...`). The seed command goes through the same check.
-- **Malformed `Authorization` header returns 500.** A header without a space (for example just `Bearer`) panics at `token[1]` in `checkAuthHeader` (`modules/middleware/middleware_auth.go`). This is a known issue that predates RBAC.
 
 ---
 
